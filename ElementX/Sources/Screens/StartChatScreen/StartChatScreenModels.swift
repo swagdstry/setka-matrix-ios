@@ -53,6 +53,7 @@ enum StartChatScreenViewAction {
     case createRoom
     case createDM(user: UserProfileProxy)
     case selectUser(UserProfileProxy)
+    case selectContact(roomID: String)
     case joinRoomByAddress
     case openRoomDirectorySearch
 }

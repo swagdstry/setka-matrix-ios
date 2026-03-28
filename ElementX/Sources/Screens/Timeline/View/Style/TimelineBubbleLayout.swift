@@ -116,7 +116,10 @@ struct TimelineBubbleLayout: Layout {
             return cachedSize
         }
         
-        let size = subview.sizeThatFits(proposedSize)
+        let measuredSize = subview.sizeThatFits(proposedSize)
+        let width = measuredSize.width.isFinite ? measuredSize.width : 0
+        let height = measuredSize.height.isFinite ? measuredSize.height : 0
+        let size = CGSize(width: width, height: height)
         
         cache.sizes[index]?[proposedSize] = size
         return size

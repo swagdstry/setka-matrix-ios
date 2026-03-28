@@ -29,7 +29,11 @@ struct RoomTimelineItemView: View {
     @ViewBuilder private var timelineView: some View {
         switch viewState.type {
         case .text(let item):
-            TextRoomTimelineView(timelineItem: item, linkMetadata: linkMetadataForItem(item))
+            if item.body.contains("[video_note:") {
+                VideoNoteRoomTimelineView(text: item.body)
+            } else {
+                TextRoomTimelineView(timelineItem: item, linkMetadata: linkMetadataForItem(item))
+            }
         case .separator(let item):
             SeparatorRoomTimelineView(timelineItem: item)
         case .image(let item):

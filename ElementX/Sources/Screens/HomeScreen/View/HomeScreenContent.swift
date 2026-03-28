@@ -14,6 +14,8 @@ struct HomeScreenContent: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     
     @ObservedObject var context: HomeScreenViewModel.Context
+    @ObservedObject private var mediaPlayerController = GlobalMediaPlayerController.shared
+    @State private var isMiniPlayerCollapsed = false
     let scrollViewAdapter: ScrollViewAdapter
     
     var body: some View {
@@ -60,18 +62,41 @@ struct HomeScreenContent: View {
                     .disableAutocorrection(true)
                 }
             }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if mediaPlayerController.shouldShowAudioOverlay || mediaPlayerController.activeVideoNote != nil {
+                    InlineMiniMediaPlayerView(controller: mediaPlayerController,
+                                              displayMode: isMiniPlayerCollapsed ? .compact : .expanded,
+                                              onExpand: {
+                                                  withAnimation(.spring(response: 0.32, dampingFraction: 0.86).disabledDuringTests()) {
+                                                      isMiniPlayerCollapsed = false
+                                                  }
+                                              })
+                                              .padding(.horizontal, 12)
+                                              .padding(.top, 4)
+                                              .padding(.bottom, 4)
+                                              .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity),
+                                                                      removal: .scale(scale: 0.94, anchor: .top).combined(with: .opacity)))
+                }
+            }
             .introspect(.scrollView, on: .supportedVersions) { scrollView in
                 guard scrollView != scrollViewAdapter.scrollView else { return }
                 scrollViewAdapter.scrollView = scrollView
             }
             .onReceive(scrollViewAdapter.didScroll) { _ in
                 updateVisibleRange()
+                updateMiniPlayerCollapse()
             }
             .onReceive(scrollViewAdapter.isScrolling) { _ in
                 updateVisibleRange()
             }
             .onChange(of: context.searchQuery) {
                 updateVisibleRange()
+            }
+            .onAppear {
+                GlobalMediaPlayerController.shared.setHomeScreenVisible(true)
+            }
+            .onDisappear {
+                GlobalMediaPlayerController.shared.setHomeScreenVisible(false)
             }
             .onChange(of: context.viewState.visibleRooms) {
                 updateVisibleRange()
@@ -117,6 +142,10 @@ struct HomeScreenContent: View {
             .scrollBounceBehavior(context.viewState.roomListMode == .empty ? .basedOnSize : .automatic)
             .animation(.elementDefault, value: context.viewState.roomListMode)
             .animation(.none, value: context.viewState.visibleRooms)
+            .animation(.spring(response: 0.34, dampingFraction: 0.86).disabledDuringTests(),
+                       value: mediaPlayerController.shouldShowAudioOverlay)
+            .animation(.spring(response: 0.34, dampingFraction: 0.86).disabledDuringTests(),
+                       value: mediaPlayerController.activeVideoNote != nil)
         }
     }
     
@@ -144,6 +173,15 @@ struct HomeScreenContent: View {
     /// Once we move to iOS 17 we should remove all of this and use scroll anchors instead
     private func updateVisibleRange() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { delayedUpdateVisibleRange() }
+    }
+    
+    private func updateMiniPlayerCollapse() {
+        guard let scrollView = scrollViewAdapter.scrollView else { return }
+        let shouldCollapse = scrollView.contentOffset.y + scrollView.contentInset.top > 6
+        
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.88).disabledDuringTests()) {
+            isMiniPlayerCollapsed = shouldCollapse
+        }
     }
     
     private func delayedUpdateVisibleRange() {

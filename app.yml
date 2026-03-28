@@ -1,10 +1,10 @@
 settings:
-  APP_DISPLAY_NAME: Element X
-  PRODUCTION_APP_NAME: Element
+  APP_DISPLAY_NAME: Сетка
+  PRODUCTION_APP_NAME: Сетка
   APP_GROUP_IDENTIFIER: group.io.element
   BASE_BUNDLE_IDENTIFIER: io.element.elementx
   ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: "colors/accent-color"
-  DEVELOPMENT_TEAM: 7J4U792NQT
+  DEVELOPMENT_TEAM: ""
 
   # Optional configuration to load accounts from Element Classic.
   CLASSIC_APP_GROUP_IDENTIFIER: group.im.vector

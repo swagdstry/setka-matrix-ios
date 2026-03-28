@@ -105,7 +105,8 @@ struct HighlightedTimelineItemTimeline_Previews: PreviewProvider {
         ElementNavigationStack {
             RoomScreen(context: roomViewModel.context,
                        timelineContext: timelineViewModel.context,
-                       composerToolbar: ComposerToolbar.mock())
+                       composerToolbar: ComposerToolbar.mock(),
+                       timelineActions: timelineViewModel.actions)
         }
         .previewDisplayName("Timeline")
     }

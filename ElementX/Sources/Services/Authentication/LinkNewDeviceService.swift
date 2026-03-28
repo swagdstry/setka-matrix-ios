@@ -201,6 +201,8 @@ private extension QRCodeLoginError {
             .cancelled
         case .OtherDeviceAlreadySignedIn:
             .deviceAlreadySignedIn
+        case .UnsupportedQrCodeType:
+            .invalidQRCode
         case .Unknown, .MissingSecretsBackup, .DeviceIdAlreadyInUse:
             .unknown
         }

@@ -114,16 +114,27 @@ struct MessageText: UIViewRepresentable {
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: MessageTextView, context: Context) -> CGSize? {
-        let proposalWidth = proposal.width ?? UIView.layoutFittingExpandedSize.width
+        let rawProposalWidth = proposal.width ?? UIView.layoutFittingExpandedSize.width
+        let proposalWidth: CGFloat
+        
+        if rawProposalWidth.isFinite, rawProposalWidth > 0 {
+            proposalWidth = rawProposalWidth
+        } else {
+            proposalWidth = 320
+        }
         
         if let size = computedSizes[proposalWidth] {
             return size
         }
         
-        let size = uiView.sizeThatFits(CGSize(width: proposalWidth, height: UIView.layoutFittingCompressedSize.height))
+        let measuredSize = uiView.sizeThatFits(CGSize(width: proposalWidth, height: UIView.layoutFittingCompressedSize.height))
+        let size = CGSize(width: measuredSize.width.isFinite ? measuredSize.width : proposalWidth,
+                          height: measuredSize.height.isFinite ? measuredSize.height : UIView.layoutFittingCompressedSize.height)
+        
         DispatchQueue.main.async {
             computedSizes[proposalWidth] = size
         }
+        
         return size
     }
 

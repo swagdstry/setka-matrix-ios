@@ -43,6 +43,9 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
                 return buildEncryptedTimelineItem(eventItemProxy, messageLikeContent, encryptedMessage, isOutgoing)
             case .other:
                 return nil // We shouldn't receive these without asking for custom event types.
+            case .liveLocation:
+                // TODO: Implement
+                return nil
             }
         case .failedToParseMessageLike(let eventType, let error):
             return buildUnsupportedTimelineItem(eventItemProxy, eventType, error, isOutgoing)
@@ -69,9 +72,6 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
             return buildCallInviteTimelineItem(for: eventItemProxy)
         case .rtcNotification:
             return buildCallNotificationTimelineItem(for: eventItemProxy)
-        case .liveLocation:
-            // TODO: Implement
-            return nil
         }
     }
     
@@ -573,6 +573,12 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
                                        mimeType: messageContent.info?.mimetype,
                                        fileSize: messageContent.info?.size.map(UInt.init))
         
+        let normalizedCaption = messageContent.caption?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+        let normalizedFilename = messageContent.filename.lowercased()
+        let isVideoNote = normalizedCaption == "[video_note]"
+            || normalizedCaption.hasPrefix("[video_note:")
+            || normalizedFilename.contains("video-note")
+        
         return .init(filename: messageContent.filename,
                      caption: messageContent.caption,
                      formattedCaption: formattedCaption,
@@ -580,7 +586,8 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
                      videoInfo: videoInfo,
                      thumbnailInfo: thumbnailInfo,
                      blurhash: messageContent.info?.blurhash,
-                     contentType: UTType(mimeType: messageContent.info?.mimetype, fallbackFilename: messageContent.filename))
+                     contentType: UTType(mimeType: messageContent.info?.mimetype, fallbackFilename: messageContent.filename),
+                     isVideoNote: isVideoNote)
     }
 
     private func buildLocationTimelineItemContent(_ locationContent: LocationContent) -> LocationRoomTimelineItemContent {

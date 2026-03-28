@@ -11,8 +11,10 @@ import SwiftUI
 
 struct TimelineItemBubbledStylerView<Content: View>: View {
     @EnvironmentObject private var context: TimelineViewModel.Context
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.timelineGroupStyle) private var timelineGroupStyle
     @Environment(\.focussedEventID) private var focussedEventID
+    @ObservedObject private var appThemeService = AppThemeService.shared
     
     let timelineItem: EventBasedTimelineItemProtocol
     let adjustedDeliveryStatus: TimelineItemDeliveryStatus?
@@ -182,7 +184,9 @@ struct TimelineItemBubbledStylerView<Content: View>: View {
             .timelineItemSendInfo(timelineItem: timelineItem, adjustedDeliveryStatus: adjustedDeliveryStatus, context: context)
             .bubbleBackground(isOutgoing: timelineItem.isOutgoing,
                               insets: timelineItem.bubbleInsets,
-                              color: timelineItem.bubbleBackgroundColor)
+                              color: timelineItem.bubbleBackgroundColor(themeService: appThemeService, colorScheme: colorScheme),
+                              gradient: timelineItem.bubbleBackgroundGradient(themeService: appThemeService, colorScheme: colorScheme),
+                              cornerRadius: appThemeService.bubbleCornerRadius)
     }
     
     var contentWithReply: some View {
@@ -240,8 +244,9 @@ struct TimelineItemBubbledStylerView<Content: View>: View {
 
 @MainActor
 private extension EventBasedTimelineItemProtocol {
-    var bubbleBackgroundColor: Color? {
-        let defaultColor: Color = isOutgoing ? .compound._bgBubbleOutgoing : .compound._bgBubbleIncoming
+    func bubbleBackgroundColor(themeService: AppThemeService, colorScheme: ColorScheme) -> Color? {
+        let defaultColor: Color = isOutgoing ? themeService.resolvedOutgoingBubbleColor(for: colorScheme)
+            : themeService.resolvedIncomingBubbleColor(for: colorScheme)
         
         switch self {
         case is ImageRoomTimelineItem, is VideoRoomTimelineItem:
@@ -251,6 +256,21 @@ private extension EventBasedTimelineItemProtocol {
             return nil
         default:
             return defaultColor
+        }
+    }
+    
+    func bubbleBackgroundGradient(themeService: AppThemeService, colorScheme: ColorScheme) -> LinearGradient? {
+        guard isOutgoing else {
+            return nil
+        }
+        
+        switch self {
+        case is StickerRoomTimelineItem:
+            return nil
+        case is ImageRoomTimelineItem, is VideoRoomTimelineItem:
+            return properties.replyDetails != nil || properties.isThreaded || hasMediaCaption ? themeService.resolvedOutgoingBubbleGradient(for: colorScheme) : nil
+        default:
+            return themeService.resolvedOutgoingBubbleGradient(for: colorScheme)
         }
     }
 

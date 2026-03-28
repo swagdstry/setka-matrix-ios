@@ -250,6 +250,11 @@ final class ComposerToolbarViewModel: ComposerToolbarViewModelType, ComposerTool
             } else {
                 context.plainComposerText = NSAttributedString(string: wysiwygViewModel.attributedContent.text.string)
             }
+        case .videoNote:
+            state.bindings.composerFocused = false
+            actionsSubject.send(.videoNote)
+        case .sendVideoNote(let url):
+            actionsSubject.send(.sendVideoNote(url))
         }
     }
 

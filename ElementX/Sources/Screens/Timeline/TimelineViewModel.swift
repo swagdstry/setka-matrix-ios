@@ -214,6 +214,8 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             }
             let serverNames = roomProxy.knownServerNames(maxCount: 50) // Limit to the same number used by ClientProxy.resolveRoomAlias(_:)
             actionsSubject.send(.displayRoom(roomID: predecessorID, via: Array(serverNames)))
+        case .displayMediaUploadPreviewScreen(let mediaURLs):
+            actionsSubject.send(.displayMediaUploadPreviewScreen(mediaURLs: mediaURLs))
         }
     }
 
@@ -226,6 +228,8 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
                                          mode: mode,
                                          intentionalMentions: intentionalMentions)
             }
+        case .videoNote:
+            actionsSubject.send(.displayVideoNoteRecorder)
         case .editLastMessage:
             editLastMessage()
         case .attach(let attachment):
@@ -238,6 +242,8 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             composerFocusedSubject.send(isFocused)
         case .voiceMessage(let voiceMessageAction):
             processVoiceMessageAction(voiceMessageAction)
+        case .sendVideoNote(let url):
+            actionsSubject.send(.displayMediaUploadPreviewScreen(mediaURLs: [url]))
         case .contentChanged(let isEmpty):
             guard appSettings.sharePresence else {
                 return
@@ -562,6 +568,15 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             .receive(on: DispatchQueue.main)
             .weakAssign(to: \.state.hideTimelineMedia, on: self)
             .store(in: &cancellables)
+    }
+    
+    func sendVideoNote(_ url: URL) async {
+        let text = "[video_note:\(url.absoluteString)]"
+        
+        _ = await timelineController.sendMessage(text,
+                                                 html: nil,
+                                                 inReplyToEventID: nil,
+                                                 intentionalMentions: .empty)
     }
 
     private func setupDirectRoomSubscriptionsIfNeeded() {

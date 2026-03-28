@@ -105,6 +105,8 @@ class SettingsFlowCoordinator: FlowCoordinatorProtocol {
                     presentBlockedUsersScreen()
                 case .notifications:
                     presentNotificationSettings()
+                case .appTheme:
+                    presentAppTheme()
                 case .advancedSettings:
                     presentAdvancedSettings()
                 case .labs:
@@ -248,6 +250,20 @@ class SettingsFlowCoordinator: FlowCoordinatorProtocol {
                                                                               analytics: flowParameters.analytics,
                                                                               clientProxy: flowParameters.userSession.clientProxy,
                                                                               userIndicatorController: flowParameters.userIndicatorController))
+        coordinator.actionsPublisher
+            .sink { [weak self] action in
+                switch action {
+                case .appTheme:
+                    self?.presentAppTheme()
+                }
+            }
+            .store(in: &cancellables)
+        
+        navigationStackCoordinator.push(coordinator)
+    }
+    
+    private func presentAppTheme() {
+        let coordinator = AppThemeScreenCoordinator(appSettings: flowParameters.appSettings)
         navigationStackCoordinator.push(coordinator)
     }
     

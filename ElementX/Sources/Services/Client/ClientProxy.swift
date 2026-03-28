@@ -837,6 +837,119 @@ class ClientProxy: ClientProxyProtocol {
         }
     }
     
+    func fetchContacts() async -> Result<[ManagedContact], ClientProxyError> {
+        do {
+            let data = try await performContactsRequest(method: "GET",
+                                                        path: "/user/\(encodedUserID())/contact_list")
+            let response = try JSONDecoder().decode(ContactsResponse.self, from: data)
+            let contacts = response.rooms.map { roomID, metadata in
+                ManagedContact(roomID: roomID,
+                               alias: metadata.displayName ?? roomSummaryForIdentifier(roomID)?.name ?? metadata.userID ?? roomID,
+                               userID: metadata.userID,
+                               email: metadata.email,
+                               phone: metadata.phone)
+            }
+            
+            return .success(contacts)
+        } catch {
+            MXLog.error("Failed fetching contacts with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
+    func saveContact(_ contact: ManagedContact) async -> Result<Void, ClientProxyError> {
+        do {
+            let payload = ContactMetadataPayload(displayName: contact.alias,
+                                                 userID: contact.userID,
+                                                 email: contact.email,
+                                                 phone: contact.phone)
+            let body = try JSONEncoder().encode(payload)
+            _ = try await performContactsRequest(method: "PUT",
+                                                 path: "/user/\(encodedUserID())/contact_list/rooms/\(encodedPathSegment(contact.roomID))",
+                                                 body: body)
+            return .success(())
+        } catch {
+            MXLog.error("Failed saving contact with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
+    func deleteContact(roomID: String) async -> Result<Void, ClientProxyError> {
+        do {
+            _ = try await performContactsRequest(method: "DELETE",
+                                                 path: "/user/\(encodedUserID())/contact_list/rooms/\(encodedPathSegment(roomID))")
+            return .success(())
+        } catch {
+            MXLog.error("Failed deleting contact with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
+    func fetchRoomWallpaper(roomID: String) async -> Result<RoomWallpaperMetadata?, ClientProxyError> {
+        do {
+            let encodedRoomID = encodedPathSegment(roomID)
+            let (data, response) = try await performUserMetadataRequest(method: "GET",
+                                                                        path: "/user/\(encodedUserID())/room_wallpaper/rooms/\(encodedRoomID)")
+            if response.statusCode == 404 {
+                return .success(nil)
+            }
+            
+            guard 200..<300 ~= response.statusCode else {
+                return .failure(.invalidResponse)
+            }
+            
+            let metadata = try JSONDecoder().decode(RoomWallpaperMetadataPayload.self, from: data)
+            return .success(metadata.model)
+        } catch let error as ClientProxyError {
+            MXLog.error("Failed fetching room wallpaper with error: \(error)")
+            return .failure(error)
+        } catch {
+            MXLog.error("Failed fetching room wallpaper with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
+    func saveRoomWallpaper(roomID: String, metadata: RoomWallpaperMetadata) async -> Result<Void, ClientProxyError> {
+        do {
+            let encodedRoomID = encodedPathSegment(roomID)
+            let payload = RoomWallpaperMetadataPayload(model: metadata)
+            let body = try JSONEncoder().encode(payload)
+            let (_, response) = try await performUserMetadataRequest(method: "PUT",
+                                                                     path: "/user/\(encodedUserID())/room_wallpaper/rooms/\(encodedRoomID)",
+                                                                     body: body)
+            guard 200..<300 ~= response.statusCode else {
+                return .failure(.invalidResponse)
+            }
+            
+            return .success(())
+        } catch let error as ClientProxyError {
+            MXLog.error("Failed saving room wallpaper with error: \(error)")
+            return .failure(error)
+        } catch {
+            MXLog.error("Failed saving room wallpaper with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
+    func deleteRoomWallpaper(roomID: String) async -> Result<Void, ClientProxyError> {
+        do {
+            let encodedRoomID = encodedPathSegment(roomID)
+            let (_, response) = try await performUserMetadataRequest(method: "DELETE",
+                                                                     path: "/user/\(encodedUserID())/room_wallpaper/rooms/\(encodedRoomID)")
+            guard 200..<300 ~= response.statusCode || response.statusCode == 404 else {
+                return .failure(.invalidResponse)
+            }
+            
+            return .success(())
+        } catch let error as ClientProxyError {
+            MXLog.error("Failed deleting room wallpaper with error: \(error)")
+            return .failure(error)
+        } catch {
+            MXLog.error("Failed deleting room wallpaper with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
     func roomDirectorySearchProxy() -> RoomDirectorySearchProxyProtocol {
         RoomDirectorySearchProxy(roomDirectorySearch: client.roomDirectorySearch(), appSettings: appSettings)
     }
@@ -1271,6 +1384,189 @@ class ClientProxy: ClientProxyProtocol {
             MXLog.error("Failed retrieving user identity: \(error)")
             return .failure(.sdkError(error))
         }
+    }
+
+    private func encodedUserID() -> String {
+        encodedPathSegment(userID)
+    }
+    
+    private func encodedPathSegment(_ value: String) -> String {
+        let allowedCharacters = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+        return value.addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? value
+    }
+    
+    private func performContactsRequest(method: String,
+                                        path: String,
+                                        body: Data? = nil) async throws -> Data {
+        let (data, response) = try await performUserMetadataRequest(method: method, path: path, body: body)
+        guard 200..<300 ~= response.statusCode else {
+            throw ClientProxyError.invalidResponse
+        }
+        
+        return data
+    }
+    
+    private func performUserMetadataRequest(method: String,
+                                            path: String,
+                                            body: Data? = nil) async throws -> (Data, HTTPURLResponse) {
+        let session = try client.session()
+        let baseURLString = homeserver.hasSuffix("/") ? String(homeserver.dropLast()) : homeserver
+        guard let url = URL(string: "\(baseURLString)/_matrix/client/v3\(path)") else {
+            throw ClientProxyError.invalidServerName
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        
+        if let body {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        
+        let (data, response) = try await URLSession.shared.dataWithRetry(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw ClientProxyError.invalidResponse
+        }
+        
+        return (data, httpResponse)
+    }
+}
+
+private struct ContactsResponse: Decodable {
+    let rooms: [String: ContactMetadataPayload]
+}
+
+private struct ContactMetadataPayload: Codable {
+    let displayName: String?
+    let userID: String?
+    let email: String?
+    let phone: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case displayName = "display_name"
+        case userID = "user_id"
+        case email
+        case phone
+    }
+}
+
+private struct RoomWallpaperMetadataPayload: Codable {
+    private struct DecodedFields {
+        let type: String?
+        let theme: String?
+        let image: String?
+        let data: String?
+        let contentType: String?
+    }
+    
+    let type: String?
+    let theme: String?
+    let image: String?
+    let data: String?
+    let contentType: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case theme
+        case image
+        case url
+        case path
+        case imageURL = "image_url"
+        case data
+        case contentType = "content_type"
+        case wallpaper
+        case roomWallpaper = "room_wallpaper"
+        case value
+    }
+    
+    init(type: String?, theme: String?, image: String?, data: String?, contentType: String?) {
+        self.type = type
+        self.theme = theme
+        self.image = image
+        self.data = data
+        self.contentType = contentType
+    }
+    
+    init(model: RoomWallpaperMetadata) {
+        self.init(type: model.type,
+                  theme: model.theme,
+                  image: model.image,
+                  data: model.data,
+                  contentType: model.contentType)
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        if let decoded = Self.decodeFields(from: container) {
+            type = decoded.type
+            theme = decoded.theme
+            image = decoded.image
+            data = decoded.data
+            contentType = decoded.contentType
+            return
+        }
+        
+        for nestedKey in [CodingKeys.wallpaper, .roomWallpaper, .value] {
+            if let nestedContainer = try? container.nestedContainer(keyedBy: CodingKeys.self, forKey: nestedKey),
+               let decoded = Self.decodeFields(from: nestedContainer) {
+                type = decoded.type
+                theme = decoded.theme
+                image = decoded.image
+                data = decoded.data
+                contentType = decoded.contentType
+                return
+            }
+        }
+        
+        type = nil
+        theme = nil
+        image = nil
+        data = nil
+        contentType = nil
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(type, forKey: .type)
+        try container.encodeIfPresent(theme, forKey: .theme)
+        try container.encodeIfPresent(image, forKey: .image)
+        try container.encodeIfPresent(data, forKey: .data)
+        try container.encodeIfPresent(contentType, forKey: .contentType)
+    }
+    
+    var model: RoomWallpaperMetadata {
+        .init(type: type,
+              theme: theme,
+              image: image,
+              data: data,
+              contentType: contentType)
+    }
+    
+    private static func decodeFields(from container: KeyedDecodingContainer<CodingKeys>) -> DecodedFields? {
+        let type = try? container.decodeIfPresent(String.self, forKey: .type)
+        let theme = try? container.decodeIfPresent(String.self, forKey: .theme)
+        
+        let imageFromImageKey = try? container.decodeIfPresent(String.self, forKey: .image)
+        let imageFromURLKey = try? container.decodeIfPresent(String.self, forKey: .url)
+        let imageFromPathKey = try? container.decodeIfPresent(String.self, forKey: .path)
+        let imageFromImageURLKey = try? container.decodeIfPresent(String.self, forKey: .imageURL)
+        let image = imageFromImageKey ?? imageFromURLKey ?? imageFromPathKey ?? imageFromImageURLKey
+        
+        let data = try? container.decodeIfPresent(String.self, forKey: .data)
+        let contentType = try? container.decodeIfPresent(String.self, forKey: .contentType)
+        
+        guard type != nil || theme != nil || image != nil || data != nil || contentType != nil else {
+            return nil
+        }
+        
+        return .init(type: type,
+                     theme: theme,
+                     image: image,
+                     data: data,
+                     contentType: contentType)
     }
 }
 

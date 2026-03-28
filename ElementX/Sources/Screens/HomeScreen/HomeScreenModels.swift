@@ -243,7 +243,10 @@ struct HomeScreenRoom: Identifiable, Equatable {
 }
 
 extension HomeScreenRoom {
-    init(summary: RoomSummary, hideUnreadMessagesBadge: Bool, seenInvites: Set<String> = []) {
+    init(summary: RoomSummary,
+         hideUnreadMessagesBadge: Bool,
+         seenInvites: Set<String> = [],
+         nameOverride: String? = nil) {
         let roomID = summary.id
         
         let hasUnreadMessages = hideUnreadMessagesBadge ? false : summary.hasUnreadMessages
@@ -268,7 +271,7 @@ extension HomeScreenRoom {
                                 isMentionShown: isMentionShown,
                                 isMuteShown: isMuteShown,
                                 isCallShown: isCallShown),
-                  name: summary.name,
+                  name: nameOverride ?? summary.name,
                   isDirect: summary.isDirect,
                   isHighlighted: isHighlighted,
                   isFavourite: summary.isFavourite,

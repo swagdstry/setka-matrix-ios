@@ -4,7 +4,19 @@
     {
       "layers" : [
         {
+          "image-name" : "b9ff0619-8e81-49d1-af43-7aa498ecfb42.png",
+          "name" : "b9ff0619-8e81-49d1-af43-7aa498ecfb42",
+          "position" : {
+            "scale" : 1.7,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
           "glass" : false,
+          "hidden" : false,
           "image-name" : "AppIcon.png",
           "name" : "AppIcon"
         }

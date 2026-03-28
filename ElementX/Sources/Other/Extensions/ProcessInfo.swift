@@ -85,4 +85,29 @@ extension ProcessInfo {
         false
         #endif
     }
+    
+    var platform: String {
+        if #available(iOS 26.1, *), ProcessInfo.processInfo.isiOSAppOnVision {
+            "visionOS"
+        } else if ProcessInfo.processInfo.isiOSAppOnMac {
+            "macOS"
+        } else {
+            "iOS"
+        }
+    }
+}
+
+extension ProcessInfo {
+    /// Returns whether the app is running on Mac via iOS App on Mac (Catalyst) or iOS on Mac.
+    var isiOSAppOnMac: Bool {
+        #if targetEnvironment(macCatalyst)
+        return true
+        #else
+        // Check if we're running on Mac via the iOS environment
+        if #available(iOS 14.0, *) {
+            return environment["SIMULATOR_DEVICE_NAME"]?.contains("Mac") == true
+        }
+        return false
+        #endif
+    }
 }

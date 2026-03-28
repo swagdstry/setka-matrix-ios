@@ -44,6 +44,22 @@ enum ClientProxyError: Error {
     case invalidInvite
 }
 
+struct RoomWallpaperMetadata: Codable, Equatable {
+    let type: String?
+    let theme: String?
+    let image: String?
+    let data: String?
+    let contentType: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case theme
+        case image
+        case data
+        case contentType = "content_type"
+    }
+}
+
 enum SlidingSyncConstants {
     static let maximumVisibleRangeSize = 30
 }
@@ -223,6 +239,18 @@ protocol ClientProxyProtocol: AnyObject {
     func searchUsers(searchTerm: String, limit: UInt) async -> Result<SearchUsersResultsProxy, ClientProxyError>
     
     func profile(for userID: String) async -> Result<UserProfileProxy, ClientProxyError>
+    
+    // MARK: - Contacts
+    
+    func fetchContacts() async -> Result<[ManagedContact], ClientProxyError>
+    func saveContact(_ contact: ManagedContact) async -> Result<Void, ClientProxyError>
+    func deleteContact(roomID: String) async -> Result<Void, ClientProxyError>
+    
+    // MARK: - Room wallpaper
+    
+    func fetchRoomWallpaper(roomID: String) async -> Result<RoomWallpaperMetadata?, ClientProxyError>
+    func saveRoomWallpaper(roomID: String, metadata: RoomWallpaperMetadata) async -> Result<Void, ClientProxyError>
+    func deleteRoomWallpaper(roomID: String) async -> Result<Void, ClientProxyError>
     
     func roomDirectorySearchProxy() -> RoomDirectorySearchProxyProtocol
     

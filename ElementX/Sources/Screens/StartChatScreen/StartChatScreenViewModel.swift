@@ -38,7 +38,6 @@ class StartChatScreenViewModel: StartChatScreenViewModelType, StartChatScreenVie
         self.appSettings = appSettings
         
         super.init(initialViewState: StartChatScreenViewState(userID: userSession.clientProxy.userID), mediaProvider: userSession.mediaProvider)
-        
         setupBindings()
         
         Task {
@@ -75,6 +74,8 @@ class StartChatScreenViewModel: StartChatScreenViewModelType, StartChatScreenVie
             }
         case .createDM(let user):
             Task { await createDirectRoom(user: user) }
+        case .selectContact(let roomID):
+            actionsSubject.send(.showRoom(roomID: roomID))
         case .joinRoomByAddress:
             joinRoomByAddress()
         case .openRoomDirectorySearch:

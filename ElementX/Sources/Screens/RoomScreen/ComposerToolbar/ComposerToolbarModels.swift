@@ -36,6 +36,9 @@ enum ComposerToolbarViewModelAction {
     case voiceMessage(ComposerToolbarVoiceMessageAction)
     
     case contentChanged(isEmpty: Bool)
+    
+    case videoNote
+    case sendVideoNote(URL)
 }
 
 enum ComposerToolbarViewAction {
@@ -57,6 +60,9 @@ enum ComposerToolbarViewAction {
     case plainComposerTextChanged
     case didToggleFormattingOptions
     case selectedTextChanged
+    
+    case videoNote
+    case sendVideoNote(URL)
 }
 
 enum ComposerAttachmentType {

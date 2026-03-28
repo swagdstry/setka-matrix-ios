@@ -8,6 +8,7 @@
 
 import Combine
 import UIKit
+import UniformTypeIdentifiers
 
 enum TimelineInteractionHandlerAction {
     case composer(action: TimelineComposerAction)
@@ -207,6 +208,10 @@ class TimelineInteractionHandler {
         if action.switchToDefaultComposer {
             actionsSubject.send(.composer(action: .setMode(mode: .default)))
         }
+    }
+    
+    func sendVideoNote(url: URL) async {
+        actionsSubject.send(.displayMediaUploadPreviewScreen(mediaURLs: [url]))
     }
     
     private func processEditMessageEvent(_ messageTimelineItem: EventBasedMessageTimelineItemProtocol) {
@@ -425,17 +430,17 @@ class TimelineInteractionHandler {
     }
 
     func playPauseAudio(for itemID: TimelineItemIdentifier) async {
+        await playAudio(for: itemID, toggleIfCurrent: true)
+    }
+    
+    private func playAudio(for itemID: TimelineItemIdentifier, toggleIfCurrent: Bool) async {
         MXLog.info("Toggle play/pause audio for itemID \(itemID)")
         guard let timelineItem = timelineController.timelineItems.firstUsingStableID(itemID) else {
             fatalError("TimelineItem \(itemID) not found")
         }
-        
-        guard let voiceMessageRoomTimelineItem = timelineItem as? VoiceMessageRoomTimelineItem else {
-            fatalError("Invalid TimelineItem type for itemID \(itemID) (expecting `VoiceMessageRoomTimelineItem` but found \(type(of: timelineItem)) instead")
-        }
-        
-        guard let source = voiceMessageRoomTimelineItem.content.source else {
-            MXLog.error("Cannot start voice message playback, source is not defined for itemID \(itemID)")
+
+        guard let source = audioSource(for: timelineItem) else {
+            MXLog.error("Cannot start audio playback, source is not defined for itemID \(itemID)")
             return
         }
         
@@ -450,6 +455,19 @@ class TimelineInteractionHandler {
             fatalError("Audio player state not found for \(itemID)")
         }
         
+        let queue = playableAudioQueue()
+        let currentIndex = queue.firstIndex(where: { $0.itemID == itemID }) ?? 0
+        GlobalMediaPlayerController.shared.presentAudio(playerState: audioPlayerState,
+                                                        title: audioTitle(for: timelineItem),
+                                                        roomID: roomProxy.id,
+                                                        queue: queue,
+                                                        currentIndex: currentIndex,
+                                                        playItem: { [weak self] itemID in
+                                                            Task {
+                                                                await self?.playAudio(for: itemID, toggleIfCurrent: false)
+                                                            }
+                                                        })
+        
         // Ensure this one is attached
         if !audioPlayerState.isAttached {
             audioPlayerState.attachAudioPlayer(audioPlayer)
@@ -461,22 +479,23 @@ class TimelineInteractionHandler {
         guard audioPlayer.sourceURL == source.url, audioPlayer.state != .error else {
             // Load content
             do {
-                MXLog.info("Loading voice message audio content from source for itemID \(itemID)")
-                let url = try await userSession.voiceMessageMediaManager.loadVoiceMessageFromSource(source, body: nil)
+                MXLog.info("Loading audio content from source for itemID \(itemID)")
+                let url = try await loadPlaybackURL(for: timelineItem, source: source)
 
                 // Make sure that the player is still attached, as it may have been detached while waiting for the voice message to be loaded.
                 if audioPlayerState.isAttached {
                     audioPlayer.load(sourceURL: source.url, playbackURL: url, autoplay: true)
                 }
             } catch {
-                MXLog.error("Failed to load voice message: \(error)")
+                MXLog.error("Failed to load audio for itemID \(itemID): \(error)")
                 audioPlayerState.reportError()
+                actionsSubject.send(.displayErrorToast(L10n.errorUnknown))
             }
             
             return
         }
         
-        if audioPlayer.state == .playing {
+        if audioPlayer.state == .playing, toggleIfCurrent {
             audioPlayer.pause()
         } else {
             audioPlayer.play()
@@ -496,20 +515,15 @@ class TimelineInteractionHandler {
             MXLog.error("TimelineItem \(itemID) not found")
             return nil
         }
-        
-        guard let voiceMessageRoomTimelineItem = timelineItem as? VoiceMessageRoomTimelineItem else {
-            MXLog.error("Invalid TimelineItem type (expecting `VoiceMessageRoomTimelineItem` but found \(type(of: timelineItem)) instead")
-            return nil
-        }
-        
+
         if let playerState = mediaPlayerProvider.playerState(for: .timelineItemIdentifier(itemID)) {
             return playerState
         }
         
         let playerState = AudioPlayerState(id: .timelineItemIdentifier(itemID),
-                                           title: L10n.commonVoiceMessage,
-                                           duration: voiceMessageRoomTimelineItem.content.duration,
-                                           waveform: voiceMessageRoomTimelineItem.content.waveform,
+                                           title: audioTitle(for: timelineItem),
+                                           duration: audioDuration(for: timelineItem),
+                                           waveform: audioWaveform(for: timelineItem),
                                            playbackSpeed: appSettings.voiceMessagePlaybackSpeed,
                                            playbackSpeedPublisher: appSettings.$voiceMessagePlaybackSpeed)
         mediaPlayerProvider.register(audioPlayerState: playerState)
@@ -543,8 +557,17 @@ class TimelineInteractionHandler {
         case is ImageRoomTimelineItem,
              is VideoRoomTimelineItem:
             return await mediaPreviewAction(for: timelineItem, messageTypes: [.image, .video])
-        case is AudioRoomTimelineItem,
-             is FileRoomTimelineItem:
+        case is VoiceMessageRoomTimelineItem:
+            await playPauseAudio(for: itemID)
+            return .none
+        case is AudioRoomTimelineItem:
+            await playPauseAudio(for: itemID)
+            return .none
+        case let fileItem as FileRoomTimelineItem:
+            if isPlayableAudioFile(fileItem) {
+                await playPauseAudio(for: itemID)
+                return .none
+            }
             return await mediaPreviewAction(for: timelineItem, messageTypes: [.audio, .file])
         default:
             return .none
@@ -615,6 +638,172 @@ class TimelineInteractionHandler {
             return .displayMediaPreview(item: item, timelineViewModel: .new(timelineViewModel))
         } else {
             return .displayMediaPreview(item: item, timelineViewModel: .active)
+        }
+    }
+
+    private func audioSource(for timelineItem: RoomTimelineItemProtocol) -> MediaSourceProxy? {
+        switch timelineItem {
+        case let item as VoiceMessageRoomTimelineItem:
+            item.content.source
+        case let item as AudioRoomTimelineItem:
+            item.content.source
+        case let item as FileRoomTimelineItem:
+            item.content.source
+        default:
+            nil
+        }
+    }
+    
+    private func audioDuration(for timelineItem: RoomTimelineItemProtocol) -> TimeInterval {
+        switch timelineItem {
+        case let item as VoiceMessageRoomTimelineItem:
+            item.content.duration
+        case let item as AudioRoomTimelineItem:
+            item.content.duration
+        default:
+            0
+        }
+    }
+    
+    private func audioWaveform(for timelineItem: RoomTimelineItemProtocol) -> EstimatedWaveform? {
+        switch timelineItem {
+        case let item as VoiceMessageRoomTimelineItem:
+            item.content.waveform
+        case let item as AudioRoomTimelineItem:
+            item.content.waveform
+        default:
+            nil
+        }
+    }
+    
+    private func audioTitle(for timelineItem: RoomTimelineItemProtocol) -> String {
+        switch timelineItem {
+        case is VoiceMessageRoomTimelineItem:
+            L10n.commonVoiceMessage
+        case let item as AudioRoomTimelineItem:
+            item.content.filename
+        case let item as FileRoomTimelineItem:
+            item.content.filename
+        default:
+            L10n.commonAudio
+        }
+    }
+    
+    private func isPlayableAudioFile(_ item: FileRoomTimelineItem) -> Bool {
+        if let contentType = item.content.contentType, contentType.conforms(to: .audio) {
+            return true
+        }
+        
+        let supportedExtensions = ["mp3", "wav", "ogg", "m4a", "aac", "flac"]
+        let fileExtension = URL(fileURLWithPath: item.content.filename).pathExtension.lowercased()
+        return supportedExtensions.contains(fileExtension)
+    }
+    
+    private func loadPlaybackURL(for timelineItem: RoomTimelineItemProtocol, source: MediaSourceProxy) async throws -> URL {
+        switch timelineItem {
+        case is VoiceMessageRoomTimelineItem:
+            return try await userSession.voiceMessageMediaManager.loadVoiceMessageFromSource(source, body: nil)
+        case let item as AudioRoomTimelineItem:
+            guard case let .success(fileHandle) = await userSession.mediaProvider.loadFileFromSource(source,
+                                                                                                     filename: item.content.filename),
+                let fileURL = fileHandle.url else {
+                throw MediaProviderError.failedRetrievingFile
+            }
+            guard FileManager.default.fileExists(atPath: fileURL.path) else {
+                MXLog.error("Loaded audio file is missing on disk: \(fileURL.path)")
+                throw MediaProviderError.failedRetrievingFile
+            }
+            return try preparedAudioPlaybackURL(fileURL: fileURL,
+                                                source: source,
+                                                filename: item.content.filename,
+                                                contentType: item.content.contentType)
+        case let item as FileRoomTimelineItem:
+            guard case let .success(fileHandle) = await userSession.mediaProvider.loadFileFromSource(source,
+                                                                                                     filename: item.content.filename),
+                let fileURL = fileHandle.url else {
+                throw MediaProviderError.failedRetrievingFile
+            }
+            guard FileManager.default.fileExists(atPath: fileURL.path) else {
+                MXLog.error("Loaded file audio is missing on disk: \(fileURL.path)")
+                throw MediaProviderError.failedRetrievingFile
+            }
+            return try preparedAudioPlaybackURL(fileURL: fileURL,
+                                                source: source,
+                                                filename: item.content.filename,
+                                                contentType: item.content.contentType)
+        default:
+            throw MediaPlayerProviderError.unsupportedMediaType
+        }
+    }
+
+    private func preparedAudioPlaybackURL(fileURL: URL, source: MediaSourceProxy, filename: String, contentType: UTType?) throws -> URL {
+        let targetURL = audioPlaybackCacheURL(for: source,
+                                              filename: filename,
+                                              contentType: contentType)
+        
+        if FileManager.default.fileExists(atPath: targetURL.path(percentEncoded: false)) {
+            return targetURL
+        }
+        
+        do {
+            try FileManager.default.createDirectoryIfNeeded(at: targetURL.deletingLastPathComponent())
+            try? FileManager.default.removeItem(at: targetURL)
+            try FileManager.default.copyItem(at: fileURL, to: targetURL)
+            return targetURL
+        } catch {
+            MXLog.error("Failed preparing audio playback URL for \(filename): \(error)")
+            throw error
+        }
+    }
+    
+    private func playbackFilename(for filename: String, contentType: UTType?) -> String {
+        let sanitizedFilename = URL(fileURLWithPath: filename).lastPathComponent
+        let existingExtension = URL(fileURLWithPath: sanitizedFilename).pathExtension
+        
+        if !existingExtension.isEmpty {
+            return sanitizedFilename
+        }
+        
+        if let preferredExtension = contentType?.preferredFilenameExtension {
+            return "\(sanitizedFilename).\(preferredExtension)"
+        }
+        
+        return sanitizedFilename.appending(".m4a")
+    }
+    
+    private func audioPlaybackCacheURL(for source: MediaSourceProxy, filename: String, contentType: UTType?) -> URL {
+        let cacheDirectory = URL.appGroupTemporaryDirectory
+            .appending(component: "media", directoryHint: .isDirectory)
+            .appending(component: "audio-playback", directoryHint: .isDirectory)
+        
+        let preferredFilename = playbackFilename(for: filename, contentType: contentType)
+        let rawSourceIdentifier = source.url.lastPathComponent.isEmpty ? source.url.absoluteString : source.url.lastPathComponent
+        let sourceIdentifier = rawSourceIdentifier
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: ":", with: "_")
+            .replacingOccurrences(of: "?", with: "_")
+            .replacingOccurrences(of: "&", with: "_")
+            .replacingOccurrences(of: "=", with: "_")
+        let safeFilename = preferredFilename.replacingOccurrences(of: "/", with: "_")
+        
+        return cacheDirectory.appending(component: "\(sourceIdentifier)-\(safeFilename)")
+    }
+    
+    private func playableAudioQueue() -> [GlobalMediaPlayerController.ActiveAudioPresentation.QueueItem] {
+        timelineController.timelineItems.compactMap { timelineItem in
+            switch timelineItem {
+            case let item as VoiceMessageRoomTimelineItem:
+                guard item.content.source != nil else { return nil }
+                return .init(itemID: item.id, title: L10n.commonVoiceMessage)
+            case let item as AudioRoomTimelineItem:
+                guard item.content.source != nil else { return nil }
+                return .init(itemID: item.id, title: item.content.filename)
+            case let item as FileRoomTimelineItem:
+                guard item.content.source != nil, isPlayableAudioFile(item) else { return nil }
+                return .init(itemID: item.id, title: item.content.filename)
+            default:
+                return nil
+            }
         }
     }
 }

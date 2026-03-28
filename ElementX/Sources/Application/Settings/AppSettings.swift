@@ -34,6 +34,206 @@ enum AppBuildType {
     case release
 }
 
+enum SetkaThemeMode: String, Codable, CaseIterable, Hashable {
+    case system = "System"
+    case light = "Light"
+    case dark = "Dark"
+    
+    var appAppearance: AppAppearance {
+        switch self {
+        case .system:
+            .system
+        case .light:
+            .light
+        case .dark:
+            .dark
+        }
+    }
+}
+
+enum SetkaHomeBackgroundStyle: String, Codable, CaseIterable, Hashable {
+    case solid
+    case gradient
+    case image
+}
+
+enum SetkaHomeChatListStyle: String, Codable, CaseIterable, Hashable {
+    case plain
+    case bubble
+}
+
+struct SetkaThemeConfiguration: Codable, Equatable {
+    var version: Int
+    var themeMode: SetkaThemeMode
+    var accentColorHex: String
+    var uiScale: Double
+    var messageScale: Double
+    var bubbleRadiusDp: Int
+    var bubbleWidthPercent: Int
+    var timelineOverlayOpacityPercent: Int
+    var composerBackgroundOpacityPercent: Int
+    var wallpaperBlurDp: Int
+    var showEncryptionStatus: Bool
+    var topBarBackgroundColorHex: String
+    var topBarTextColorHex: String
+    var composerBackgroundColorHex: String
+    var serviceBubbleColorHex: String
+    var serviceTextColorHex: String
+    var incomingBubbleColorHex: String
+    var incomingBubbleGradientToColorHex: String?
+    var outgoingBubbleColorHex: String
+    var outgoingBubbleGradientToColorHex: String
+    var homeBackgroundColorHex: String
+    var homeBackgroundStyle: SetkaHomeBackgroundStyle
+    var homeGradientFromColorHex: String
+    var homeGradientToColorHex: String
+    var homeWallpaperImagePath: String?
+    var homeChatListStyle: SetkaHomeChatListStyle
+    var homeChatListOpacityPercent: Int
+    var defaultRoomWallpaperStyle: String
+    var enableChatAnimations: Bool
+    var enableBlurEffects: Bool
+    var initialTimelineItemCount: Int
+    var disableLiquidGlassEffects: Bool
+    
+    static let `default` = SetkaThemeConfiguration(version: 7,
+                                                   themeMode: .system,
+                                                   accentColorHex: "#0A84FF",
+                                                   uiScale: 1.0,
+                                                   messageScale: 1.0,
+                                                   bubbleRadiusDp: 10,
+                                                   bubbleWidthPercent: 78,
+                                                   timelineOverlayOpacityPercent: 20,
+                                                   composerBackgroundOpacityPercent: 92,
+                                                   wallpaperBlurDp: 12,
+                                                   showEncryptionStatus: false,
+                                                   topBarBackgroundColorHex: "#F6F7F8",
+                                                   topBarTextColorHex: "#111111",
+                                                   composerBackgroundColorHex: "#FFFFFF",
+                                                   serviceBubbleColorHex: "#DCE5EA",
+                                                   serviceTextColorHex: "#2A2A2A",
+                                                   incomingBubbleColorHex: "#FFFFFF",
+                                                   incomingBubbleGradientToColorHex: nil,
+                                                   outgoingBubbleColorHex: "#DCEBFF",
+                                                   outgoingBubbleGradientToColorHex: "#CFE3FF",
+                                                   homeBackgroundColorHex: "#F2F5FA",
+                                                   homeBackgroundStyle: .solid,
+                                                   homeGradientFromColorHex: "#0F172A",
+                                                   homeGradientToColorHex: "#111827",
+                                                   homeWallpaperImagePath: nil,
+                                                   homeChatListStyle: .plain,
+                                                   homeChatListOpacityPercent: 84,
+                                                   defaultRoomWallpaperStyle: "none",
+                                                   enableChatAnimations: true,
+                                                   enableBlurEffects: true,
+                                                   initialTimelineItemCount: 20,
+                                                   disableLiquidGlassEffects: false)
+    
+    init(version: Int,
+         themeMode: SetkaThemeMode,
+         accentColorHex: String,
+         uiScale: Double,
+         messageScale: Double,
+         bubbleRadiusDp: Int,
+         bubbleWidthPercent: Int,
+         timelineOverlayOpacityPercent: Int,
+         composerBackgroundOpacityPercent: Int,
+         wallpaperBlurDp: Int,
+         showEncryptionStatus: Bool,
+         topBarBackgroundColorHex: String,
+         topBarTextColorHex: String,
+         composerBackgroundColorHex: String,
+         serviceBubbleColorHex: String,
+         serviceTextColorHex: String,
+         incomingBubbleColorHex: String,
+         incomingBubbleGradientToColorHex: String?,
+         outgoingBubbleColorHex: String,
+         outgoingBubbleGradientToColorHex: String,
+         homeBackgroundColorHex: String,
+         homeBackgroundStyle: SetkaHomeBackgroundStyle,
+         homeGradientFromColorHex: String,
+         homeGradientToColorHex: String,
+         homeWallpaperImagePath: String?,
+         homeChatListStyle: SetkaHomeChatListStyle,
+         homeChatListOpacityPercent: Int,
+         defaultRoomWallpaperStyle: String,
+         enableChatAnimations: Bool,
+         enableBlurEffects: Bool,
+         initialTimelineItemCount: Int,
+         disableLiquidGlassEffects: Bool) {
+        self.version = version
+        self.themeMode = themeMode
+        self.accentColorHex = accentColorHex
+        self.uiScale = uiScale
+        self.messageScale = messageScale
+        self.bubbleRadiusDp = bubbleRadiusDp
+        self.bubbleWidthPercent = bubbleWidthPercent
+        self.timelineOverlayOpacityPercent = timelineOverlayOpacityPercent
+        self.composerBackgroundOpacityPercent = composerBackgroundOpacityPercent
+        self.wallpaperBlurDp = wallpaperBlurDp
+        self.showEncryptionStatus = showEncryptionStatus
+        self.topBarBackgroundColorHex = topBarBackgroundColorHex
+        self.topBarTextColorHex = topBarTextColorHex
+        self.composerBackgroundColorHex = composerBackgroundColorHex
+        self.serviceBubbleColorHex = serviceBubbleColorHex
+        self.serviceTextColorHex = serviceTextColorHex
+        self.incomingBubbleColorHex = incomingBubbleColorHex
+        self.incomingBubbleGradientToColorHex = incomingBubbleGradientToColorHex
+        self.outgoingBubbleColorHex = outgoingBubbleColorHex
+        self.outgoingBubbleGradientToColorHex = outgoingBubbleGradientToColorHex
+        self.homeBackgroundColorHex = homeBackgroundColorHex
+        self.homeBackgroundStyle = homeBackgroundStyle
+        self.homeGradientFromColorHex = homeGradientFromColorHex
+        self.homeGradientToColorHex = homeGradientToColorHex
+        self.homeWallpaperImagePath = homeWallpaperImagePath
+        self.homeChatListStyle = homeChatListStyle
+        self.homeChatListOpacityPercent = homeChatListOpacityPercent
+        self.defaultRoomWallpaperStyle = defaultRoomWallpaperStyle
+        self.enableChatAnimations = enableChatAnimations
+        self.enableBlurEffects = enableBlurEffects
+        self.initialTimelineItemCount = initialTimelineItemCount
+        self.disableLiquidGlassEffects = disableLiquidGlassEffects
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = SetkaThemeConfiguration.default
+        
+        version = try container.decodeIfPresent(Int.self, forKey: .version) ?? defaults.version
+        themeMode = try container.decodeIfPresent(SetkaThemeMode.self, forKey: .themeMode) ?? defaults.themeMode
+        accentColorHex = try container.decodeIfPresent(String.self, forKey: .accentColorHex) ?? defaults.accentColorHex
+        uiScale = try container.decodeIfPresent(Double.self, forKey: .uiScale) ?? defaults.uiScale
+        messageScale = try container.decodeIfPresent(Double.self, forKey: .messageScale) ?? defaults.messageScale
+        bubbleRadiusDp = try container.decodeIfPresent(Int.self, forKey: .bubbleRadiusDp) ?? defaults.bubbleRadiusDp
+        bubbleWidthPercent = try container.decodeIfPresent(Int.self, forKey: .bubbleWidthPercent) ?? defaults.bubbleWidthPercent
+        timelineOverlayOpacityPercent = try container.decodeIfPresent(Int.self, forKey: .timelineOverlayOpacityPercent) ?? defaults.timelineOverlayOpacityPercent
+        composerBackgroundOpacityPercent = try container.decodeIfPresent(Int.self, forKey: .composerBackgroundOpacityPercent) ?? defaults.composerBackgroundOpacityPercent
+        wallpaperBlurDp = try container.decodeIfPresent(Int.self, forKey: .wallpaperBlurDp) ?? defaults.wallpaperBlurDp
+        showEncryptionStatus = try container.decodeIfPresent(Bool.self, forKey: .showEncryptionStatus) ?? defaults.showEncryptionStatus
+        topBarBackgroundColorHex = try container.decodeIfPresent(String.self, forKey: .topBarBackgroundColorHex) ?? defaults.topBarBackgroundColorHex
+        topBarTextColorHex = try container.decodeIfPresent(String.self, forKey: .topBarTextColorHex) ?? defaults.topBarTextColorHex
+        composerBackgroundColorHex = try container.decodeIfPresent(String.self, forKey: .composerBackgroundColorHex) ?? defaults.composerBackgroundColorHex
+        serviceBubbleColorHex = try container.decodeIfPresent(String.self, forKey: .serviceBubbleColorHex) ?? defaults.serviceBubbleColorHex
+        serviceTextColorHex = try container.decodeIfPresent(String.self, forKey: .serviceTextColorHex) ?? defaults.serviceTextColorHex
+        incomingBubbleColorHex = try container.decodeIfPresent(String.self, forKey: .incomingBubbleColorHex) ?? defaults.incomingBubbleColorHex
+        incomingBubbleGradientToColorHex = try container.decodeIfPresent(String.self, forKey: .incomingBubbleGradientToColorHex)
+        outgoingBubbleColorHex = try container.decodeIfPresent(String.self, forKey: .outgoingBubbleColorHex) ?? defaults.outgoingBubbleColorHex
+        outgoingBubbleGradientToColorHex = try container.decodeIfPresent(String.self, forKey: .outgoingBubbleGradientToColorHex) ?? defaults.outgoingBubbleGradientToColorHex
+        homeBackgroundColorHex = try container.decodeIfPresent(String.self, forKey: .homeBackgroundColorHex) ?? defaults.homeBackgroundColorHex
+        homeBackgroundStyle = try container.decodeIfPresent(SetkaHomeBackgroundStyle.self, forKey: .homeBackgroundStyle) ?? defaults.homeBackgroundStyle
+        homeGradientFromColorHex = try container.decodeIfPresent(String.self, forKey: .homeGradientFromColorHex) ?? defaults.homeGradientFromColorHex
+        homeGradientToColorHex = try container.decodeIfPresent(String.self, forKey: .homeGradientToColorHex) ?? defaults.homeGradientToColorHex
+        homeWallpaperImagePath = try container.decodeIfPresent(String.self, forKey: .homeWallpaperImagePath)
+        homeChatListStyle = try container.decodeIfPresent(SetkaHomeChatListStyle.self, forKey: .homeChatListStyle) ?? defaults.homeChatListStyle
+        homeChatListOpacityPercent = try container.decodeIfPresent(Int.self, forKey: .homeChatListOpacityPercent) ?? defaults.homeChatListOpacityPercent
+        defaultRoomWallpaperStyle = try container.decodeIfPresent(String.self, forKey: .defaultRoomWallpaperStyle) ?? defaults.defaultRoomWallpaperStyle
+        enableChatAnimations = try container.decodeIfPresent(Bool.self, forKey: .enableChatAnimations) ?? defaults.enableChatAnimations
+        enableBlurEffects = try container.decodeIfPresent(Bool.self, forKey: .enableBlurEffects) ?? defaults.enableBlurEffects
+        initialTimelineItemCount = try container.decodeIfPresent(Int.self, forKey: .initialTimelineItemCount) ?? defaults.initialTimelineItemCount
+        disableLiquidGlassEffects = try container.decodeIfPresent(Bool.self, forKey: .disableLiquidGlassEffects) ?? defaults.disableLiquidGlassEffects
+    }
+}
+
 /// Store Element specific app settings.
 final class AppSettings {
     private enum UserDefaultsKeys: String {
@@ -60,6 +260,7 @@ final class AppSettings {
         case viewSourceEnabled
         case optimizeMediaUploads
         case appAppearance
+        case setkaThemeConfiguration
         case sharePresence
         
         case elementCallBaseURLOverride
@@ -192,9 +393,9 @@ final class AppSettings {
     ///
     /// Account provider is the friendly term for the server name. It should not contain an `https` prefix and should
     /// match the last part of the user ID. For example `example.com` and not `https://matrix.example.com`.
-    private(set) var accountProviders = ["matrix.org"]
+    private(set) var accountProviders = ["setka-matrix.ru"]
     /// Whether or not the user is allowed to manually enter their own account provider or must select from one of `defaultAccountProviders`.
-    private(set) var allowOtherAccountProviders = true
+    private(set) var allowOtherAccountProviders = false
     /// Whether the components surrounding the app brand/logo should be hidden or not
     private(set) var hideBrandChrome = false
     
@@ -233,6 +434,9 @@ final class AppSettings {
     @UserPreference(key: UserDefaultsKeys.appAppearance, defaultValue: .system, storageType: .userDefaults(store))
     var appAppearance: AppAppearance
     
+    @UserPreference(key: UserDefaultsKeys.setkaThemeConfiguration, defaultValue: .default, storageType: .userDefaults(store))
+    var setkaThemeConfiguration: SetkaThemeConfiguration
+    
     // MARK: - Security
     
     /// The app must be locked with a PIN code as part of the authentication flow.
@@ -249,8 +453,9 @@ final class AppSettings {
     
     /// Any pre-defined static client registrations for OIDC issuers.
     let oidcStaticRegistrations: [URL: String] = ["https://id.thirdroom.io/realms/thirdroom": "elementx"]
-    /// The redirect URL used for OIDC. This no longer uses universal links so we don't need the bundle ID to avoid conflicts between Element X, Nightly and PR builds.
-    private(set) var oidcRedirectURL: URL = "https://element.io/oidc/login"
+    /// The redirect URL used for OIDC.
+    /// This auth server currently accepts only Element's app scheme for native clients.
+    private(set) var oidcRedirectURL: URL = "io.element.elementx:/oidc/login"
     
     private(set) lazy var oidcConfiguration = OIDCConfiguration(clientName: InfoPlistReader.main.bundleDisplayName,
                                                                 redirectURI: oidcRedirectURL,

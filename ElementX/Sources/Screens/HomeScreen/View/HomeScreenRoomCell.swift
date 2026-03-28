@@ -12,7 +12,9 @@ import SwiftUI
 
 struct HomeScreenRoomCell: View {
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.redactionReasons) private var redactionReasons
+    @ObservedObject private var appThemeService = AppThemeService.shared
     
     let room: HomeScreenRoom
     let isSelected: Bool
@@ -31,16 +33,30 @@ struct HomeScreenRoomCell: View {
             HStack(spacing: 16.0) {
                 avatar
                 
-                content
-                    .padding(.vertical, verticalInsets)
-                    .rowDivider(horizontalInsets: horizontalInsets)
+                contentContainer
             }
             .padding(.horizontal, horizontalInsets)
             .accessibilityElement(children: .combine)
         }
-        .buttonStyle(HomeScreenRoomCellButtonStyle(isSelected: isSelected))
+        .buttonStyle(HomeScreenRoomCellButtonStyle(isSelected: isSelected,
+                                                   isBubbleStyleEnabled: appThemeService.isHomeChatListBubbled,
+                                                   bubbleOpacity: appThemeService.homeChatListOpacity,
+                                                   bubbleColor: appThemeService.resolvedHomeChatListBubbleColor(for: colorScheme),
+                                                   colorScheme: colorScheme))
         .accessibilityIdentifier(A11yIdentifiers.homeScreen.roomName(room.name))
         .accessibilityHidden(redactionReasons.contains(.placeholder) ? true : false)
+    }
+    
+    @ViewBuilder
+    private var contentContainer: some View {
+        if appThemeService.isHomeChatListBubbled {
+            content
+                .padding(.vertical, verticalInsets)
+        } else {
+            content
+                .padding(.vertical, verticalInsets)
+                .rowDivider(horizontalInsets: horizontalInsets)
+        }
     }
     
     @ViewBuilder @MainActor
@@ -159,12 +175,40 @@ struct HomeScreenRoomCell: View {
 
 struct HomeScreenRoomCellButtonStyle: ButtonStyle {
     let isSelected: Bool
+    let isBubbleStyleEnabled: Bool
+    let bubbleOpacity: Double
+    let bubbleColor: Color
+    let colorScheme: ColorScheme
+    
+    private var borderColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
+    
+    private var effectiveBubbleOpacity: Double {
+        min(0.42, max(0.12, bubbleOpacity * 0.45))
+    }
     
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .background(isSelected ? Color.compound.bgSubtleSecondary : Color.compound.bgCanvasDefault)
-            .contentShape(Rectangle())
-            .animation(isSelected ? .none : .easeOut(duration: 0.1).disabledDuringTests(), value: isSelected)
+        if isBubbleStyleEnabled {
+            configuration.label
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(isSelected ? bubbleColor.opacity(min(0.56, effectiveBubbleOpacity + 0.12)) : bubbleColor.opacity(effectiveBubbleOpacity))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(borderColor.opacity(isSelected ? 0.14 : 0.08), lineWidth: 1)
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .animation(.easeOut(duration: 0.14).disabledDuringTests(), value: isSelected)
+        } else {
+            configuration.label
+                .background(isSelected ? Color.compound.bgSubtleSecondary : Color.compound.bgCanvasDefault)
+                .contentShape(Rectangle())
+                .animation(isSelected ? .none : .easeOut(duration: 0.1).disabledDuringTests(), value: isSelected)
+        }
     }
 }
 

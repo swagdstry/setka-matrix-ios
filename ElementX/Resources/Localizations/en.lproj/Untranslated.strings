@@ -14,3 +14,16 @@
 "soft_logout_clear_data_submit" = "Clear all data";
 "soft_logout_clear_data_dialog_title" = "Clear data";
 "soft_logout_clear_data_dialog_content" = "Clear all data currently stored on this device?\nSign in again to access your account data and messages.";
+
+// MARK: - Contacts
+
+"screen_contacts_section_title" = "Контакты";
+"screen_contacts_empty_state" = "Ваши контакты появятся здесь.";
+"screen_contacts_add_action" = "Добавить в контакты";
+"screen_contacts_edit_action" = "Изменить контакт";
+"screen_contacts_delete_action" = "Удалить из контактов";
+"screen_contacts_dm_footer_add" = "Сохраните этого человека в синхронизируемый список контактов.";
+"screen_contacts_dm_footer_edit" = "Обновите имя или удалите этого человека из контактов.";
+"screen_contacts_editor_footer" = "Контакты синхронизируются с контакт-листом homeserver, если это поддерживается.";
+"screen_contacts_editor_email" = "Почта";
+"screen_contacts_editor_phone" = "Телефон";

@@ -17,6 +17,7 @@ struct ComposerToolbar: View {
     @FocusState private var composerFocused: Bool
     @State private var frame: CGRect = .zero
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @EnvironmentObject private var recordingOverlayController: RoomRecordingOverlayController
     
     var body: some View {
         VStack(spacing: 8) {
@@ -89,7 +90,7 @@ struct ComposerToolbar: View {
                     sendButton
                         .padding(.leading, 3)
                 } else {
-                    voiceMessageRecordingButton(mode: context.viewState.isVoiceMessageModeActivated ? .recording : .idle)
+                    voiceMessageRecordingButton()
                         .padding(.leading, 3)
                 }
             }
@@ -120,15 +121,25 @@ struct ComposerToolbar: View {
                 if !context.composerFormattingEnabled {
                     RoomAttachmentPicker(context: context)
                 }
+                
                 messageComposer
             }
             .opacity(context.viewState.isVoiceMessageModeActivated ? 0 : 1)
+            .scaleEffect(context.viewState.isVoiceMessageModeActivated ? 0.98 : 1.0, anchor: .bottom)
+            .blur(radius: context.viewState.isVoiceMessageModeActivated ? 1.0 : 0)
+            .allowsHitTesting(!context.viewState.isVoiceMessageModeActivated)
             
             if context.viewState.isVoiceMessageModeActivated {
                 voiceMessageContent
                     .fixedSize(horizontal: false, vertical: true)
+                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity),
+                                            removal: .opacity))
             }
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.85).disabledDuringTests(),
+                   value: context.viewState.isVoiceMessageModeActivated)
+        .animation(.easeInOut(duration: 0.18).disabledDuringTests(),
+                   value: context.viewState.composerMode)
     }
     
     private var closeRTEButton: some View {
@@ -291,12 +302,36 @@ struct ComposerToolbar: View {
         }
     }
     
-    private func voiceMessageRecordingButton(mode: VoiceMessageRecordingButtonMode) -> some View {
-        VoiceMessageRecordingButton(mode: mode) {
-            context.send(viewAction: .voiceMessage(.startRecording))
-        } stopRecording: {
-            context.send(viewAction: .voiceMessage(.stopRecording))
-        }
+    private func voiceMessageRecordingButton() -> some View {
+        MediaRecordingButton(currentMode: Binding(get: {
+            recordingOverlayController.selectedMode
+        }, set: { newValue in
+            recordingOverlayController.selectedMode = newValue
+        }),
+        onStartRecording: { recordingMode in
+            recordingOverlayController.beginRecording(recordingMode)
+                                 
+            switch recordingMode {
+            case .voice:
+                context.send(viewAction: .voiceMessage(.startRecording))
+            case .video:
+                break
+            }
+        },
+        onLockRecording: { recordingMode in
+            recordingOverlayController.lockRecording(recordingMode)
+        },
+        onRecordingDragChanged: { recordingMode, progress in
+            recordingOverlayController.updateLockDragProgress(for: recordingMode, progress: progress)
+        },
+        onStopRecording: { recordingMode in
+            switch recordingOverlayController.finishGesture(for: recordingMode) {
+            case .stopVoice:
+                context.send(viewAction: .voiceMessage(.stopRecording))
+            case .stopVideo, .keepLocked, .none:
+                break
+            }
+        })
     }
     
     private var voiceMessageTrashButton: some View {
@@ -328,6 +363,7 @@ struct ComposerToolbar: View {
 // MARK: - Previews
 
 struct ComposerToolbar_Previews: PreviewProvider, TestablePreview {
+    static let recordingOverlayController = RoomRecordingOverlayController()
     static let viewModel = TimelineViewModel.mock
     static let wysiwygViewModel = WysiwygComposerViewModel()
     static let composerViewModel = ComposerToolbarViewModel(roomProxy: JoinedRoomProxyMock(.init()),
@@ -346,12 +382,14 @@ struct ComposerToolbar_Previews: PreviewProvider, TestablePreview {
     
     static var previews: some View {
         ComposerToolbar.mock(focused: true)
+            .environmentObject(recordingOverlayController)
         
         // Putting them is VStack allows the completion suggestion preview to work properly in tests
         VStack(spacing: 8) {
             // The mock functon can't be used in this context because it does not hold a reference to the view model, losing the combine subscriptions
             ComposerToolbar(context: composerViewModel.context)
         }
+        .environmentObject(recordingOverlayController)
         .previewDisplayName("With Suggestions")
         
         VStack(spacing: 8) {
@@ -360,6 +398,7 @@ struct ComposerToolbar_Previews: PreviewProvider, TestablePreview {
             ComposerToolbar.voiceMessageRecordingMock()
             ComposerToolbar.voiceMessagePreviewMock(uploading: false)
         }
+        .environmentObject(recordingOverlayController)
         .previewDisplayName("Voice Message")
         
         VStack(spacing: 8) {
@@ -367,11 +406,13 @@ struct ComposerToolbar_Previews: PreviewProvider, TestablePreview {
             ComposerToolbar.replyLoadingPreviewMock(isLoading: false)
         }
         .environmentObject(viewModel.context)
+        .environmentObject(recordingOverlayController)
         .previewDisplayName("Reply")
         
         VStack(spacing: 8) {
             ComposerToolbar.disabledPreviewMock()
         }
+        .environmentObject(recordingOverlayController)
         .previewDisplayName("Disabled")
     }
 }

@@ -66,6 +66,7 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
         
         self.initialSelectedPinnedEventID = initialSelectedPinnedEventID
         pinnedEventStringBuilder = .pinnedEventStringBuilder(userID: roomProxy.ownUserID)
+        ContactsService.shared.configure(clientProxy: userSession.clientProxy)
 
         let roomHistorySharingState: RoomHistorySharingState? = if appSettings.enableKeyShareOnInvite {
             roomProxy.infoPublisher.value.historySharingState
@@ -73,7 +74,10 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
             nil
         }
         
-        let viewState = RoomScreenViewState(roomTitle: roomProxy.infoPublisher.value.displayName ?? roomProxy.id,
+        let initialRoomName = ContactsService.shared.preferredName(forRoomID: roomProxy.id,
+                                                                   fallback: roomProxy.infoPublisher.value.displayName ?? roomProxy.id)
+        
+        let viewState = RoomScreenViewState(roomTitle: initialRoomName,
                                             roomAvatar: roomProxy.infoPublisher.value.avatar,
                                             hasOngoingCall: roomProxy.infoPublisher.value.hasRoomCall,
                                             hasSuccessor: roomProxy.infoPublisher.value.successor != nil,
@@ -170,6 +174,14 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
             .receive(on: DispatchQueue.main)
             .sink { [weak self] roomInfo in
                 self?.updateRoomInfo(roomInfo)
+            }
+            .store(in: &cancellables)
+        
+        ContactsService.shared.$contacts
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                updateRoomInfo(roomProxy.infoPublisher.value)
             }
             .store(in: &cancellables)
         
@@ -324,7 +336,8 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
     }
     
     private func updateRoomInfo(_ roomInfo: RoomInfoProxyProtocol) {
-        state.roomTitle = roomInfo.displayName ?? roomProxy.id
+        state.roomTitle = ContactsService.shared.preferredName(forRoomID: roomProxy.id,
+                                                               fallback: roomInfo.displayName ?? roomProxy.id)
         state.roomAvatar = roomInfo.avatar
         state.hasOngoingCall = roomInfo.hasRoomCall
         state.hasSuccessor = roomInfo.successor != nil

@@ -44,6 +44,7 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
         spaceFilterSubject = CurrentValueSubject<SpaceServiceFilter?, Never>(nil)
         
         roomSummaryProvider = userSession.clientProxy.roomSummaryProvider
+        ContactsService.shared.configure(clientProxy: userSession.clientProxy)
         
         super.init(initialViewState: .init(userID: userSession.clientProxy.userID,
                                            bindings: .init(filtersState: .init(appSettings: appSettings))),
@@ -128,6 +129,13 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
         appSettings.$hasSeenNewSoundBanner
             .sink { [weak self] hasSeenNewSoundBanner in
                 self?.state.shouldShowNewSoundBanner = !hasSeenNewSoundBanner
+            }
+            .store(in: &cancellables)
+        
+        ContactsService.shared.$contacts
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateRooms()
             }
             .store(in: &cancellables)
         
@@ -362,9 +370,16 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
         let seenInvites = appSettings.seenInvites
         
         for summary in roomSummaryProvider.roomListPublisher.value {
+            let nameOverride: String? = if summary.isDirect {
+                ContactsService.shared.alias(forRoomID: summary.id)
+            } else {
+                nil
+            }
+            
             let room = HomeScreenRoom(summary: summary,
                                       hideUnreadMessagesBadge: appSettings.hideUnreadMessagesBadge,
-                                      seenInvites: seenInvites)
+                                      seenInvites: seenInvites,
+                                      nameOverride: nameOverride)
             rooms.append(room)
         }
         

@@ -10,6 +10,26 @@ import Foundation
 // swiftlint:disable explicit_type_interface function_parameter_count identifier_name line_length
 // swiftlint:disable nesting type_body_length type_name vertical_whitespace_opening_braces
 internal enum UntranslatedL10n {
+  /// Добавить в контакты
+  internal static var screenContactsAddAction: String { return UntranslatedL10n.tr("Untranslated", "screen_contacts_add_action") }
+  /// Удалить из контактов
+  internal static var screenContactsDeleteAction: String { return UntranslatedL10n.tr("Untranslated", "screen_contacts_delete_action") }
+  /// Сохраните этого человека в синхронизируемый список контактов.
+  internal static var screenContactsDmFooterAdd: String { return UntranslatedL10n.tr("Untranslated", "screen_contacts_dm_footer_add") }
+  /// Обновите имя или удалите этого человека из контактов.
+  internal static var screenContactsDmFooterEdit: String { return UntranslatedL10n.tr("Untranslated", "screen_contacts_dm_footer_edit") }
+  /// Изменить контакт
+  internal static var screenContactsEditAction: String { return UntranslatedL10n.tr("Untranslated", "screen_contacts_edit_action") }
+  /// Почта
+  internal static var screenContactsEditorEmail: String { return UntranslatedL10n.tr("Untranslated", "screen_contacts_editor_email") }
+  /// Контакты синхронизируются с контакт-листом homeserver, если это поддерживается.
+  internal static var screenContactsEditorFooter: String { return UntranslatedL10n.tr("Untranslated", "screen_contacts_editor_footer") }
+  /// Телефон
+  internal static var screenContactsEditorPhone: String { return UntranslatedL10n.tr("Untranslated", "screen_contacts_editor_phone") }
+  /// Ваши контакты появятся здесь.
+  internal static var screenContactsEmptyState: String { return UntranslatedL10n.tr("Untranslated", "screen_contacts_empty_state") }
+  /// Контакты
+  internal static var screenContactsSectionTitle: String { return UntranslatedL10n.tr("Untranslated", "screen_contacts_section_title") }
   /// Clear all data currently stored on this device?
   /// Sign in again to access your account data and messages.
   internal static var softLogoutClearDataDialogContent: String { return UntranslatedL10n.tr("Untranslated", "soft_logout_clear_data_dialog_content") }

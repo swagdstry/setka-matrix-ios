@@ -1,0 +1,53 @@
+"screen_app_theme_title" = "Тема приложения";
+"screen_app_theme_section_colors" = "Цвета";
+"screen_app_theme_section_layout" = "Оформление";
+"screen_app_theme_section_preview" = "Предпросмотр темы";
+"screen_app_theme_section_home" = "Главный экран";
+"screen_app_theme_section_behavior" = "Поведение";
+"screen_app_theme_section_files" = "Файлы";
+
+"screen_app_theme_color_accent" = "Акцентный цвет";
+"screen_app_theme_color_top_bar_background" = "Фон верхней панели";
+"screen_app_theme_color_top_bar_text" = "Текст верхней панели";
+"screen_app_theme_color_composer_background" = "Фон поля ввода";
+"screen_app_theme_color_service_bubble" = "Служебный пузырь";
+"screen_app_theme_color_service_text" = "Текст служебного пузыря";
+"screen_app_theme_color_incoming_bubble" = "Входящий пузырь";
+"screen_app_theme_color_outgoing_bubble" = "Исходящий пузырь";
+"screen_app_theme_color_outgoing_gradient" = "Градиент исходящего";
+"screen_app_theme_color_home_background" = "Фон главного экрана";
+
+"screen_app_theme_layout_ui_scale" = "Масштаб интерфейса";
+"screen_app_theme_layout_message_scale" = "Масштаб сообщений";
+"screen_app_theme_layout_bubble_radius" = "Радиус пузыря";
+"screen_app_theme_layout_bubble_width_percent" = "Ширина пузыря %%";
+"screen_app_theme_layout_timeline_overlay_opacity_percent" = "Непрозрачность оверлея ленты %%";
+"screen_app_theme_layout_composer_opacity_percent" = "Непрозрачность поля ввода %%";
+"screen_app_theme_layout_wallpaper_blur" = "Размытие обоев";
+"screen_app_theme_layout_default_room_wallpaper" = "Обои комнаты по умолчанию";
+
+"screen_app_theme_home_background_style" = "Стиль фона главного экрана";
+"screen_app_theme_home_background_style_solid" = "Сплошной";
+"screen_app_theme_home_background_style_gradient" = "Градиент";
+"screen_app_theme_home_background_style_image" = "Изображение";
+"screen_app_theme_home_gradient_from" = "Градиент: цвет начала";
+"screen_app_theme_home_gradient_to" = "Градиент: цвет конца";
+"screen_app_theme_home_wallpaper_pick" = "Выбрать обои главного экрана";
+"screen_app_theme_home_wallpaper_reset" = "Сбросить обои главного экрана";
+"screen_app_theme_home_chat_list_style" = "Стиль списка чатов";
+"screen_app_theme_home_chat_list_style_plain" = "Обычный";
+"screen_app_theme_home_chat_list_style_bubble" = "Пузырьки";
+"screen_app_theme_home_chat_list_opacity" = "Прозрачность списка чатов %%";
+
+"screen_app_theme_behavior_chat_animations" = "Включить анимации чата";
+"screen_app_theme_behavior_blur_effects" = "Включить эффекты размытия";
+"screen_app_theme_behavior_disable_liquid_glass" = "Отключить iOS liquid glass";
+"screen_app_theme_behavior_show_encryption_status" = "Показывать статус шифрования";
+"screen_app_theme_behavior_initial_timeline_count" = "Начальное число событий в ленте";
+
+"screen_app_theme_file_import" = "Импорт .setkathemes";
+"screen_app_theme_file_export" = "Экспорт .setkathemes";
+"screen_app_theme_file_footer" = "Тема хранится в настройках приложения и может обмениваться с Android через .setkathemes.";
+
+"screen_app_theme_import_failed_title" = "Не удалось импортировать тему";
+"screen_app_theme_export_failed_title" = "Не удалось экспортировать тему";

@@ -21,4 +21,5 @@ struct VideoRoomTimelineItemContent: Hashable {
     
     var blurhash: String?
     var contentType: UTType?
+    var isVideoNote = false
 }

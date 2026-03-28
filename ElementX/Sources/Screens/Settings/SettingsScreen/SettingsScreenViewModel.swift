@@ -118,6 +118,8 @@ class SettingsScreenViewModel: SettingsScreenViewModelType, SettingsScreenViewMo
             actionsSubject.send(.secureBackup)
         case .notifications:
             actionsSubject.send(.notifications)
+        case .appTheme:
+            actionsSubject.send(.appTheme)
         case .advancedSettings:
             actionsSubject.send(.advancedSettings)
         case .labs:

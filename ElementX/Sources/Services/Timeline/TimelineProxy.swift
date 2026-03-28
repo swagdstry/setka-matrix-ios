@@ -357,6 +357,36 @@ final class TimelineProxy: TimelineProxyProtocol {
         return .success(())
     }
     
+    func sendVideoNote(url: URL,
+                       thumbnailURL: URL,
+                       videoInfo: VideoInfo,
+                       requestHandle: @MainActor (SendAttachmentJoinHandleProtocol) -> Void) async -> Result<Void, TimelineProxyError> {
+        MXLog.info("Sending video note")
+        
+        do {
+            let handle = try timeline.sendVideo(params: .init(source: .file(filename: url.path(percentEncoded: false)),
+                                                              
+                                                              caption: "[video_note]",
+                                                              
+                                                              formattedCaption: nil,
+                                                              mentions: nil,
+                                                              inReplyTo: nil),
+                                                thumbnailSource: .file(filename: thumbnailURL.path(percentEncoded: false)),
+                                                videoInfo: videoInfo)
+            
+            await requestHandle(handle)
+            
+            try await handle.join()
+            
+            MXLog.info("Finished sending video note")
+            return .success(())
+            
+        } catch {
+            MXLog.error("Failed sending video note: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
     func sendVoiceMessage(url: URL,
                           audioInfo: AudioInfo,
                           waveform: [Float],

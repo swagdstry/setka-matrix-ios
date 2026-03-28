@@ -1,0 +1,53 @@
+"screen_app_theme_title" = "App Theme";
+"screen_app_theme_section_colors" = "Colors";
+"screen_app_theme_section_layout" = "Layout";
+"screen_app_theme_section_preview" = "Theme preview";
+"screen_app_theme_section_home" = "Home";
+"screen_app_theme_section_behavior" = "Behavior";
+"screen_app_theme_section_files" = "Files";
+
+"screen_app_theme_color_accent" = "Accent color";
+"screen_app_theme_color_top_bar_background" = "Top bar background";
+"screen_app_theme_color_top_bar_text" = "Top bar text";
+"screen_app_theme_color_composer_background" = "Composer background";
+"screen_app_theme_color_service_bubble" = "Service bubble";
+"screen_app_theme_color_service_text" = "Service text";
+"screen_app_theme_color_incoming_bubble" = "Incoming bubble";
+"screen_app_theme_color_outgoing_bubble" = "Outgoing bubble";
+"screen_app_theme_color_outgoing_gradient" = "Outgoing gradient";
+"screen_app_theme_color_home_background" = "Home background";
+
+"screen_app_theme_layout_ui_scale" = "UI scale";
+"screen_app_theme_layout_message_scale" = "Message scale";
+"screen_app_theme_layout_bubble_radius" = "Bubble radius";
+"screen_app_theme_layout_bubble_width_percent" = "Bubble width %%";
+"screen_app_theme_layout_timeline_overlay_opacity_percent" = "Timeline overlay opacity %%";
+"screen_app_theme_layout_composer_opacity_percent" = "Composer opacity %%";
+"screen_app_theme_layout_wallpaper_blur" = "Wallpaper blur";
+"screen_app_theme_layout_default_room_wallpaper" = "Default room wallpaper";
+
+"screen_app_theme_home_background_style" = "Home background style";
+"screen_app_theme_home_background_style_solid" = "Solid";
+"screen_app_theme_home_background_style_gradient" = "Gradient";
+"screen_app_theme_home_background_style_image" = "Image";
+"screen_app_theme_home_gradient_from" = "Home gradient from";
+"screen_app_theme_home_gradient_to" = "Home gradient to";
+"screen_app_theme_home_wallpaper_pick" = "Pick home wallpaper";
+"screen_app_theme_home_wallpaper_reset" = "Reset home wallpaper";
+"screen_app_theme_home_chat_list_style" = "Chats list style";
+"screen_app_theme_home_chat_list_style_plain" = "Plain";
+"screen_app_theme_home_chat_list_style_bubble" = "Bubble";
+"screen_app_theme_home_chat_list_opacity" = "Chats list opacity %%";
+
+"screen_app_theme_behavior_chat_animations" = "Enable chat animations";
+"screen_app_theme_behavior_blur_effects" = "Enable blur effects";
+"screen_app_theme_behavior_disable_liquid_glass" = "Disable iOS liquid glass";
+"screen_app_theme_behavior_show_encryption_status" = "Show encryption status";
+"screen_app_theme_behavior_initial_timeline_count" = "Initial timeline item count";
+
+"screen_app_theme_file_import" = "Import .setkathemes";
+"screen_app_theme_file_export" = "Export .setkathemes";
+"screen_app_theme_file_footer" = "Theme is stored in app settings and can be exchanged with Android using .setkathemes.";
+
+"screen_app_theme_import_failed_title" = "Theme import failed";
+"screen_app_theme_export_failed_title" = "Theme export failed";

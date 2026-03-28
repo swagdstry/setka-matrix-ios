@@ -18,6 +18,10 @@ class AdvancedSettingsScreenViewModel: AdvancedSettingsScreenViewModelType, Adva
     
     private var timelineMediaVisibilityTask: Task<Void, Never>?
     private var hideInviteAvatarsTask: Task<Void, Never>?
+    private let actionsSubject = PassthroughSubject<AdvancedSettingsScreenViewModelAction, Never>()
+    var actionsPublisher: AnyPublisher<AdvancedSettingsScreenViewModelAction, Never> {
+        actionsSubject.eraseToAnyPublisher()
+    }
     
     init(advancedSettings: AdvancedSettingsProtocol,
          analytics: AnalyticsService,
@@ -54,6 +58,8 @@ class AdvancedSettingsScreenViewModel: AdvancedSettingsScreenViewModelType, Adva
             hideInviteAvatarsTask = Task { [weak self] in await self?.updateHideInviteAvatars(value) }
         case let .updateTimelineMediaVisibility(value):
             timelineMediaVisibilityTask = Task { [weak self] in await self?.updateTimelineMediaVisibility(value) }
+        case .appTheme:
+            actionsSubject.send(.appTheme)
         }
     }
     

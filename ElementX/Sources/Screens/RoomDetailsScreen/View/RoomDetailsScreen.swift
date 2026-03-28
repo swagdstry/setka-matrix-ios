@@ -7,12 +7,19 @@
 //
 
 import Compound
+import PhotosUI
 import SwiftUI
 
 struct RoomDetailsScreen: View {
     @Bindable var context: RoomDetailsScreenViewModel.Context
+    @ObservedObject private var contactsService = ContactsService.shared
+    @ObservedObject private var roomWallpaperService = RoomWallpaperService.shared
     
     @State private var isTopicExpanded = false
+    @State private var contactEditorDraft: ContactEditorSheet.Draft?
+    @State private var isRoomWallpaperDialogPresented = false
+    @State private var isRoomWallpaperPhotoPickerPresented = false
+    @State private var selectedWallpaperPhotoItem: PhotosPickerItem?
     
     var body: some View {
         Form {
@@ -21,6 +28,10 @@ struct RoomDetailsScreen: View {
             topicSection
             
             configurationSection
+            
+            if context.viewState.dmRecipientInfo != nil {
+                contactsSection
+            }
             
             if context.viewState.dmRecipientInfo == nil {
                 peopleSection
@@ -57,6 +68,59 @@ struct RoomDetailsScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .track(screen: .RoomDetails)
         .interactiveQuickLook(item: $context.mediaPreviewItem, allowEditing: false)
+        .sheet(item: $contactEditorDraft) { draft in
+            ContactEditorSheet(title: existingContact == nil ? UntranslatedL10n.screenContactsAddAction : UntranslatedL10n.screenContactsEditAction,
+                               draft: Binding(get: {
+                                   contactEditorDraft ?? draft
+                               }, set: { newValue in
+                                   contactEditorDraft = newValue
+                               })) {
+                contactEditorDraft = nil
+            } onSave: {
+                guard let draft = contactEditorDraft else { return }
+                contactEditorDraft = nil
+                Task {
+                    _ = await contactsService.upsertContact(roomID: draft.roomID,
+                                                            alias: draft.alias,
+                                                            userID: draft.userID,
+                                                            email: draft.email,
+                                                            phone: draft.phone)
+                }
+            }
+        }
+        .confirmationDialog(L10n.commonAppearance,
+                            isPresented: $isRoomWallpaperDialogPresented,
+                            titleVisibility: .visible) {
+            Button(L10n.actionChoosePhoto) {
+                isRoomWallpaperPhotoPickerPresented = true
+            }
+            
+            ForEach(RoomWallpaperService.Wallpaper.allCases, id: \.self) { wallpaper in
+                Button(wallpaper.title) {
+                    roomWallpaperService.setWallpaper(wallpaper, forRoomID: context.viewState.details.id)
+                }
+            }
+            
+            Button(L10n.actionCancel, role: .cancel) { }
+        }
+        .photosPicker(isPresented: $isRoomWallpaperPhotoPickerPresented,
+                      selection: $selectedWallpaperPhotoItem,
+                      matching: .images,
+                      preferredItemEncoding: .automatic,
+                      photoLibrary: .shared())
+        .onChange(of: selectedWallpaperPhotoItem) { _, newItem in
+            Task {
+                guard let data = try? await newItem?.loadTransferable(type: Data.self) else {
+                    return
+                }
+                await MainActor.run {
+                    roomWallpaperService.setCustomWallpaper(imageData: data, forRoomID: context.viewState.details.id)
+                }
+            }
+        }
+        .task(id: context.viewState.details.id) {
+            await roomWallpaperService.refreshFromServer(roomID: context.viewState.details.id)
+        }
     }
     
     // MARK: - Private
@@ -182,6 +246,12 @@ struct RoomDetailsScreen: View {
                         })
             }
             
+            ListRow(label: .default(title: L10n.commonAppearance, icon: \.image),
+                    details: .title(roomWallpaperService.wallpaperTitle(forRoomID: context.viewState.details.id)),
+                    kind: .button {
+                        isRoomWallpaperDialogPresented = true
+                    })
+            
             if context.viewState.dmRecipientInfo != nil {
                 switch context.viewState.dmRecipientInfo?.verificationState {
                 case .verified:
@@ -202,6 +272,38 @@ struct RoomDetailsScreen: View {
                                 context.send(viewAction: .processTapRecipientProfile)
                             })
                 }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var contactsSection: some View {
+        if let recipient = context.viewState.dmRecipientInfo?.member {
+            Section {
+                ListRow(label: .default(title: existingContact == nil ? UntranslatedL10n.screenContactsAddAction : UntranslatedL10n.screenContactsEditAction,
+                                        icon: \.userProfile),
+                        kind: .button {
+                            contactEditorDraft = ContactEditorSheet.Draft(contact: existingContact ?? .init(roomID: context.viewState.details.id,
+                                                                                                            alias: recipient.name ?? recipient.id,
+                                                                                                            userID: recipient.id))
+                        })
+                
+                if existingContact != nil {
+                    ListRow(label: .action(title: UntranslatedL10n.screenContactsDeleteAction,
+                                           icon: \.delete,
+                                           role: .destructive),
+                            kind: .button {
+                                Task {
+                                    _ = await contactsService.deleteContact(roomID: context.viewState.details.id)
+                                }
+                            })
+                }
+            } header: {
+                Text(UntranslatedL10n.screenContactsSectionTitle)
+                    .compoundListSectionHeader()
+            } footer: {
+                Text(existingContact == nil ? UntranslatedL10n.screenContactsDmFooterAdd : UntranslatedL10n.screenContactsDmFooterEdit)
+                    .compoundListSectionFooter()
             }
         }
     }
@@ -323,6 +425,10 @@ struct RoomDetailsScreen: View {
 
     private func blockUserAlertMessage(_ item: RoomDetailsScreenViewStateBindings.IgnoreUserAlertItem) -> some View {
         Text(item.description)
+    }
+    
+    private var existingContact: ManagedContact? {
+        contactsService.contact(forRoomID: context.viewState.details.id)
     }
 }
 

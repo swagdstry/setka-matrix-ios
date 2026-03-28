@@ -4419,6 +4419,420 @@ class ClientProxyMock: ClientProxyProtocol, @unchecked Sendable {
             return profileForReturnValue
         }
     }
+    //MARK: - fetchContacts
+
+    var fetchContactsUnderlyingCallsCount = 0
+    var fetchContactsCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return fetchContactsUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchContactsUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchContactsUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchContactsUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var fetchContactsCalled: Bool {
+        return fetchContactsCallsCount > 0
+    }
+
+    var fetchContactsUnderlyingReturnValue: Result<[ManagedContact], ClientProxyError>!
+    var fetchContactsReturnValue: Result<[ManagedContact], ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return fetchContactsUnderlyingReturnValue
+            } else {
+                var returnValue: Result<[ManagedContact], ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchContactsUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchContactsUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchContactsUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var fetchContactsClosure: (() async -> Result<[ManagedContact], ClientProxyError>)?
+
+    func fetchContacts() async -> Result<[ManagedContact], ClientProxyError> {
+        fetchContactsCallsCount += 1
+        if let fetchContactsClosure = fetchContactsClosure {
+            return await fetchContactsClosure()
+        } else {
+            return fetchContactsReturnValue
+        }
+    }
+    //MARK: - saveContact
+
+    var saveContactUnderlyingCallsCount = 0
+    var saveContactCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return saveContactUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = saveContactUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                saveContactUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    saveContactUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var saveContactCalled: Bool {
+        return saveContactCallsCount > 0
+    }
+    var saveContactReceivedContact: ManagedContact?
+    var saveContactReceivedInvocations: [ManagedContact] = []
+
+    var saveContactUnderlyingReturnValue: Result<Void, ClientProxyError>!
+    var saveContactReturnValue: Result<Void, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return saveContactUnderlyingReturnValue
+            } else {
+                var returnValue: Result<Void, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = saveContactUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                saveContactUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    saveContactUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var saveContactClosure: ((ManagedContact) async -> Result<Void, ClientProxyError>)?
+
+    func saveContact(_ contact: ManagedContact) async -> Result<Void, ClientProxyError> {
+        saveContactCallsCount += 1
+        saveContactReceivedContact = contact
+        DispatchQueue.main.async {
+            self.saveContactReceivedInvocations.append(contact)
+        }
+        if let saveContactClosure = saveContactClosure {
+            return await saveContactClosure(contact)
+        } else {
+            return saveContactReturnValue
+        }
+    }
+    //MARK: - deleteContact
+
+    var deleteContactRoomIDUnderlyingCallsCount = 0
+    var deleteContactRoomIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return deleteContactRoomIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = deleteContactRoomIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                deleteContactRoomIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    deleteContactRoomIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var deleteContactRoomIDCalled: Bool {
+        return deleteContactRoomIDCallsCount > 0
+    }
+    var deleteContactRoomIDReceivedRoomID: String?
+    var deleteContactRoomIDReceivedInvocations: [String] = []
+
+    var deleteContactRoomIDUnderlyingReturnValue: Result<Void, ClientProxyError>!
+    var deleteContactRoomIDReturnValue: Result<Void, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return deleteContactRoomIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<Void, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = deleteContactRoomIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                deleteContactRoomIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    deleteContactRoomIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var deleteContactRoomIDClosure: ((String) async -> Result<Void, ClientProxyError>)?
+
+    func deleteContact(roomID: String) async -> Result<Void, ClientProxyError> {
+        deleteContactRoomIDCallsCount += 1
+        deleteContactRoomIDReceivedRoomID = roomID
+        DispatchQueue.main.async {
+            self.deleteContactRoomIDReceivedInvocations.append(roomID)
+        }
+        if let deleteContactRoomIDClosure = deleteContactRoomIDClosure {
+            return await deleteContactRoomIDClosure(roomID)
+        } else {
+            return deleteContactRoomIDReturnValue
+        }
+    }
+    //MARK: - fetchRoomWallpaper
+
+    var fetchRoomWallpaperRoomIDUnderlyingCallsCount = 0
+    var fetchRoomWallpaperRoomIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return fetchRoomWallpaperRoomIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchRoomWallpaperRoomIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchRoomWallpaperRoomIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchRoomWallpaperRoomIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var fetchRoomWallpaperRoomIDCalled: Bool {
+        return fetchRoomWallpaperRoomIDCallsCount > 0
+    }
+    var fetchRoomWallpaperRoomIDReceivedRoomID: String?
+    var fetchRoomWallpaperRoomIDReceivedInvocations: [String] = []
+
+    var fetchRoomWallpaperRoomIDUnderlyingReturnValue: Result<RoomWallpaperMetadata?, ClientProxyError>!
+    var fetchRoomWallpaperRoomIDReturnValue: Result<RoomWallpaperMetadata?, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return fetchRoomWallpaperRoomIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<RoomWallpaperMetadata?, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchRoomWallpaperRoomIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchRoomWallpaperRoomIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchRoomWallpaperRoomIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var fetchRoomWallpaperRoomIDClosure: ((String) async -> Result<RoomWallpaperMetadata?, ClientProxyError>)?
+
+    func fetchRoomWallpaper(roomID: String) async -> Result<RoomWallpaperMetadata?, ClientProxyError> {
+        fetchRoomWallpaperRoomIDCallsCount += 1
+        fetchRoomWallpaperRoomIDReceivedRoomID = roomID
+        DispatchQueue.main.async {
+            self.fetchRoomWallpaperRoomIDReceivedInvocations.append(roomID)
+        }
+        if let fetchRoomWallpaperRoomIDClosure = fetchRoomWallpaperRoomIDClosure {
+            return await fetchRoomWallpaperRoomIDClosure(roomID)
+        } else {
+            return fetchRoomWallpaperRoomIDReturnValue
+        }
+    }
+    //MARK: - saveRoomWallpaper
+
+    var saveRoomWallpaperRoomIDMetadataUnderlyingCallsCount = 0
+    var saveRoomWallpaperRoomIDMetadataCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return saveRoomWallpaperRoomIDMetadataUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = saveRoomWallpaperRoomIDMetadataUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                saveRoomWallpaperRoomIDMetadataUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    saveRoomWallpaperRoomIDMetadataUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var saveRoomWallpaperRoomIDMetadataCalled: Bool {
+        return saveRoomWallpaperRoomIDMetadataCallsCount > 0
+    }
+    var saveRoomWallpaperRoomIDMetadataReceivedArguments: (roomID: String, metadata: RoomWallpaperMetadata)?
+    var saveRoomWallpaperRoomIDMetadataReceivedInvocations: [(roomID: String, metadata: RoomWallpaperMetadata)] = []
+
+    var saveRoomWallpaperRoomIDMetadataUnderlyingReturnValue: Result<Void, ClientProxyError>!
+    var saveRoomWallpaperRoomIDMetadataReturnValue: Result<Void, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return saveRoomWallpaperRoomIDMetadataUnderlyingReturnValue
+            } else {
+                var returnValue: Result<Void, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = saveRoomWallpaperRoomIDMetadataUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                saveRoomWallpaperRoomIDMetadataUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    saveRoomWallpaperRoomIDMetadataUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var saveRoomWallpaperRoomIDMetadataClosure: ((String, RoomWallpaperMetadata) async -> Result<Void, ClientProxyError>)?
+
+    func saveRoomWallpaper(roomID: String, metadata: RoomWallpaperMetadata) async -> Result<Void, ClientProxyError> {
+        saveRoomWallpaperRoomIDMetadataCallsCount += 1
+        saveRoomWallpaperRoomIDMetadataReceivedArguments = (roomID: roomID, metadata: metadata)
+        DispatchQueue.main.async {
+            self.saveRoomWallpaperRoomIDMetadataReceivedInvocations.append((roomID: roomID, metadata: metadata))
+        }
+        if let saveRoomWallpaperRoomIDMetadataClosure = saveRoomWallpaperRoomIDMetadataClosure {
+            return await saveRoomWallpaperRoomIDMetadataClosure(roomID, metadata)
+        } else {
+            return saveRoomWallpaperRoomIDMetadataReturnValue
+        }
+    }
+    //MARK: - deleteRoomWallpaper
+
+    var deleteRoomWallpaperRoomIDUnderlyingCallsCount = 0
+    var deleteRoomWallpaperRoomIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return deleteRoomWallpaperRoomIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = deleteRoomWallpaperRoomIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                deleteRoomWallpaperRoomIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    deleteRoomWallpaperRoomIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var deleteRoomWallpaperRoomIDCalled: Bool {
+        return deleteRoomWallpaperRoomIDCallsCount > 0
+    }
+    var deleteRoomWallpaperRoomIDReceivedRoomID: String?
+    var deleteRoomWallpaperRoomIDReceivedInvocations: [String] = []
+
+    var deleteRoomWallpaperRoomIDUnderlyingReturnValue: Result<Void, ClientProxyError>!
+    var deleteRoomWallpaperRoomIDReturnValue: Result<Void, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return deleteRoomWallpaperRoomIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<Void, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = deleteRoomWallpaperRoomIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                deleteRoomWallpaperRoomIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    deleteRoomWallpaperRoomIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var deleteRoomWallpaperRoomIDClosure: ((String) async -> Result<Void, ClientProxyError>)?
+
+    func deleteRoomWallpaper(roomID: String) async -> Result<Void, ClientProxyError> {
+        deleteRoomWallpaperRoomIDCallsCount += 1
+        deleteRoomWallpaperRoomIDReceivedRoomID = roomID
+        DispatchQueue.main.async {
+            self.deleteRoomWallpaperRoomIDReceivedInvocations.append(roomID)
+        }
+        if let deleteRoomWallpaperRoomIDClosure = deleteRoomWallpaperRoomIDClosure {
+            return await deleteRoomWallpaperRoomIDClosure(roomID)
+        } else {
+            return deleteRoomWallpaperRoomIDReturnValue
+        }
+    }
     //MARK: - roomDirectorySearchProxy
 
     var roomDirectorySearchProxyUnderlyingCallsCount = 0

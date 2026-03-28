@@ -20,7 +20,7 @@ enum UserSessionFlowCoordinatorAction {
 }
 
 class UserSessionFlowCoordinator: FlowCoordinatorProtocol {
-    enum HomeTab: Hashable { case chats, spaces }
+    enum HomeTab: Hashable { case chats, spaces, contacts }
     
     private let navigationRootCoordinator: NavigationRootCoordinator
     private let navigationTabCoordinator: NavigationTabCoordinator<HomeTab>
@@ -37,6 +37,8 @@ class UserSessionFlowCoordinator: FlowCoordinatorProtocol {
     private let chatsTabDetails: NavigationTabCoordinator<HomeTab>.TabDetails
     private let spacesTabFlowCoordinator: SpacesTabFlowCoordinator
     private let spacesTabDetails: NavigationTabCoordinator<HomeTab>.TabDetails
+    private let contactsTabCoordinator: ContactsTabCoordinator
+    private let contactsTabDetails: NavigationTabCoordinator<HomeTab>.TabDetails
     
     // periphery:ignore - retaining purpose
     private var settingsFlowCoordinator: SettingsFlowCoordinator?
@@ -76,6 +78,9 @@ class UserSessionFlowCoordinator: FlowCoordinatorProtocol {
         self.appLockService = appLockService
         self.flowParameters = flowParameters
         
+        ContactsService.shared.configure(clientProxy: flowParameters.userSession.clientProxy)
+        RoomWallpaperService.shared.configure(clientProxy: flowParameters.userSession.clientProxy)
+        
         navigationTabCoordinator = NavigationTabCoordinator()
         navigationRootCoordinator.setRootCoordinator(navigationTabCoordinator)
         
@@ -92,6 +97,12 @@ class UserSessionFlowCoordinator: FlowCoordinatorProtocol {
         spacesTabDetails = .init(tag: HomeTab.spaces, title: L10n.screenHomeTabSpaces, icon: \.space, selectedIcon: \.spaceSolid)
         spacesTabDetails.navigationSplitCoordinator = spacesSplitCoordinator
         
+        contactsTabCoordinator = ContactsTabCoordinator(userSession: flowParameters.userSession)
+        contactsTabDetails = .init(tag: HomeTab.contacts,
+                                   title: UntranslatedL10n.screenContactsSectionTitle,
+                                   icon: \.userProfile,
+                                   selectedIcon: \.userProfileSolid)
+        
         onboardingStackCoordinator = NavigationStackCoordinator()
         onboardingFlowCoordinator = OnboardingFlowCoordinator(isNewLogin: isNewLogin,
                                                               appLockService: appLockService,
@@ -100,7 +111,8 @@ class UserSessionFlowCoordinator: FlowCoordinatorProtocol {
         
         navigationTabCoordinator.setTabs([
             .init(coordinator: chatsSplitCoordinator, details: chatsTabDetails),
-            .init(coordinator: spacesSplitCoordinator, details: spacesTabDetails)
+            .init(coordinator: spacesSplitCoordinator, details: spacesTabDetails),
+            .init(coordinator: contactsTabCoordinator, details: contactsTabDetails)
         ])
         
         stateMachine = flowParameters.stateMachineFactory.makeUserSessionFlowStateMachine(state: .initial)
@@ -175,6 +187,7 @@ class UserSessionFlowCoordinator: FlowCoordinatorProtocol {
             
             chatsTabFlowCoordinator.start()
             spacesTabFlowCoordinator.start()
+            contactsTabCoordinator.start()
             attemptStartingOnboarding()
         }
         
@@ -543,5 +556,168 @@ class UserSessionFlowCoordinator: FlowCoordinatorProtocol {
             .store(in: &cancellables)
         
         navigationTabCoordinator.setSheetCoordinator(coordinator, animated: true)
+    }
+}
+
+private final class ContactsTabCoordinator: CoordinatorProtocol {
+    private let userSession: UserSessionProtocol
+    
+    init(userSession: UserSessionProtocol) {
+        self.userSession = userSession
+    }
+    
+    func start() {
+        ContactsService.shared.configure(clientProxy: userSession.clientProxy)
+    }
+    
+    func toPresentable() -> AnyView {
+        AnyView(ContactsTabScreen(userSession: userSession))
+    }
+}
+
+private struct ContactsTabScreen: View {
+    struct SuggestedContact: Identifiable {
+        let roomID: String
+        let user: UserProfileProxy
+        
+        var id: String {
+            roomID
+        }
+    }
+    
+    private let userSession: UserSessionProtocol
+    @ObservedObject private var contactsService = ContactsService.shared
+    
+    @SwiftUI.State private var suggestedContacts = [SuggestedContact]()
+    @SwiftUI.State private var isLoadingSuggestions = false
+    @SwiftUI.State private var contactEditorDraft: ContactEditorSheet.Draft?
+    
+    init(userSession: UserSessionProtocol) {
+        self.userSession = userSession
+    }
+    
+    var body: some View {
+        ElementNavigationStack {
+            Form {
+                contactsSection
+                suggestionsSection
+                emptyStateSection
+            }
+            .compoundList()
+            .navigationTitle(UntranslatedL10n.screenContactsSectionTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(item: $contactEditorDraft) { draft in
+                ContactEditorSheet(title: existingContact(for: draft.roomID) == nil ? UntranslatedL10n.screenContactsAddAction : UntranslatedL10n.screenContactsEditAction,
+                                   draft: Binding(get: {
+                                       contactEditorDraft ?? draft
+                                   }, set: { newValue in
+                                       contactEditorDraft = newValue
+                                   })) {
+                    contactEditorDraft = nil
+                } onSave: {
+                    guard let draft = contactEditorDraft else { return }
+                    contactEditorDraft = nil
+                    Task {
+                        _ = await contactsService.upsertContact(roomID: draft.roomID,
+                                                                alias: draft.alias,
+                                                                userID: draft.userID,
+                                                                email: draft.email,
+                                                                phone: draft.phone)
+                    }
+                }
+            }
+            .task {
+                contactsService.configure(clientProxy: userSession.clientProxy)
+                await loadSuggestedContacts()
+            }
+            .refreshable {
+                contactsService.refresh()
+                await loadSuggestedContacts()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var contactsSection: some View {
+        if !contactsService.contacts.isEmpty {
+            Section {
+                ForEach(contactsService.contacts) { contact in
+                    ListRow(label: .default(title: contact.alias, icon: \.userProfile),
+                            details: .title(contact.subtitle),
+                            kind: .button {
+                                contactEditorDraft = .init(contact: contact)
+                            })
+                }
+            } header: {
+                Text(UntranslatedL10n.screenContactsSectionTitle)
+                    .compoundListSectionHeader()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var suggestionsSection: some View {
+        if !suggestedContacts.isEmpty || isLoadingSuggestions {
+            Section {
+                if isLoadingSuggestions {
+                    ListRow(label: .plain(title: L10n.commonLoading),
+                            details: .isWaiting(true),
+                            kind: .label)
+                } else {
+                    ForEach(suggestedContacts) { suggestion in
+                        let existingContact = existingContact(for: suggestion.roomID)
+                        ListRow(label: .default(title: suggestion.user.displayName ?? suggestion.user.userID, icon: \.userProfile),
+                                details: .title(existingContact == nil ? UntranslatedL10n.screenContactsAddAction : UntranslatedL10n.screenContactsEditAction),
+                                kind: .button {
+                                    contactEditorDraft = .init(contact: existingContact ?? ManagedContact(roomID: suggestion.roomID,
+                                                                                                          alias: suggestion.user.displayName ?? suggestion.user.userID,
+                                                                                                          userID: suggestion.user.userID))
+                                })
+                    }
+                }
+            } header: {
+                Text(L10n.commonSuggestions)
+                    .compoundListSectionHeader()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var emptyStateSection: some View {
+        if contactsService.contacts.isEmpty, suggestedContacts.isEmpty, !isLoadingSuggestions {
+            Section {
+                Text(UntranslatedL10n.screenContactsEmptyState)
+                    .font(.compound.bodySM)
+                    .foregroundStyle(.compound.textSecondary)
+            }
+        }
+    }
+    
+    private func existingContact(for roomID: String) -> ManagedContact? {
+        contactsService.contact(forRoomID: roomID)
+    }
+    
+    private func loadSuggestedContacts() async {
+        isLoadingSuggestions = true
+        defer { isLoadingSuggestions = false }
+        
+        let recentUsers = await userSession.clientProxy.recentConversationCounterparts()
+        
+        var seenRoomIDs = Set<String>()
+        var updatedSuggestions = [SuggestedContact]()
+        
+        for user in recentUsers where user.userID != userSession.clientProxy.userID {
+            guard case let .success(.some(roomID)) = userSession.clientProxy.directRoomForUserID(user.userID) else {
+                continue
+            }
+            
+            guard seenRoomIDs.insert(roomID).inserted else {
+                continue
+            }
+            
+            updatedSuggestions.append(.init(roomID: roomID, user: user))
+        }
+        
+        suggestedContacts = updatedSuggestions
     }
 }

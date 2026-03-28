@@ -22,7 +22,7 @@ struct RoomHeaderView: View {
     let action: () -> Void
     
     var body: some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), AppThemeService.shared.shouldUseLiquidGlass, AppThemeService.shared.shouldUseBlurEffects {
             // On iOS 26+ we use the toolbarRole(.editor) to leading align.
             content
                 // Not using a Button here so that we get our custom padding around the avatar. This also
@@ -91,7 +91,7 @@ struct RoomHeaderView: View {
 
 extension RoomHeaderView {
     static var toolbarRole: ToolbarRole {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), AppThemeService.shared.shouldUseLiquidGlass, AppThemeService.shared.shouldUseBlurEffects {
             .editor
         } else {
             .automatic

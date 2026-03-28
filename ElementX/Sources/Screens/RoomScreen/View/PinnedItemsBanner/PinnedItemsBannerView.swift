@@ -22,7 +22,20 @@ struct PinnedItemsBannerView: View {
         }
         .padding(.vertical, 16)
         .padding(.leading, 16)
-        .background(Color.compound.bgCanvasDefault)
+        .background {
+            if #available(iOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(.ultraThinMaterial.opacity(0.95))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Color.white.opacity(0.24), lineWidth: 1)
+                    }
+            } else {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.compound.bgCanvasDefault.opacity(0.86))
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: Color(red: 0.11, green: 0.11, blue: 0.13).opacity(0.1), radius: 12, x: 0, y: 4)
         // To include the shadow in the size
         .padding(.bottom, 28)

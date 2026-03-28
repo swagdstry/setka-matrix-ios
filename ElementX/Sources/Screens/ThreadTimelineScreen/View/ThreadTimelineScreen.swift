@@ -12,6 +12,8 @@ import SwiftUI
 struct ThreadTimelineScreen: View {
     @ObservedObject private var context: ThreadTimelineScreenViewModelType.Context
     @ObservedObject private var timelineContext: TimelineViewModelType.Context
+    @ObservedObject private var mediaPlayerController = GlobalMediaPlayerController.shared
+    @StateObject private var recordingOverlayController = RoomRecordingOverlayController()
     private let composerToolbar: ComposerToolbar
     
     init(context: ThreadTimelineScreenViewModelType.Context,
@@ -25,6 +27,24 @@ struct ThreadTimelineScreen: View {
     var body: some View {
         TimelineView(timelineContext: timelineContext)
             .background(.compound.bgCanvasDefault)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if mediaPlayerController.shouldShowAudioOverlay ||
+                    mediaPlayerController.activeVideoNote?.roomID == timelineContext.viewState.roomID {
+                    InlineMiniMediaPlayerView(controller: mediaPlayerController)
+                        .padding(.horizontal, 12)
+                        .padding(.top, 8)
+                        .padding(.bottom, 4)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .onAppear {
+                GlobalMediaPlayerController.shared.setCurrentRoomID(timelineContext.viewState.roomID)
+            }
+            .onDisappear {
+                if GlobalMediaPlayerController.shared.currentRoomID == timelineContext.viewState.roomID {
+                    GlobalMediaPlayerController.shared.setCurrentRoomID(nil)
+                }
+            }
             .toolbarRole(RoomHeaderView.toolbarRole)
             .navigationTitle(L10n.commonThread)
             .navigationBarTitleDisplayMode(.inline)
@@ -41,10 +61,15 @@ struct ThreadTimelineScreen: View {
                     .padding(.top, 8)
                     .background(Color.compound.bgCanvasDefault.ignoresSafeArea())
                     .environmentObject(timelineContext)
+                    .environmentObject(recordingOverlayController)
                     .environment(\.timelineContext, timelineContext)
                     // Make sure the reply header honours the hideTimelineMedia setting too.
                     .environment(\.shouldAutomaticallyLoadImages, !timelineContext.viewState.hideTimelineMedia)
             }
+            .animation(.spring(response: 0.34, dampingFraction: 0.86).disabledDuringTests(),
+                       value: mediaPlayerController.shouldShowAudioOverlay)
+            .animation(.spring(response: 0.34, dampingFraction: 0.86).disabledDuringTests(),
+                       value: mediaPlayerController.activeVideoNote?.roomID == timelineContext.viewState.roomID)
     }
     
     @ViewBuilder

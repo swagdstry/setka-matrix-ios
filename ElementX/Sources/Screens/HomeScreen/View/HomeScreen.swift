@@ -12,7 +12,9 @@ import SentrySwiftUI
 import SwiftUI
 
 struct HomeScreen: View {
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var context: HomeScreenViewModel.Context
+    @ObservedObject private var appThemeService = AppThemeService.shared
     
     @State private var scrollViewAdapter = ScrollViewAdapter()
     
@@ -29,7 +31,7 @@ struct HomeScreen: View {
                    message: leaveRoomAlertMessage)
             .navigationTitle(title)
             .toolbar { toolbar }
-            .background(Color.compound.bgCanvasDefault.ignoresSafeArea())
+            .background(homeBackground.ignoresSafeArea())
             .track(screen: .Home)
             .toolbarBloom(hasSearchBar: true)
             .sentryTrace("\(Self.self)")
@@ -41,6 +43,36 @@ struct HomeScreen: View {
     }
     
     // MARK: - Private
+    
+    private var homeBackground: some View {
+        ZStack {
+            switch appThemeService.currentTheme.homeBackgroundStyle {
+            case .solid:
+                appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
+            case .gradient:
+                appThemeService.resolvedHomeGradient(for: colorScheme)
+            case .image:
+                if let wallpaperURL = appThemeService.homeWallpaperURL {
+                    AsyncImage(url: wallpaperURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .blur(radius: appThemeService.wallpaperBlurRadius)
+                        default:
+                            appThemeService.resolvedHomeGradient(for: colorScheme)
+                        }
+                    }
+                } else {
+                    appThemeService.resolvedHomeGradient(for: colorScheme)
+                }
+            }
+            
+            Color.black
+                .opacity(appThemeService.resolvedHomeWallpaperDimOpacity(for: colorScheme))
+        }
+    }
     
     private var title: String {
         if let selectedSpace = context.viewState.selectedSpaceFilter {

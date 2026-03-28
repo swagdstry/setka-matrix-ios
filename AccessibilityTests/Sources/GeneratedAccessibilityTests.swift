@@ -35,6 +35,10 @@ extension AccessibilityTests {
         try await performAccessibilityAudit(named: "AppLockSetupSettingsScreen_Previews")
     }
 
+    func testAppThemeScreen() async throws {
+        try await performAccessibilityAudit(named: "AppThemeScreen_Previews")
+    }
+
     func testAudioMediaEventsTimelineView() async throws {
         try await performAccessibilityAudit(named: "AudioMediaEventsTimelineView_Previews")
     }
@@ -337,6 +341,10 @@ extension AccessibilityTests {
 
     func testMediaEventsTimelineScreen() async throws {
         try await performAccessibilityAudit(named: "MediaEventsTimelineScreen_Previews")
+    }
+
+    func testMediaRecordingButton() async throws {
+        try await performAccessibilityAudit(named: "MediaRecordingButton_Previews")
     }
 
     func testMediaUploadPreviewScreen() async throws {

@@ -76,6 +76,14 @@ class RoomDetailsScreenViewModel: RoomDetailsScreenViewModelType, RoomDetailsScr
                                            notificationSettingsState: .loading,
                                            bindings: .init()),
                    mediaProvider: userSession.mediaProvider)
+        ContactsService.shared.configure(clientProxy: userSession.clientProxy)
+        ContactsService.shared.$contacts
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                updateRoomInfo(roomProxy.infoPublisher.value)
+            }
+            .store(in: &cancellables)
         
         appSettings.$knockingEnabled
             .weakAssign(to: \.state.knockingEnabled, on: self)
@@ -280,6 +288,15 @@ class RoomDetailsScreenViewModel: RoomDetailsScreenViewModelType, RoomDetailsScr
         state.joinedMembersCount = roomInfo.joinedMembersCount
         
         state.details = roomProxy.details
+        state.details = RoomDetails(id: state.details.id,
+                                    name: ContactsService.shared.preferredName(forRoomID: roomProxy.id,
+                                                                               fallback: state.details.name ?? roomProxy.id),
+                                    avatar: state.details.avatar,
+                                    canonicalAlias: state.details.canonicalAlias,
+                                    isEncrypted: state.details.isEncrypted,
+                                    isPublic: state.details.isPublic,
+                                    isDirect: state.details.isDirect,
+                                    historySharingState: state.details.historySharingState)
         
         // Set state.details.historySharingState manually while we are still behind
         // a feature flag.

@@ -186,7 +186,10 @@ class TimelineTableViewController: UIViewController {
         tableView.separatorStyle = .none
         tableView.allowsSelection = false
         tableView.keyboardDismissMode = .onDrag
-        tableView.backgroundColor = .compound.bgCanvasDefault
+        tableView.backgroundColor = .clear
+        tableView.isOpaque = false
+        view.backgroundColor = .clear
+        view.isOpaque = false
         
         // The tableview should be flipped to display the newest items at the top
         // the only exception is VoiceOver, where we want to keep the latest item at the top as Android.
@@ -271,6 +274,7 @@ class TimelineTableViewController: UIViewController {
                 guard let self else {
                     return cell
                 }
+                cell.backgroundColor = .clear
                 
                 cell.contentConfiguration = UIHostingConfiguration {
                     TypingIndicatorView(typingMembers: self.typingMembers)
@@ -287,6 +291,7 @@ class TimelineTableViewController: UIViewController {
             default:
                 let cell = tableView.dequeueReusableCell(withIdentifier: TimelineItemCell.reuseIdentifier, for: indexPath)
                 guard let self, let cell = cell as? TimelineItemCell else { return cell }
+                cell.backgroundColor = .clear
                 
                 let viewState = timelineItemsDictionary[id]
                 cell.item = viewState

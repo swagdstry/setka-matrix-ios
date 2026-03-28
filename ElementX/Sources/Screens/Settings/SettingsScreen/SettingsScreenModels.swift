@@ -21,6 +21,7 @@ enum SettingsScreenViewModelAction: Equatable {
     case blockedUsers
     case secureBackup
     case notifications
+    case appTheme
     case advancedSettings
     case labs
     case developerOptions
@@ -71,6 +72,7 @@ enum SettingsScreenViewAction {
     case linkNewDevice
     case manageAccount(url: URL)
     case notifications
+    case appTheme
     case enableDeveloperOptions
     case developerOptions
     case advancedSettings
