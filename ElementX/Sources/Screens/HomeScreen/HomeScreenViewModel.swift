@@ -22,6 +22,7 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
     private let userIndicatorController: UserIndicatorControllerProtocol
     
     private let roomSummaryProvider: RoomSummaryProviderProtocol?
+    private var setkaPlusStatusRequestsInFlight = Set<String>()
     
     private var actionsSubject: PassthroughSubject<HomeScreenViewModelAction, Never> = .init()
     var actions: AnyPublisher<HomeScreenViewModelAction, Never> {
@@ -153,6 +154,10 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
         Task {
             state.reportRoomEnabled = await userSession.clientProxy.isReportRoomSupported
         }
+
+        Task {
+            await loadSetkaPlusData()
+        }
         
         let isSearchFieldFocused = context.$viewState.map(\.bindings.isSearchFieldFocused)
         let searchQuery = context.$viewState.map(\.bindings.searchQuery)
@@ -208,57 +213,11 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
         case .globalSearch:
             actionsSubject.send(.presentGlobalSearch)
         case .spaceFilters:
-            if spaceFilterSubject.value != nil {
-                spaceFilterSubject.send(nil)
-            } else {
-                state.bindings.spaceFiltersViewModel = ChatsSpaceFiltersScreenViewModel(spaceService: userSession.clientProxy.spaceService,
-                                                                                        mediaProvider: userSession.mediaProvider)
-                
-                state.bindings.spaceFiltersViewModel?.actionsPublisher.sink { [weak self] action in
-                    guard let self else { return }
-                    
-                    switch action {
-                    case .confirm(let spaceServiceFilter):
-                        spaceFilterSubject.send(spaceServiceFilter)
-                        state.bindings.spaceFiltersViewModel = nil
-                    case .cancel:
-                        state.bindings.spaceFiltersViewModel = nil
-                    }
-                }
-                .store(in: &cancellables)
-            }
+            handleSpaceFiltersAction()
         case .markRoomAsUnread(let roomIdentifier):
-            Task {
-                guard case let .joined(roomProxy) = await userSession.clientProxy.roomForIdentifier(roomIdentifier) else {
-                    MXLog.error("Failed retrieving room for identifier: \(roomIdentifier)")
-                    return
-                }
-                
-                switch await roomProxy.flagAsUnread(true) {
-                case .success:
-                    analyticsService.trackInteraction(name: .MobileRoomListRoomContextMenuUnreadToggle)
-                case .failure(let error):
-                    MXLog.error("Failed marking room \(roomIdentifier) as unread with error: \(error)")
-                }
-            }
+            handleMarkRoomAsUnread(roomIdentifier)
         case .markRoomAsRead(let roomIdentifier):
-            Task {
-                guard case let .joined(roomProxy) = await userSession.clientProxy.roomForIdentifier(roomIdentifier) else {
-                    MXLog.error("Failed retrieving room for identifier: \(roomIdentifier)")
-                    return
-                }
-                
-                switch await roomProxy.flagAsUnread(false) {
-                case .success:
-                    analyticsService.trackInteraction(name: .MobileRoomListRoomContextMenuUnreadToggle)
-                    
-                    if case .failure(let error) = await roomProxy.markAsRead(receiptType: appSettings.sharePresence ? .read : .readPrivate) {
-                        MXLog.error("Failed marking room \(roomIdentifier) as read with error: \(error)")
-                    }
-                case .failure(let error):
-                    MXLog.error("Failed flagging room \(roomIdentifier) as read with error: \(error)")
-                }
-            }
+            handleMarkRoomAsRead(roomIdentifier)
         case .markRoomAsFavourite(let roomIdentifier, let isFavourite):
             Task {
                 await markRoomAsFavourite(roomIdentifier, isFavourite: isFavourite)
@@ -269,6 +228,14 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
             }
         case .declineInvite(let roomIdentifier):
             Task { await showDeclineInviteConfirmationAlert(roomID: roomIdentifier) }
+        case .setkaPlusStatusTapped:
+            handleSetkaPlusStatusTapped()
+        case .setSetkaPlusStatusEmoji(let emoji):
+            handleSetkaPlusStatusSelection(emoji: emoji, packID: nil, stickerID: nil)
+        case .setSetkaPlusStatusSticker(let packID, let stickerID):
+            handleSetkaPlusStatusSelection(emoji: nil, packID: packID, stickerID: stickerID)
+        case .clearSetkaPlusStatusEmoji:
+            handleSetkaPlusStatusSelection(emoji: nil, packID: nil, stickerID: nil)
         }
     }
     
@@ -286,6 +253,81 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
     }
     
     // MARK: - Private
+
+    private func handleSpaceFiltersAction() {
+        if spaceFilterSubject.value != nil {
+            spaceFilterSubject.send(nil)
+            return
+        }
+        
+        state.bindings.spaceFiltersViewModel = ChatsSpaceFiltersScreenViewModel(spaceService: userSession.clientProxy.spaceService,
+                                                                                mediaProvider: userSession.mediaProvider)
+        
+        state.bindings.spaceFiltersViewModel?.actionsPublisher.sink { [weak self] action in
+            guard let self else { return }
+            
+            switch action {
+            case .confirm(let spaceServiceFilter):
+                spaceFilterSubject.send(spaceServiceFilter)
+                state.bindings.spaceFiltersViewModel = nil
+            case .cancel:
+                state.bindings.spaceFiltersViewModel = nil
+            }
+        }
+        .store(in: &cancellables)
+    }
+    
+    private func handleMarkRoomAsUnread(_ roomIdentifier: String) {
+        Task {
+            guard case let .joined(roomProxy) = await userSession.clientProxy.roomForIdentifier(roomIdentifier) else {
+                MXLog.error("Failed retrieving room for identifier: \(roomIdentifier)")
+                return
+            }
+            
+            switch await roomProxy.flagAsUnread(true) {
+            case .success:
+                analyticsService.trackInteraction(name: .MobileRoomListRoomContextMenuUnreadToggle)
+            case .failure(let error):
+                MXLog.error("Failed marking room \(roomIdentifier) as unread with error: \(error)")
+            }
+        }
+    }
+    
+    private func handleMarkRoomAsRead(_ roomIdentifier: String) {
+        Task {
+            guard case let .joined(roomProxy) = await userSession.clientProxy.roomForIdentifier(roomIdentifier) else {
+                MXLog.error("Failed retrieving room for identifier: \(roomIdentifier)")
+                return
+            }
+            
+            switch await roomProxy.flagAsUnread(false) {
+            case .success:
+                analyticsService.trackInteraction(name: .MobileRoomListRoomContextMenuUnreadToggle)
+                
+                if case .failure(let error) = await roomProxy.markAsRead(receiptType: appSettings.sharePresence ? .read : .readPrivate) {
+                    MXLog.error("Failed marking room \(roomIdentifier) as read with error: \(error)")
+                }
+            case .failure(let error):
+                MXLog.error("Failed flagging room \(roomIdentifier) as read with error: \(error)")
+            }
+        }
+    }
+    
+    private func handleSetkaPlusStatusTapped() {
+        guard state.isSetkaPlusActive else {
+            state.bindings.alertInfo = AlertInfo(id: UUID(), title: SetkaPlusL10n.subscriptionRequiredForStatus)
+            return
+        }
+        
+        state.bindings.setkaPlusStatusPickerPresented = true
+    }
+    
+    private func handleSetkaPlusStatusSelection(emoji: String?, packID: String?, stickerID: String?) {
+        state.bindings.setkaPlusStatusPickerPresented = false
+        Task {
+            await updateOwnSetkaPlusStatus(emoji: emoji, packID: packID, stickerID: stickerID)
+        }
+    }
     
     private func updateFilter() {
         if state.shouldHideRoomList {
@@ -375,15 +417,102 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
             } else {
                 nil
             }
+
+            let baseName = nameOverride ?? summary.name
+            var decoratedName = baseName
+            if summary.isDirect,
+               let counterpartID = directCounterpartUserID(from: summary),
+               let status = state.setkaPlusUserStatuses[counterpartID] {
+                decoratedName = SetkaPlusStatusDisplay.decoratedName(baseName, status: status)
+            }
             
             let room = HomeScreenRoom(summary: summary,
                                       hideUnreadMessagesBadge: appSettings.hideUnreadMessagesBadge,
                                       seenInvites: seenInvites,
-                                      nameOverride: nameOverride)
+                                      nameOverride: decoratedName)
             rooms.append(room)
         }
         
         state.rooms = rooms
+
+        Task {
+            await preloadStatusesForDirectRooms()
+        }
+    }
+
+    private func loadSetkaPlusData() async {
+        async let subscriptionResult = userSession.clientProxy.fetchSetkaPlusSubscription()
+        async let statusResult = userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: nil)
+        async let packsResult = userSession.clientProxy.fetchSetkaPlusStickerPacks()
+
+        switch await subscriptionResult {
+        case .success(let subscription):
+            state.setkaPlusSubscription = subscription
+        case .failure(let error):
+            MXLog.error("Failed fetching Setka Plus subscription for home screen with error: \(error)")
+        }
+
+        switch await statusResult {
+        case .success(let status):
+            state.setkaPlusStatusEmoji = status
+            state.setkaPlusUserStatuses[userSession.clientProxy.userID] = status
+        case .failure(let error):
+            MXLog.error("Failed fetching own Setka Plus status emoji with error: \(error)")
+        }
+
+        switch await packsResult {
+        case .success(let packs):
+            state.setkaPlusEmojiPacks = packs
+        case .failure(let error):
+            MXLog.error("Failed fetching Setka Plus sticker packs with error: \(error)")
+        }
+
+        updateRooms()
+    }
+
+    private func updateOwnSetkaPlusStatus(emoji: String?, packID: String?, stickerID: String?) async {
+        switch await userSession.clientProxy.updateSetkaPlusStatusEmoji(emoji: emoji, packID: packID, stickerID: stickerID) {
+        case .success(let status):
+            state.setkaPlusStatusEmoji = status
+            state.setkaPlusUserStatuses[userSession.clientProxy.userID] = status
+            updateRooms()
+        case .failure(let error):
+            MXLog.error("Failed updating own Setka Plus status emoji with error: \(error)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+        }
+    }
+
+    private func preloadStatusesForDirectRooms() async {
+        guard let roomSummaryProvider else { return }
+
+        let userIDs = Set(roomSummaryProvider.roomListPublisher.value.compactMap { summary in
+            directCounterpartUserID(from: summary)
+        }).subtracting([userSession.clientProxy.userID])
+
+        for userID in userIDs {
+            if state.setkaPlusUserStatuses[userID] != nil || setkaPlusStatusRequestsInFlight.contains(userID) {
+                continue
+            }
+            setkaPlusStatusRequestsInFlight.insert(userID)
+
+            switch await userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: userID) {
+            case .success(let status):
+                state.setkaPlusUserStatuses[userID] = status
+            case .failure:
+                break
+            }
+            setkaPlusStatusRequestsInFlight.remove(userID)
+        }
+    }
+
+    private func directCounterpartUserID(from summary: RoomSummary) -> String? {
+        guard summary.isDirect else { return nil }
+        
+        if case let .heroes(users) = summary.avatar {
+            return users.first(where: { $0.userID != userSession.clientProxy.userID })?.userID ?? users.first?.userID
+        }
+        
+        return ContactsService.shared.contact(forRoomID: summary.id)?.userID
     }
     
     private func markRoomAsFavourite(_ roomID: String, isFavourite: Bool) async {

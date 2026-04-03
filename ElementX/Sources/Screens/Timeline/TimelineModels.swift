@@ -20,6 +20,7 @@ enum TimelineViewModelAction {
     case displayLocationPicker
     case displayPollForm(mode: PollFormMode)
     case displayMediaUploadPreviewScreen(mediaURLs: [URL])
+    case displaySetkaPlusComposerPicker(packs: [SetkaPlusStickerPack])
     case displaySenderDetails(userID: String)
     case displayMessageForwarding(forwardingItem: MessageForwardingItem)
     case displayMediaPreview(TimelineMediaPreviewViewModel)
@@ -84,6 +85,8 @@ enum TimelineViewAction {
     
     case displayPredecessorRoom
     case displayMediaUploadPreviewScreen(mediaURLs: [URL])
+    case sendSetkaPlusEmojiMessage(String)
+    case sendSetkaPlusSticker(packID: String, stickerID: String)
 }
 
 enum TimelineComposerAction {

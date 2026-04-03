@@ -11,6 +11,7 @@ import Compound
 import GameController
 import QuickLook
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MediaUploadPreviewScreen: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -19,6 +20,7 @@ struct MediaUploadPreviewScreen: View {
     
     @State private var captionWarningFrame: CGRect = .zero
     @State private var currentIndex = 0
+    @State private var editorItem: EditorItem?
     @FocusState private var isComposerFocussed
     
     private var title: String {
@@ -59,6 +61,16 @@ struct MediaUploadPreviewScreen: View {
             .preferredColorScheme(colorSchemeOverride)
             .onAppear(perform: focusComposerIfHardwareKeyboardConnected)
             .alert(item: $context.alertInfo)
+            .fullScreenCover(item: $editorItem) { item in
+                MediaMarkupEditorView(url: item.url,
+                                      title: context.viewState.title,
+                                      onSave: { updatedURL in
+                                          context.send(viewAction: .mediaEdited(index: item.index, url: updatedURL))
+                                      },
+                                      onDismiss: {
+                                          editorItem = nil
+                                      })
+            }
     }
     
     @ViewBuilder
@@ -92,9 +104,18 @@ struct MediaUploadPreviewScreen: View {
             }
             .messageComposerStyle()
             
-            SendButton {
-                context.send(viewAction: .send)
+            ZStack {
+                SendButton {
+                    context.send(viewAction: .send)
+                }
+                .opacity(context.viewState.isApplyingMediaEdits ? 0.5 : 1.0)
+                
+                if context.viewState.isApplyingMediaEdits {
+                    ProgressView()
+                        .controlSize(.small)
+                }
             }
+            .disabled(context.viewState.isApplyingMediaEdits)
         }
     }
     
@@ -149,11 +170,44 @@ struct MediaUploadPreviewScreen: View {
             // follow the dark colour scheme on devices running with dark mode disabled.
             .tint(.compound.textActionPrimary)
         }
+        
+        ToolbarItemGroup(placement: .primaryAction) {
+            if canEditCurrentMedia {
+                Button(L10n.actionEdit) {
+                    editorItem = .init(index: currentIndex, url: context.viewState.mediaURLs[currentIndex])
+                }
+                .tint(.compound.textActionPrimary)
+                
+                if hasEditedCurrentMedia {
+                    Button(L10n.actionReset) {
+                        context.send(viewAction: .resetMediaEdits(index: currentIndex))
+                    }
+                    .tint(.compound.textActionPrimary)
+                }
+            }
+        }
+    }
+    
+    private var canEditCurrentMedia: Bool {
+        guard context.viewState.mediaURLs.indices.contains(currentIndex) else { return false }
+        let url = context.viewState.mediaURLs[currentIndex]
+        guard let contentType = UTType(filenameExtension: url.pathExtension) else { return false }
+        return contentType.conforms(to: .image) || contentType.conforms(to: .movie) || contentType.conforms(to: .video)
+    }
+    
+    private var hasEditedCurrentMedia: Bool {
+        guard context.viewState.mediaURLs.indices.contains(currentIndex),
+              context.viewState.originalMediaURLs.indices.contains(currentIndex) else {
+            return false
+        }
+        
+        return context.viewState.mediaURLs[currentIndex] != context.viewState.originalMediaURLs[currentIndex]
     }
     
     private func handleKeyPress(_ key: UIKeyboardHIDUsage) {
         switch key {
         case .keyboardReturnOrEnter:
+            guard !context.viewState.isApplyingMediaEdits else { return }
             context.send(viewAction: .send)
         case .keyboardEscape:
             context.send(viewAction: .cancel)
@@ -253,15 +307,108 @@ private class PreviewViewController: QLPreviewController {
     required init?(coder: NSCoder) {
         fatalError()
     }
+}
+
+private struct EditorItem: Identifiable {
+    let id = UUID()
+    let index: Int
+    let url: URL
+}
+
+private struct MediaMarkupEditorView: UIViewControllerRepresentable {
+    let url: URL
+    let title: String?
+    let onSave: (URL) -> Void
+    let onDismiss: () -> Void
     
-    override func viewWillLayoutSubviews() {
-        super.viewWillLayoutSubviews()
+    func makeUIViewController(context: Context) -> UINavigationController {
+        let controller = EditorPreviewController(onCancel: {
+            onDismiss()
+        }, onDone: { editedURL in
+            if let editedURL {
+                onSave(editedURL)
+            }
+            onDismiss()
+        })
+        controller.dataSource = context.coordinator
+        controller.delegate = context.coordinator
         
-        // Remove top file details bar
-        navigationController?.navigationBar.isHidden = true
-                
-        // Hide toolbar share button
-        toolbarItems?.first?.isHidden = true
+        return UINavigationController(rootViewController: controller)
+    }
+    
+    func updateUIViewController(_ uiViewController: UINavigationController, context: Context) { }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(view: self)
+    }
+    
+    final class Coordinator: NSObject, QLPreviewControllerDataSource, QLPreviewControllerDelegate {
+        private let view: MediaMarkupEditorView
+        
+        init(view: MediaMarkupEditorView) {
+            self.view = view
+        }
+        
+        func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
+            1
+        }
+        
+        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
+            PreviewItem(previewItemURL: view.url, previewItemTitle: view.title)
+        }
+        
+        func previewController(_ controller: QLPreviewController, editingModeFor previewItem: QLPreviewItem) -> QLPreviewItemEditingMode {
+            .updateContents
+        }
+        
+        func previewController(_ controller: QLPreviewController, didUpdateContentsOf previewItem: QLPreviewItem) {
+            guard let url = previewItem.previewItemURL else { return }
+            view.onSave(url)
+        }
+        
+        func previewController(_ controller: QLPreviewController, didSaveEditedCopyOf previewItem: QLPreviewItem, at modifiedContentsURL: URL) {
+            view.onSave(modifiedContentsURL)
+        }
+        
+        func previewControllerDidDismiss(_ controller: QLPreviewController) {
+            view.onDismiss()
+        }
+    }
+}
+
+private final class EditorPreviewController: QLPreviewController {
+    private let onCancel: () -> Void
+    private let onDone: (URL?) -> Void
+    
+    init(onCancel: @escaping () -> Void, onDone: @escaping (URL?) -> Void) {
+        self.onCancel = onCancel
+        self.onDone = onDone
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError()
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: L10n.actionCancel,
+                                                           style: .plain,
+                                                           target: self,
+                                                           action: #selector(closeTapped))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: L10n.actionDone,
+                                                            style: .done,
+                                                            target: self,
+                                                            action: #selector(doneTapped))
+    }
+    
+    @objc private func closeTapped() {
+        onCancel()
+    }
+    
+    @objc private func doneTapped() {
+        onDone(currentPreviewItem?.previewItemURL)
     }
 }
 

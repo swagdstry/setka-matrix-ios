@@ -219,6 +219,7 @@
 		1E4751AA7816552116976307 /* MockTimelineController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C51EA1EF13DBBB6DEC0A7C /* MockTimelineController.swift */; };
 		1E9725496C75546B57F00C58 /* AppLockSettingsScreenViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA75BFF3C32D152E0FB37789 /* AppLockSettingsScreenViewModelTests.swift */; };
 		1F0F52913AD04A5595BF12B8 /* ClassicAppMXAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED6B0B34169730875C687DA /* ClassicAppMXAccount.swift */; };
+		1F186EE307C3FBDA916F6598 /* SetkaPlusComposerPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21C2B9680B52A23E8DAE7F13 /* SetkaPlusComposerPickerSheet.swift */; };
 		1F2B612BBE3C242F497A6A39 /* PhishingDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B62A9D344B3A2F702112231 /* PhishingDetector.swift */; };
 		1F3F0BC3A49DB8657375256F /* ReportRoomScreenViewModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97366325AF59D06F20912A7 /* ReportRoomScreenViewModelProtocol.swift */; };
 		1F3F79176356E012CBE0E114 /* ElementCallServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8653C52109B000A237F78EA5 /* ElementCallServiceMock.swift */; };
@@ -277,6 +278,7 @@
 		26F9113CC5E2177A9DA41E15 /* RoomPermissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65526E1B4F513A10D37243BF /* RoomPermissions.swift */; };
 		27342FFE7EFAC162AF31CF17 /* PillViewOnBubblePreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2832D358B1341FD0780780 /* PillViewOnBubblePreviews.swift */; };
 		276B98930A37344C44AAAE21 /* BlockedUsersScreenCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0AB6453172DCFF5BF3EEE3 /* BlockedUsersScreenCoordinator.swift */; };
+		276E7609DE779B4C774DBA6B /* SetkaPlusL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFF89FD4C27A52E3D46976A /* SetkaPlusL10n.swift */; };
 		278230D50703514AE1A08EE4 /* ReportRoomScreenCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFBD0C87B6EEBF5E317B3260 /* ReportRoomScreenCoordinator.swift */; };
 		28033F95E851625799A7BE1E /* TimelineInteractionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F92CE3C07ADE3DD67B743DC5 /* TimelineInteractionHandler.swift */; };
 		282765CB93CD5CB8ED852C93 /* UserProfileScreenViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40F2630E12767BD2E64D01D /* UserProfileScreenViewModelTests.swift */; };
@@ -370,6 +372,7 @@
 		380DB8F022887E2FD70A0C13 /* SettingsScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3266CCC7A08EE78FDC1492D3 /* SettingsScreenViewModel.swift */; };
 		387CD879CAC8BDD6F977FCB5 /* PreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55433D9C5E15B9FCE977993C /* PreviewTests.swift */; };
 		38BA2D4A6EA4608F5A74EA9D /* SpaceRoomListProxyProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 219B545ABAECF2E0AEA9676F /* SpaceRoomListProxyProtocol.swift */; };
+		38F02AE2A2CE20876B951F1C /* SetkaPlus.strings in Resources */ = {isa = PBXBuildFile; fileRef = A6AF420CF517A44AA3665D14 /* SetkaPlus.strings */; };
 		38F1B7201ED88E3485F3B8F9 /* BugReportHook.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2ADD73F548E52A581DEAF9B /* BugReportHook.swift */; };
 		390E7FCA8CF513BC23D54CE7 /* ManageAuthorizedSpacesScreenViewModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D7D3E3162CEEAFDA42C75B0 /* ManageAuthorizedSpacesScreenViewModelProtocol.swift */; };
 		392B706FC5DE1E5690E19410 /* Dynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 57213B29BC2D55C2472A6DF3 /* Dynamic */; };
@@ -725,6 +728,7 @@
 		756D64A5D2077FC204644C1D /* test_image.png in Resources */ = {isa = PBXBuildFile; fileRef = CA8BF4B4DD0E84507E9543C5 /* test_image.png */; };
 		75836E8581D3DBAE67AF66E7 /* SpaceScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41718837B16665A0E785B4CA /* SpaceScreenViewModel.swift */; };
 		75E626452AD940C4E1A80DEC /* SpaceAddRoomsScreenViewModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59FE0BA2FB648CAC8571FB9B /* SpaceAddRoomsScreenViewModelProtocol.swift */; };
+		76153BE6D97CBFA1D679C569 /* SetkaPlusScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7AB9C66D75A053999A049E4 /* SetkaPlusScreenViewModel.swift */; };
 		7636CA547E5B10B879784638 /* ComposerDraftService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2433D42FC925B76EE41ACDA6 /* ComposerDraftService.swift */; };
 		763A156E1B3B4A313428F679 /* PinnedEventsTimelineFlowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D31F32618698AC6EA553AA1 /* PinnedEventsTimelineFlowCoordinator.swift */; };
 		763E7BC544CA7CDA6FBC7FC1 /* TimelineStartRoomTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A63878E98995BD1FDCA5FD7 /* TimelineStartRoomTimelineView.swift */; };
@@ -804,6 +808,7 @@
 		81E6711161C4D97CA7EE06A8 /* CharacterSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E02F1F0158F91E9271D81CC /* CharacterSet.swift */; };
 		825C769A74ABDC8A6677169E /* Compound in Frameworks */ = {isa = PBXBuildFile; productRef = C2B5C2E94030CF10B75BB11E /* Compound */; };
 		826F978C3039419DE70B4A84 /* ContactsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 045CD4A82F5B8A92364BFD7B /* ContactsService.swift */; };
+		8272DD302565C8FC68F5F413 /* SetkaPlusScreenModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9DC1B249F5BD57103519894 /* SetkaPlusScreenModels.swift */; };
 		828AA2FC940FC801543B60F6 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 4C128B0B010CD446B67A680A /* Algorithms */; };
 		8290CC1CAB6A4C4DEAFA989E /* NotificationSettingsScreenViewModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 591FBCD2BFEC032913016AAF /* NotificationSettingsScreenViewModelProtocol.swift */; };
 		829E718590E730748DA9C853 /* DeferredFulfillment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15BAB589575D41094ED137A0 /* DeferredFulfillment.swift */; };
@@ -1045,6 +1050,7 @@
 		AEE61E1E390AD454BF21037D /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B74715BFAE6D919F4AA3E9B /* AppAppearance.swift */; };
 		AEEC61C082EB229E08AE844B /* RoomStateEventStringBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD177B0CEFEAB2C0CDB24765 /* RoomStateEventStringBuilder.swift */; };
 		AEFEE13E2B57B4123536FDD4 /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40EAD0BA4B2EDA5623233531 /* TimelineView.swift */; };
+		AF106773E2BD4835357A998C /* SetkaPlusStatusPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A128EA56703008A02BAB9CF /* SetkaPlusStatusPickerSheet.swift */; };
 		AF118BFE5B4F3D33F556B4FF /* ResolveVerifiedUserSendFailureScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4560FCFC8D1B80CAD25FB068 /* ResolveVerifiedUserSendFailureScreen.swift */; };
 		AF1B8AE1C15BE444CD1ACCCD /* WaitingConfirmation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FCFB01C1CC35C51492AF279 /* WaitingConfirmation.swift */; };
 		AF65F49752535BB391A61A10 /* SpacesAnnouncementSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628C49EEF72CDD4A4F4EC748 /* SpacesAnnouncementSheetView.swift */; };
@@ -1064,6 +1070,7 @@
 		B21682E9320AB34F0E55E01D /* RoomAttachmentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B29610DCA1AE6E5DFB9910 /* RoomAttachmentPicker.swift */; };
 		B22D2A57CAC207F8F4174EB3 /* ImageRoomTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835372BD3BF7F6EA572626B3 /* ImageRoomTimelineView.swift */; };
 		B2628B4519CF94EA6BBC7038 /* DeviceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 216ABD3732E64BF16470A4B2 /* DeviceKit */; };
+		B2C01EE597D5FC76054CB07F /* SetkaPlusScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F80AD77E435AC7966B9150 /* SetkaPlusScreen.swift */; };
 		B2E7F3EFA0390BA4A3131D44 /* EditRoomAddressScreenViewModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ECFBA0499E24AD9320D8F79 /* EditRoomAddressScreenViewModelProtocol.swift */; };
 		B2FBF5C411557F039E9653EE /* AppLockScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFADAEA08FE072FA8D475BCF /* AppLockScreen.swift */; };
 		B332F7331E0F6466DE2269B0 /* RoomChangePermissionsScreenModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38DB28FA5C17F6B079757D5E /* RoomChangePermissionsScreenModels.swift */; };
@@ -1122,6 +1129,7 @@
 		BEA2432F2183BFDB55DED8B6 /* RoomRolesAndPermissionsScreenViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B010D289F9BBFFA1DF062FAA /* RoomRolesAndPermissionsScreenViewModelTests.swift */; };
 		BEB21C4B06BD2188CD89A167 /* AppThemeScreenCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F47AA77BAB6C4B98F6DA247 /* AppThemeScreenCoordinator.swift */; };
 		BED1579B7FACCAE5FA47AA9B /* RoomDetailsEditScreenModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B06650A1CBC97EA2665E78 /* RoomDetailsEditScreenModels.swift */; };
+		BEDF71A15E4D16C0C6E56B12 /* SetkaPlusScreenCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0A4C99C254183B6B47B0CD /* SetkaPlusScreenCoordinator.swift */; };
 		BEF2081EA87D580A4F987D73 /* ThreadTimelineScreenViewModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBBC3FC460FC78923C67C6CD /* ThreadTimelineScreenViewModelProtocol.swift */; };
 		BFB08875073E60E2D3934210 /* EncryptionResetScreenModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8B0876F7E4A39ACBDBBCF3F /* EncryptionResetScreenModels.swift */; };
 		C0151346B46B6A14954C4524 /* AnalyticsPromptScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAE3A2D97385E1EA6F8DC8F /* AnalyticsPromptScreenViewModel.swift */; };
@@ -1318,6 +1326,7 @@
 		E01F50362244A26FB303FEF6 /* Task.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CDDE5AE05DB50494852701E /* Task.swift */; };
 		E035DCF6EFC570027E5235D8 /* TimelineStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99DE13CBB995992D63C621F /* TimelineStyler.swift */; };
 		E03C4F97DB07D765AB9F2701 /* HomeScreenRoomList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99609EF89D90515F16E86578 /* HomeScreenRoomList.swift */; };
+		E053A3DE7020FDDDEF3BB017 /* SetkaPlusStatusDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A79B88F5CA3918CA287171D /* SetkaPlusStatusDisplay.swift */; };
 		E08865DF00E9B80DA13BE29D /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB405C6819BF8D96F9DA429F /* Array.swift */; };
 		E0AD7C4451E223728DAF68C9 /* JoinRoomScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C5530417FEB6AC7503C89D /* JoinRoomScreen.swift */; };
 		E16AE68E5A81730960C0FBC7 /* ClientBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800BE21A224851B72BD83C2B /* ClientBuilder.swift */; };
@@ -1395,6 +1404,7 @@
 		EF2D414E4DE3E0AFB5C67A15 /* StartChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0784FDF987988AD52638172B /* StartChatViewModelTests.swift */; };
 		EF796C8FF85ADB22B2DC68C8 /* EmoteRoomTimelineItemContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2C073253B8FFD8149B6F63 /* EmoteRoomTimelineItemContent.swift */; };
 		EF811CB629A777FD6FCF2B36 /* RoomSelectionScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88F0613145CD7F04855F75FC /* RoomSelectionScreenViewModel.swift */; };
+		EF866ABB15919FAE76F3CD5F /* SetkaPlusScreenViewModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CA2D07518049CAE109D8E24 /* SetkaPlusScreenViewModelProtocol.swift */; };
 		EF9755B9A11DF22EFD302599 /* MapTilerConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0FAEFEABC0FA670959B3A2 /* MapTilerConfiguration.swift */; };
 		EFA5F8ED63CF907F24644B33 /* WaveformInteractionModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF8277744C3D82E7550E97D6 /* WaveformInteractionModifier.swift */; };
 		F0B6D4CAE8479886271A266C /* ProgressMaskModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6C24468F50E246D732214C /* ProgressMaskModifier.swift */; };
@@ -1643,6 +1653,7 @@
 		0C3EAECF677590A9A670DA40 /* SessionDirectoriesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDirectoriesTests.swift; sourceTree = "<group>"; };
 		0C66663C8549A71381F8059A /* AnalyticsPromptScreenModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsPromptScreenModels.swift; sourceTree = "<group>"; };
 		0C93DE3DFDCA74E93E0DAA62 /* LayoutMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutMocks.swift; sourceTree = "<group>"; };
+		0CA2D07518049CAE109D8E24 /* SetkaPlusScreenViewModelProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetkaPlusScreenViewModelProtocol.swift; sourceTree = "<group>"; };
 		0CF04542DEE6A28C83B98095 /* SecureBackupScreenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureBackupScreenViewModel.swift; sourceTree = "<group>"; };
 		0D08786A5062838913233973 /* RoomTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomTests.swift; sourceTree = "<group>"; };
 		0D3C700DE687120389839C21 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -1715,6 +1726,7 @@
 		18363534D59F46F1B5AC80C4 /* UIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIView.swift; sourceTree = "<group>"; };
 		183755CF7783C9475E7C2E03 /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
 		1863A3AA440A2CFCBCF3F128 /* ComposerDraftServiceMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerDraftServiceMock.swift; sourceTree = "<group>"; };
+		188F7AA648E861C31F1B362B /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/SetkaPlus.strings; sourceTree = "<group>"; };
 		19096DB717BD3D6CDDC82957 /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/SAS.strings; sourceTree = "<group>"; };
 		1998A2DAB558FAA2A6C1B789 /* test_apple_image.heic */ = {isa = PBXFileReference; path = test_apple_image.heic; sourceTree = "<group>"; };
 		19C943D95EEE17BE1D48459A /* RoomMembersListScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomMembersListScreen.swift; sourceTree = "<group>"; };
@@ -1761,6 +1773,7 @@
 		213A3F38CC3F4AAB39746C4D /* RoomMemberDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomMemberDetails.swift; sourceTree = "<group>"; };
 		213BF65AAF29C56BFB944149 /* RoomInfoProxyProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomInfoProxyProtocol.swift; sourceTree = "<group>"; };
 		219B545ABAECF2E0AEA9676F /* SpaceRoomListProxyProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceRoomListProxyProtocol.swift; sourceTree = "<group>"; };
+		21C2B9680B52A23E8DAE7F13 /* SetkaPlusComposerPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetkaPlusComposerPickerSheet.swift; sourceTree = "<group>"; };
 		21D9E6E8FB92F78905C99235 /* SecureBackupLogoutConfirmationScreenCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureBackupLogoutConfirmationScreenCoordinator.swift; sourceTree = "<group>"; };
 		21F406F9DE50E8BAD5DAF9F0 /* RestorationToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorationToken.swift; sourceTree = "<group>"; };
 		222EC6555AC6DC77097BA693 /* SecureBackupLogoutConfirmationScreenModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureBackupLogoutConfirmationScreenModels.swift; sourceTree = "<group>"; };
@@ -1801,6 +1814,7 @@
 		29E0F7027513644A2ADCA55C /* AuthenticationClientFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationClientFactory.swift; sourceTree = "<group>"; };
 		29EF7F906E4D1C76B4709C2D /* RoomMembersListScreenMemberCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomMembersListScreenMemberCell.swift; sourceTree = "<group>"; };
 		29F81D887CFC10E746C134C8 /* cy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cy; path = cy.lproj/Localizable.strings; sourceTree = "<group>"; };
+		2A128EA56703008A02BAB9CF /* SetkaPlusStatusPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetkaPlusStatusPickerSheet.swift; sourceTree = "<group>"; };
 		2A1EFA440D885373F0CB0867 /* UserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSession.swift; sourceTree = "<group>"; };
 		2A272C66784CBE9C9C1C7478 /* VoiceMessageCacheProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceMessageCacheProtocol.swift; sourceTree = "<group>"; };
 		2A2B4C11022724DC7DCDF7DF /* ExpiringTaskRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpiringTaskRunner.swift; sourceTree = "<group>"; };
@@ -1967,6 +1981,7 @@
 		4C1DCD92BE785ECCCF170CCD /* TimelineItemIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineItemIdentifier.swift; sourceTree = "<group>"; };
 		4CDDE5AE05DB50494852701E /* Task.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Task.swift; sourceTree = "<group>"; };
 		4CF5006A3735199EDF814643 /* CompletionSuggestionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionSuggestionView.swift; sourceTree = "<group>"; };
+		4CFF89FD4C27A52E3D46976A /* SetkaPlusL10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetkaPlusL10n.swift; sourceTree = "<group>"; };
 		4D54A6ECF51FBAC85B3B3C3A /* EncryptionKeyProviderProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptionKeyProviderProtocol.swift; sourceTree = "<group>"; };
 		4D7D3E3162CEEAFDA42C75B0 /* ManageAuthorizedSpacesScreenViewModelProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageAuthorizedSpacesScreenViewModelProtocol.swift; sourceTree = "<group>"; };
 		4D94BCB3ACAEB52629C06626 /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = pl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -2144,6 +2159,7 @@
 		68B6E92BF527CF2B557B798E /* TimelineScrollToBottomButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineScrollToBottomButton.swift; sourceTree = "<group>"; };
 		68BD5D870AA4C5B0E3BF2BF7 /* ShareExtensionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtensionView.swift; sourceTree = "<group>"; };
 		6916652AE97E89F1B49CEE4A /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		691B84C6D919A6192AB504C7 /* en-US */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en-US"; path = "en-US.lproj/SetkaPlus.strings"; sourceTree = "<group>"; };
 		693E1421CCA763F8874E2182 /* SecureBackupKeyBackupScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureBackupKeyBackupScreen.swift; sourceTree = "<group>"; };
 		6944799B525742559E9AAC5A /* NSItemProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSItemProvider.swift; sourceTree = "<group>"; };
 		69541DA7E9A9080316F77F0E /* LocationPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPickerSheet.swift; sourceTree = "<group>"; };
@@ -2235,6 +2251,7 @@
 		7A29AF1CA66FBFDB72336A27 /* CompletionSuggestionServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionSuggestionServiceProtocol.swift; sourceTree = "<group>"; };
 		7A380DA225A9269B9FA79EF2 /* BadgeLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeLabel.swift; sourceTree = "<group>"; };
 		7A539DA971B1E9EC68A65751 /* StartChatScreenCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartChatScreenCoordinator.swift; sourceTree = "<group>"; };
+		7A79B88F5CA3918CA287171D /* SetkaPlusStatusDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetkaPlusStatusDisplay.swift; sourceTree = "<group>"; };
 		7AAC2350BD47F6457112A165 /* URLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLTests.swift; sourceTree = "<group>"; };
 		7AED88783645093EF2098CF6 /* bg */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bg; path = bg.lproj/Localizable.strings; sourceTree = "<group>"; };
 		7B0826B29887CA57D9D7E6EF /* GeneratedPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedPreviewTests.swift; sourceTree = "<group>"; };
@@ -2396,6 +2413,7 @@
 		96AEA1037D9A9CFA04085A3B /* StartChatScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartChatScreen.swift; sourceTree = "<group>"; };
 		96E268B0B4B09FA53ABBFECF /* sk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sk; path = sk.lproj/SAS.strings; sourceTree = "<group>"; };
 		96EE5C5688EDCC17086F470E /* ComposerDisabledView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerDisabledView.swift; sourceTree = "<group>"; };
+		96F80AD77E435AC7966B9150 /* SetkaPlusScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetkaPlusScreen.swift; sourceTree = "<group>"; };
 		97270240369B65B8EF43B5A1 /* RoomPollsHistoryScreenModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomPollsHistoryScreenModels.swift; sourceTree = "<group>"; };
 		9729F3F18192D0273CCC0196 /* URLComponentsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLComponentsTests.swift; sourceTree = "<group>"; };
 		981866B6BBEE31CC9883E1EE /* QRCodeLoginScreenViewModelProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeLoginScreenViewModelProtocol.swift; sourceTree = "<group>"; };
@@ -2422,6 +2440,7 @@
 		9B74715BFAE6D919F4AA3E9B /* AppAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAppearance.swift; sourceTree = "<group>"; };
 		9B749A7394CA8DB16826A97B /* UnitTests.xctestplan */ = {isa = PBXFileReference; path = UnitTests.xctestplan; sourceTree = "<group>"; };
 		9BE9FD0BEAB185856D99177D /* UserProfile+Mock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserProfile+Mock.swift"; sourceTree = "<group>"; };
+		9C0A4C99C254183B6B47B0CD /* SetkaPlusScreenCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetkaPlusScreenCoordinator.swift; sourceTree = "<group>"; };
 		9C1CF50432692DB8FBF28267 /* TimelineViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineViewModel.swift; sourceTree = "<group>"; };
 		9C27100ADF31C2F32F1B13EA /* MatrixEntityRegexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixEntityRegexTests.swift; sourceTree = "<group>"; };
 		9CA7114BB527520EEF7010FC /* UserIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserIndicator.swift; sourceTree = "<group>"; };
@@ -2465,6 +2484,7 @@
 		A249D112162A24D71C33152D /* BlurEffectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurEffectView.swift; sourceTree = "<group>"; };
 		A28C166C79DA1E333E0D1C0C /* AppLockSetupSettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockSetupSettingsScreen.swift; sourceTree = "<group>"; };
 		A297AE2A51DC89F65867BD92 /* RoomDetailsEditScreenViewModelProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomDetailsEditScreenViewModelProtocol.swift; sourceTree = "<group>"; };
+		A2B23E2630080D010D120577 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/SetkaPlus.strings; sourceTree = "<group>"; };
 		A2BB242E8AFB11BD063A1D6A /* ChatsTabFlowCoordinatorStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsTabFlowCoordinatorStateMachine.swift; sourceTree = "<group>"; };
 		A2F928C821DFC82B8A9C367F /* RoomTimelineItemViewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomTimelineItemViewState.swift; sourceTree = "<group>"; };
 		A3029722B6367917F5CCE2B0 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/SAS.strings; sourceTree = "<group>"; };
@@ -2571,6 +2591,8 @@
 		B70BA036A6A60B7B4262FA68 /* AppLockScreenPINKeypad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockScreenPINKeypad.swift; sourceTree = "<group>"; };
 		B783D1F476F9A1B38418F7D0 /* OIDCAccountSettingsPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OIDCAccountSettingsPresenter.swift; sourceTree = "<group>"; };
 		B7A947DCC4010138E9A97C51 /* BugReportFlowCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BugReportFlowCoordinator.swift; sourceTree = "<group>"; };
+		B7AB9C66D75A053999A049E4 /* SetkaPlusScreenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetkaPlusScreenViewModel.swift; sourceTree = "<group>"; };
+		B7B2F827A9C2DC4F0AD2318D /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/SetkaPlus.strings; sourceTree = "<group>"; };
 		B7C1E5253CCF923F574E1050 /* bg */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bg; path = bg.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		B7C960BFCDECCE96BAE458F4 /* RoomSelectionScreenModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomSelectionScreenModels.swift; sourceTree = "<group>"; };
 		B7CF22E92F88AEF3FED682D7 /* EncryptionResetPasswordScreenModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptionResetPasswordScreenModels.swift; sourceTree = "<group>"; };
@@ -2662,6 +2684,7 @@
 		C8749277D10C15FED1971AD4 /* IdentityResetHandleSDKMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityResetHandleSDKMock.swift; sourceTree = "<group>"; };
 		C8D599A4ABEC0BB1726E255D /* NoticeRoomTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoticeRoomTimelineView.swift; sourceTree = "<group>"; };
 		C98CE55317FBC56DCA90DC37 /* ReportContentScreenViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportContentScreenViewModelTests.swift; sourceTree = "<group>"; };
+		C9DC1B249F5BD57103519894 /* SetkaPlusScreenModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetkaPlusScreenModels.swift; sourceTree = "<group>"; };
 		C9E269EE934D805B596CFB13 /* EmojiProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiProviderTests.swift; sourceTree = "<group>"; };
 		C9E82857543C414C2F515EEE /* ClientProxyProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientProxyProtocol.swift; sourceTree = "<group>"; };
 		CA1BB13701B5D0C530DB562B /* SecureBackupKeyBackupScreenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureBackupKeyBackupScreenViewModel.swift; sourceTree = "<group>"; };
@@ -2723,6 +2746,7 @@
 		D0E49D88179EA1DCB7EDB9C5 /* Application.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Application.swift; sourceTree = "<group>"; };
 		D0FE5C804EE6483312F28240 /* TimelineItemMenuAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineItemMenuAction.swift; sourceTree = "<group>"; };
 		D1754C0F5BA03E72DD3AA7DF /* IdentityConfirmedScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityConfirmedScreen.swift; sourceTree = "<group>"; };
+		D1859FB09D45B68FF9662CA0 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/SetkaPlus.strings; sourceTree = "<group>"; };
 		D1863AEC56C07E1EC0C55E90 /* RoomDirectorySearchMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomDirectorySearchMock.swift; sourceTree = "<group>"; };
 		D19B53DE347EDEEA90305A77 /* GlobalSearchScreenViewModelProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalSearchScreenViewModelProtocol.swift; sourceTree = "<group>"; };
 		D1AACDC0D7479B4693ADEF1B /* UserIndicatorControllerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserIndicatorControllerMock.swift; sourceTree = "<group>"; };
@@ -2871,6 +2895,7 @@
 		EC4A7D914E8AEA8F2B9D6B21 /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/Localizable.strings; sourceTree = "<group>"; };
 		EC4C655F71542B5808CB7874 /* HomeScreenEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenEmptyStateView.swift; sourceTree = "<group>"; };
 		EC862B9CFC9DEA7C2DA06D4F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = en.lproj/Untranslated.stringsdict; sourceTree = "<group>"; };
+		ECB32374C5B98A4928B955A9 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/SetkaPlus.strings; sourceTree = "<group>"; };
 		ECB331F7288749788D92D400 /* BlockedUsersScreenViewModelProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockedUsersScreenViewModelProtocol.swift; sourceTree = "<group>"; };
 		ED3B2F067C7941B061511DE2 /* ExpiringTaskRunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpiringTaskRunnerTests.swift; sourceTree = "<group>"; };
 		ED560C98E35B8E011D290849 /* TimelineItemMenuActionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineItemMenuActionProvider.swift; sourceTree = "<group>"; };
@@ -3887,6 +3912,7 @@
 				3BE26C86BE3F5C13436748B0 /* MessageComposer.swift */,
 				E6310E32C0496189C144DCD8 /* MessageComposerTextField.swift */,
 				B6B29610DCA1AE6E5DFB9910 /* RoomAttachmentPicker.swift */,
+				21C2B9680B52A23E8DAE7F13 /* SetkaPlusComposerPickerSheet.swift */,
 				F4A2CF0FCCB8315E860F9E8D /* VoiceMessagePreviewComposer.swift */,
 				0DFD17BFA126662633B68EFE /* VoiceMessageRecordingButton.swift */,
 				EF423D2055658D6657D2A642 /* VoiceMessageRecordingComposer.swift */,
@@ -4045,6 +4071,7 @@
 				E4ECE6FE87B6589136594CF7 /* Localizable.strings */,
 				A1D7AE780CA7442399A0D09D /* Localizable.stringsdict */,
 				FF20E94BDC0D76913FD35127 /* SAS.strings */,
+				A6AF420CF517A44AA3665D14 /* SetkaPlus.strings */,
 				1676A8F435A85A1BD0004167 /* SetkaTheme.strings */,
 				B7D5545D1620E58D162B3AE3 /* Untranslated.strings */,
 				7AFC4BFB16ED673179E153F9 /* Untranslated.stringsdict */,
@@ -4064,6 +4091,7 @@
 				BACF5FABCAFE14140E1066DA /* LegalInformationScreen */,
 				C98F50E026BAF5409A8F25F1 /* NotificationSettingsEditScreen */,
 				6C7CB59858818F63E85E19C7 /* NotificationSettingsScreen */,
+				E2983E7AAFB186FA4C89F1A0 /* SetkaPlusScreen */,
 				8C0152219CC729A417870EFA /* SettingsScreen */,
 				B6857E837A243BABC1AA8805 /* UserDetailsEditScreen */,
 			);
@@ -4657,6 +4685,7 @@
 				F8E509FD5753ECBF8FD1F443 /* NetworkMonitor */,
 				B9420133A9D9B47CF1BB35C7 /* Pills */,
 				99F3C28AEDD075A92BD20FDF /* Progress */,
+				74C80C8EAEB59FC699FD28DA /* SetkaPlus */,
 				37ECD13C37437583F38C3CF0 /* SwiftUI */,
 				4D24AB7A96D7CAF59234E946 /* TestablePreview */,
 				8658F23ECC9F8B6804389722 /* UserIndicator */,
@@ -4726,6 +4755,14 @@
 			path = ShareExtension;
 			sourceTree = "<group>";
 		};
+		74C80C8EAEB59FC699FD28DA /* SetkaPlus */ = {
+			isa = PBXGroup;
+			children = (
+				7A79B88F5CA3918CA287171D /* SetkaPlusStatusDisplay.swift */,
+			);
+			path = SetkaPlus;
+			sourceTree = "<group>";
+		};
 		758F98E9661F811F43756D8C /* ManageAuthorizedSpacesScreen */ = {
 			isa = PBXGroup;
 			children = (
@@ -4771,6 +4808,14 @@
 			isa = PBXGroup;
 			children = (
 				89C58940AD4921F70C04D721 /* ReportContentScreen.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		79E291AD473C3E9BC09E6EFF /* View */ = {
+			isa = PBXGroup;
+			children = (
+				96F80AD77E435AC7966B9150 /* SetkaPlusScreen.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -6567,6 +6612,19 @@
 			path = Screens;
 			sourceTree = "<group>";
 		};
+		E2983E7AAFB186FA4C89F1A0 /* SetkaPlusScreen */ = {
+			isa = PBXGroup;
+			children = (
+				4CFF89FD4C27A52E3D46976A /* SetkaPlusL10n.swift */,
+				9C0A4C99C254183B6B47B0CD /* SetkaPlusScreenCoordinator.swift */,
+				C9DC1B249F5BD57103519894 /* SetkaPlusScreenModels.swift */,
+				B7AB9C66D75A053999A049E4 /* SetkaPlusScreenViewModel.swift */,
+				0CA2D07518049CAE109D8E24 /* SetkaPlusScreenViewModelProtocol.swift */,
+				79E291AD473C3E9BC09E6EFF /* View */,
+			);
+			path = SetkaPlusScreen;
+			sourceTree = "<group>";
+		};
 		E3E4878207BF5717CB64AE7E /* View */ = {
 			isa = PBXGroup;
 			children = (
@@ -6682,6 +6740,7 @@
 				A1457AC60810AE171B3E5593 /* HomeScreenRecoveryKeyConfirmationBanner.swift */,
 				8435434798A463C912921A20 /* HomeScreenRoomCell.swift */,
 				99609EF89D90515F16E86578 /* HomeScreenRoomList.swift */,
+				2A128EA56703008A02BAB9CF /* SetkaPlusStatusPickerSheet.swift */,
 				BB7BEA5A3A5A896F988A5F29 /* Filters */,
 			);
 			path = View;
@@ -7448,6 +7507,7 @@
 				4F59BEA7F8E785DD033AFF7F /* Localizable.stringsdict in Resources */,
 				C248CC84EC9FA092DB0B89EB /* PrivacyInfo.xcprivacy in Resources */,
 				54238F7D0AC4BDD00DD126E9 /* SAS.strings in Resources */,
+				38F02AE2A2CE20876B951F1C /* SetkaPlus.strings in Resources */,
 				240958929A92545F27F8DB48 /* SetkaTheme.strings in Resources */,
 				C40E5596C8F5617A34F2568F /* Settings.bundle in Resources */,
 				3C539E011A6786865E04FD91 /* Untranslated.strings in Resources */,
@@ -8776,6 +8836,15 @@
 				833A5AF67EC4EAC6C5E0B181 /* SessionVerificationScreenStateMachine.swift in Sources */,
 				AA52E076D5A5825C4AB26B18 /* SessionVerificationScreenViewModel.swift in Sources */,
 				28BBC93F4EB955A4C002EE4B /* SessionVerificationScreenViewModelProtocol.swift in Sources */,
+				1F186EE307C3FBDA916F6598 /* SetkaPlusComposerPickerSheet.swift in Sources */,
+				276E7609DE779B4C774DBA6B /* SetkaPlusL10n.swift in Sources */,
+				B2C01EE597D5FC76054CB07F /* SetkaPlusScreen.swift in Sources */,
+				BEDF71A15E4D16C0C6E56B12 /* SetkaPlusScreenCoordinator.swift in Sources */,
+				8272DD302565C8FC68F5F413 /* SetkaPlusScreenModels.swift in Sources */,
+				76153BE6D97CBFA1D679C569 /* SetkaPlusScreenViewModel.swift in Sources */,
+				EF866ABB15919FAE76F3CD5F /* SetkaPlusScreenViewModelProtocol.swift in Sources */,
+				E053A3DE7020FDDDEF3BB017 /* SetkaPlusStatusDisplay.swift in Sources */,
+				AF106773E2BD4835357A998C /* SetkaPlusStatusPickerSheet.swift in Sources */,
 				55DD54F3E62F5F62CA5B703C /* SetkaThemeL10n.swift in Sources */,
 				D262D09C27C123976BFC9899 /* SettingsFlowCoordinator.swift in Sources */,
 				5A33628A0E2EF625C7B7453F /* SettingsScreen.swift in Sources */,
@@ -9194,6 +9263,19 @@
 				372A93BE47589B619ACC0AA6 /* zh-Hant-TW */,
 			);
 			name = Localizable.stringsdict;
+			sourceTree = "<group>";
+		};
+		A6AF420CF517A44AA3665D14 /* SetkaPlus.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A2B23E2630080D010D120577 /* de */,
+				ECB32374C5B98A4928B955A9 /* en */,
+				691B84C6D919A6192AB504C7 /* en-US */,
+				B7B2F827A9C2DC4F0AD2318D /* es */,
+				D1859FB09D45B68FF9662CA0 /* fr */,
+				188F7AA648E861C31F1B362B /* ru */,
+			);
+			name = SetkaPlus.strings;
 			sourceTree = "<group>";
 		};
 		B7D5545D1620E58D162B3AE3 /* Untranslated.strings */ = {

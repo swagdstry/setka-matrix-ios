@@ -43,31 +43,37 @@ enum ClientProxyMockError: Error {
 extension ClientProxyMock {
     convenience init(_ configuration: ClientProxyMockConfiguration) {
         self.init()
-        
+
+        applyCoreConfiguration(configuration)
+        applyBasicDefaults(configuration)
+        applySetkaPlusDefaults()
+        applyMediaAndSecurityDefaults(configuration)
+        applyRoomClosures(configuration)
+        applyFeatureFlags(configuration)
+    }
+    
+    private func applyCoreConfiguration(_ configuration: ClientProxyMockConfiguration) {
         userID = configuration.userID
         deviceID = configuration.deviceID
-        
         homeserver = configuration.homeserver
         userIDServerName = configuration.userIDServerName
-        
+
         roomSummaryProvider = configuration.roomSummaryProvider
         alternateRoomSummaryProvider = RoomSummaryProviderMock(.init())
         staticRoomSummaryProvider = RoomSummaryProviderMock(.init())
-        
         roomDirectorySearchProxyReturnValue = configuration.roomDirectorySearchProxy
-        
+
         actionsPublisher = PassthroughSubject<ClientProxyAction, Never>().eraseToAnyPublisher()
         loadingStatePublisher = .init(.notLoading)
         verificationStatePublisher = .init(.unknown)
         homeserverReachabilityPublisher = .init(.reachable)
-        
         userAvatarURLPublisher = .init(nil)
         userDisplayNamePublisher = .init("User display name")
-        
         ignoredUsersPublisher = .init([RoomMemberProxyMock].allMembers.map(\.userID))
-        
         notificationSettings = configuration.notificationSettings
-        
+    }
+    
+    private func applyBasicDefaults(_ configuration: ClientProxyMockConfiguration) {
         isOnlyDeviceLeftReturnValue = .success(false)
         hasDevicesToVerifyAgainstReturnValue = .success(true)
         accountURLActionReturnValue = "https://matrix.org/account"
@@ -92,23 +98,75 @@ extension ClientProxyMock {
         profileForReturnValue = .success(.init(userID: "@a:b.com", displayName: "Some user"))
         ignoreUserReturnValue = .success(())
         unignoreUserReturnValue = .success(())
-        
         trackRecentlyVisitedRoomReturnValue = .success(())
         recentlyVisitedRoomsFilterReturnValue = []
         recentConversationCounterpartsReturnValue = []
-        
+    }
+    
+    private func applySetkaPlusDefaults() {
+        fetchSetkaPlusSubscriptionReturnValue = .success(.init(tier: "setka_plus_month",
+                                                               status: "inactive",
+                                                               startedAt: 0,
+                                                               expiresAt: 0,
+                                                               updatedAt: 0,
+                                                               isActive: false,
+                                                               priceRub: 299,
+                                                               durationDays: 30,
+                                                               planName: "Setka Plus 30 days",
+                                                               lastPaymentID: nil,
+                                                               paymentProvider: nil,
+                                                               amount: nil,
+                                                               currency: "RUB"))
+        fetchSetkaPlusPlansReturnValue = .success([.init(id: "setka_plus_month",
+                                                         name: "Setka Plus 30 days",
+                                                         priceRub: 299,
+                                                         durationDays: 30,
+                                                         features: [],
+                                                         isActive: true,
+                                                         isDefault: true,
+                                                         sortOrder: 10)])
+        fetchSetkaPlusStickerPacksReturnValue = .success([])
+        fetchSetkaPlusPaymentsReturnValue = .success([])
+        fetchSetkaPlusStatusEmojiUserIDReturnValue = .success(.init(emoji: "✨",
+                                                                    packID: nil,
+                                                                    stickerID: nil,
+                                                                    updatedAt: 0))
+        updateSetkaPlusStatusEmojiEmojiPackIDStickerIDReturnValue = .success(.init(emoji: "✨",
+                                                                                   packID: nil,
+                                                                                   stickerID: nil,
+                                                                                   updatedAt: 0))
+        createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDReturnValue = .success(.init(paymentID: "setka_plus_payment_demo",
+                                                                                          requestID: "setka_plus_request_demo",
+                                                                                          provider: "yoomoney",
+                                                                                          status: "created",
+                                                                                          amount: 299,
+                                                                                          currency: "RUB",
+                                                                                          label: nil,
+                                                                                          planID: "setka_plus_month",
+                                                                                          planName: "Setka Plus 30 days",
+                                                                                          checkoutURL: "https://yoomoney.ru",
+                                                                                          returnURL: nil))
+        processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDReturnValue = .success(.init(status: "pending",
+                                                                                              paymentID: "setka_plus_payment_demo",
+                                                                                              requestID: "setka_plus_request_demo",
+                                                                                              subscription: nil))
+    }
+    
+    private func applyMediaAndSecurityDefaults(_ configuration: ClientProxyMockConfiguration) {
         let mediaLoader = MediaLoaderMock()
         mediaLoader.loadMediaContentForSourceThrowableError = ClientProxyError.sdkError(ClientProxyMockError.generic)
         mediaLoader.loadMediaThumbnailForSourceWidthHeightThrowableError = ClientProxyError.sdkError(ClientProxyMockError.generic)
         mediaLoader.loadMediaFileForSourceFilenameThrowableError = ClientProxyError.sdkError(ClientProxyMockError.generic)
         self.mediaLoader = mediaLoader
-        
+
         secureBackupController = SecureBackupControllerMock(.init(recoveryState: configuration.recoveryState))
         resetIdentityReturnValue = .success(IdentityResetHandleSDKMock(.init()))
-        
         spaceService = SpaceServiceProxyMock(configuration.spaceServiceConfiguration)
         linkNewDeviceServiceReturnValue = LinkNewDeviceServiceMock(.init())
-        
+        userIdentityForFallBackToServerReturnValue = .success(UserIdentityProxyMock(configuration: .init()))
+    }
+    
+    private func applyRoomClosures(_ configuration: ClientProxyMockConfiguration) {
         roomForIdentifierClosure = { [weak self] identifier in
             if let room = self?.roomSummaryProvider.roomListPublisher.value.first(where: { $0.id == identifier }) {
                 let joinedRoomIDs = configuration.overrides.joinedRoomIDs
@@ -132,7 +190,7 @@ extension ClientProxyMock {
                 return nil
             }
         }
-        
+
         if let roomPreviews = configuration.roomPreviews {
             roomPreviewForIdentifierViaClosure = { roomID, _ in
                 if let preview = roomPreviews.first(where: { $0.info.id == roomID }) {
@@ -142,18 +200,15 @@ extension ClientProxyMock {
                 }
             }
         }
-        
-        userIdentityForFallBackToServerReturnValue = .success(UserIdentityProxyMock(configuration: .init()))
-        
+    }
+    
+    private func applyFeatureFlags(_ configuration: ClientProxyMockConfiguration) {
         underlyingIsReportRoomSupported = true
         underlyingIsLiveKitRTCSupported = true
         underlyingIsLoginWithQRCodeSupported = true
-        
         underlyingTimelineMediaVisibilityPublisher = CurrentValueSubject<TimelineMediaVisibility, Never>(configuration.timelineMediaVisibility).asCurrentValuePublisher()
         underlyingHideInviteAvatarsPublisher = CurrentValueSubject<Bool, Never>(configuration.hideInviteAvatars).asCurrentValuePublisher()
-        
         underlyingMaxMediaUploadSize = .success(configuration.maxMediaUploadSize)
-        
         storeSizesReturnValue = .success(.init(cryptoStore: 1, stateStore: 9, eventCacheStore: 8, mediaStore: 6))
     }
 }

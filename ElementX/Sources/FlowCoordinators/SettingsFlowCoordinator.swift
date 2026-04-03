@@ -8,6 +8,7 @@
 
 import Combine
 import SwiftUI
+import UIKit
 
 enum SettingsFlowCoordinatorAction {
     case dismiss
@@ -107,6 +108,8 @@ class SettingsFlowCoordinator: FlowCoordinatorProtocol {
                     presentNotificationSettings()
                 case .appTheme:
                     presentAppTheme()
+                case .setkaPlus:
+                    presentSetkaPlus()
                 case .advancedSettings:
                     presentAdvancedSettings()
                 case .labs:
@@ -264,6 +267,22 @@ class SettingsFlowCoordinator: FlowCoordinatorProtocol {
     
     private func presentAppTheme() {
         let coordinator = AppThemeScreenCoordinator(appSettings: flowParameters.appSettings)
+        navigationStackCoordinator.push(coordinator)
+    }
+    
+    private func presentSetkaPlus() {
+        let coordinator = SetkaPlusScreenCoordinator(parameters: .init(clientProxy: flowParameters.userSession.clientProxy,
+                                                                       userIndicatorController: flowParameters.userIndicatorController))
+        coordinator.actionsPublisher
+            .sink { action in
+                switch action {
+                case .openCheckoutURL(let url):
+                    UIApplication.shared.open(url)
+                }
+            }
+            .store(in: &cancellables)
+        
+        coordinator.start()
         navigationStackCoordinator.push(coordinator)
     }
     

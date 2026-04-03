@@ -168,6 +168,7 @@ enum TestablePreviewsDictionary {
         "ServerSelection_Previews" : ServerSelection_Previews.self,
         "SessionVerificationRequestDetailsView_Previews" : SessionVerificationRequestDetailsView_Previews.self,
         "SessionVerification_Previews" : SessionVerification_Previews.self,
+        "SetkaPlusScreen_Previews" : SetkaPlusScreen_Previews.self,
         "SettingsScreen_Previews" : SettingsScreen_Previews.self,
         "ShimmerOverlay_Previews" : ShimmerOverlay_Previews.self,
         "SoftLogoutScreen_Previews" : SoftLogoutScreen_Previews.self,

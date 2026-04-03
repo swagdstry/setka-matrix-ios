@@ -60,6 +60,220 @@ struct RoomWallpaperMetadata: Codable, Equatable {
     }
 }
 
+struct SetkaPlusSubscription: Codable, Equatable {
+    let tier: String?
+    let status: String?
+    let startedAt: Int?
+    let expiresAt: Int?
+    let updatedAt: Int?
+    let isActive: Bool?
+    let priceRub: Double?
+    let durationDays: Int?
+    let planName: String?
+    let lastPaymentID: String?
+    let paymentProvider: String?
+    let amount: Double?
+    let currency: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case tier
+        case status
+        case startedAt = "started_at"
+        case expiresAt = "expires_at"
+        case updatedAt = "updated_at"
+        case isActive = "is_active"
+        case priceRub = "price_rub"
+        case durationDays = "duration_days"
+        case planName = "plan_name"
+        case lastPaymentID = "last_payment_id"
+        case paymentProvider = "payment_provider"
+        case amount
+        case currency
+    }
+}
+
+struct SetkaPlusPlan: Codable, Equatable {
+    let id: String
+    let name: String
+    let priceRub: Double
+    let durationDays: Int
+    let features: [String]
+    let isActive: Bool
+    let isDefault: Bool
+    let sortOrder: Int?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case priceRub = "price_rub"
+        case durationDays = "duration_days"
+        case features
+        case active
+        case isDefault = "is_default"
+        case sortOrder = "sort_order"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        priceRub = try container.decode(Double.self, forKey: .priceRub)
+        durationDays = try container.decode(Int.self, forKey: .durationDays)
+        features = try container.decodeIfPresent([String].self, forKey: .features) ?? []
+        isActive = try container.decodeIfPresent(Bool.self, forKey: .active) ?? true
+        isDefault = try container.decodeIfPresent(Bool.self, forKey: .isDefault) ?? false
+        sortOrder = try container.decodeIfPresent(Int.self, forKey: .sortOrder)
+    }
+    
+    init(id: String,
+         name: String,
+         priceRub: Double,
+         durationDays: Int,
+         features: [String],
+         isActive: Bool,
+         isDefault: Bool,
+         sortOrder: Int?) {
+        self.id = id
+        self.name = name
+        self.priceRub = priceRub
+        self.durationDays = durationDays
+        self.features = features
+        self.isActive = isActive
+        self.isDefault = isDefault
+        self.sortOrder = sortOrder
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(priceRub, forKey: .priceRub)
+        try container.encode(durationDays, forKey: .durationDays)
+        try container.encode(features, forKey: .features)
+        try container.encode(isActive, forKey: .active)
+        try container.encode(isDefault, forKey: .isDefault)
+        try container.encodeIfPresent(sortOrder, forKey: .sortOrder)
+    }
+}
+
+struct SetkaPlusPayment: Codable, Equatable {
+    let paymentID: String
+    let status: String
+    let provider: String
+    let createdAt: Int?
+    let amount: Double?
+    let currency: String?
+    let requestID: String?
+    let label: String?
+    let planID: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case paymentID = "payment_id"
+        case status
+        case provider
+        case createdAt = "created_at"
+        case amount
+        case currency
+        case requestID = "request_id"
+        case label
+        case planID = "plan_id"
+    }
+}
+
+struct SetkaPlusPaymentRequest: Codable, Equatable {
+    let paymentID: String?
+    let requestID: String?
+    let provider: String?
+    let status: String?
+    let amount: Double?
+    let currency: String?
+    let label: String?
+    let planID: String?
+    let planName: String?
+    let checkoutURL: String?
+    let returnURL: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case paymentID = "payment_id"
+        case requestID = "request_id"
+        case provider
+        case status
+        case amount
+        case currency
+        case label
+        case planID = "plan_id"
+        case planName = "plan_name"
+        case checkoutURL = "checkout_url"
+        case returnURL = "return_url"
+    }
+}
+
+struct SetkaPlusPaymentProcessResult: Codable, Equatable {
+    let status: String?
+    let paymentID: String?
+    let requestID: String?
+    let subscription: SetkaPlusSubscription?
+    
+    enum CodingKeys: String, CodingKey {
+        case status
+        case paymentID = "payment_id"
+        case requestID = "request_id"
+        case subscription
+    }
+}
+
+struct SetkaPlusStickerItem: Codable, Equatable, Identifiable {
+    let id: String
+    let name: String
+    let mxcURL: String
+    let mimeType: String?
+    let width: Int?
+    let height: Int?
+    let size: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case mxcURL = "mxc_url"
+        case mimeType = "mime_type"
+        case width
+        case height
+        case size
+    }
+}
+
+struct SetkaPlusStickerPack: Codable, Equatable, Identifiable {
+    let id: String
+    let name: String
+    let kind: String
+    let stickers: [SetkaPlusStickerItem]
+    let createdAt: Int?
+    let updatedAt: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case kind
+        case stickers
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct SetkaPlusStatusEmoji: Codable, Equatable {
+    let emoji: String?
+    let packID: String?
+    let stickerID: String?
+    let updatedAt: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case emoji
+        case packID = "pack_id"
+        case stickerID = "sticker_id"
+        case updatedAt = "updated_at"
+    }
+}
+
 enum SlidingSyncConstants {
     static let maximumVisibleRangeSize = 30
 }
@@ -251,6 +465,17 @@ protocol ClientProxyProtocol: AnyObject {
     func fetchRoomWallpaper(roomID: String) async -> Result<RoomWallpaperMetadata?, ClientProxyError>
     func saveRoomWallpaper(roomID: String, metadata: RoomWallpaperMetadata) async -> Result<Void, ClientProxyError>
     func deleteRoomWallpaper(roomID: String) async -> Result<Void, ClientProxyError>
+    
+    // MARK: - Setka Plus
+    
+    func fetchSetkaPlusSubscription() async -> Result<SetkaPlusSubscription, ClientProxyError>
+    func fetchSetkaPlusPlans() async -> Result<[SetkaPlusPlan], ClientProxyError>
+    func fetchSetkaPlusStickerPacks() async -> Result<[SetkaPlusStickerPack], ClientProxyError>
+    func fetchSetkaPlusPayments() async -> Result<[SetkaPlusPayment], ClientProxyError>
+    func fetchSetkaPlusStatusEmoji(userID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError>
+    func updateSetkaPlusStatusEmoji(emoji: String?, packID: String?, stickerID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError>
+    func createSetkaPlusYooMoneyPayment(amount: Double?, description: String?, planID: String?) async -> Result<SetkaPlusPaymentRequest, ClientProxyError>
+    func processSetkaPlusYooMoneyPayment(requestID: String, moneySource: String, planID: String?) async -> Result<SetkaPlusPaymentProcessResult, ClientProxyError>
     
     func roomDirectorySearchProxy() -> RoomDirectorySearchProxyProtocol
     

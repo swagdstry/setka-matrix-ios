@@ -4833,6 +4833,542 @@ class ClientProxyMock: ClientProxyProtocol, @unchecked Sendable {
             return deleteRoomWallpaperRoomIDReturnValue
         }
     }
+    //MARK: - fetchSetkaPlusSubscription
+
+    var fetchSetkaPlusSubscriptionUnderlyingCallsCount = 0
+    var fetchSetkaPlusSubscriptionCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusSubscriptionUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusSubscriptionUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusSubscriptionUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusSubscriptionUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusSubscriptionCalled: Bool {
+        return fetchSetkaPlusSubscriptionCallsCount > 0
+    }
+
+    var fetchSetkaPlusSubscriptionUnderlyingReturnValue: Result<SetkaPlusSubscription, ClientProxyError>!
+    var fetchSetkaPlusSubscriptionReturnValue: Result<SetkaPlusSubscription, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusSubscriptionUnderlyingReturnValue
+            } else {
+                var returnValue: Result<SetkaPlusSubscription, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusSubscriptionUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusSubscriptionUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusSubscriptionUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusSubscriptionClosure: (() async -> Result<SetkaPlusSubscription, ClientProxyError>)?
+
+    func fetchSetkaPlusSubscription() async -> Result<SetkaPlusSubscription, ClientProxyError> {
+        fetchSetkaPlusSubscriptionCallsCount += 1
+        if let fetchSetkaPlusSubscriptionClosure = fetchSetkaPlusSubscriptionClosure {
+            return await fetchSetkaPlusSubscriptionClosure()
+        } else {
+            return fetchSetkaPlusSubscriptionReturnValue
+        }
+    }
+    //MARK: - fetchSetkaPlusPlans
+
+    var fetchSetkaPlusPlansUnderlyingCallsCount = 0
+    var fetchSetkaPlusPlansCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusPlansUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusPlansUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusPlansUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusPlansUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusPlansCalled: Bool {
+        return fetchSetkaPlusPlansCallsCount > 0
+    }
+
+    var fetchSetkaPlusPlansUnderlyingReturnValue: Result<[SetkaPlusPlan], ClientProxyError>!
+    var fetchSetkaPlusPlansReturnValue: Result<[SetkaPlusPlan], ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusPlansUnderlyingReturnValue
+            } else {
+                var returnValue: Result<[SetkaPlusPlan], ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusPlansUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusPlansUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusPlansUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusPlansClosure: (() async -> Result<[SetkaPlusPlan], ClientProxyError>)?
+
+    func fetchSetkaPlusPlans() async -> Result<[SetkaPlusPlan], ClientProxyError> {
+        fetchSetkaPlusPlansCallsCount += 1
+        if let fetchSetkaPlusPlansClosure = fetchSetkaPlusPlansClosure {
+            return await fetchSetkaPlusPlansClosure()
+        } else {
+            return fetchSetkaPlusPlansReturnValue
+        }
+    }
+    //MARK: - fetchSetkaPlusStickerPacks
+
+    var fetchSetkaPlusStickerPacksUnderlyingCallsCount = 0
+    var fetchSetkaPlusStickerPacksCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusStickerPacksUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusStickerPacksUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusStickerPacksUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusStickerPacksUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusStickerPacksCalled: Bool {
+        return fetchSetkaPlusStickerPacksCallsCount > 0
+    }
+
+    var fetchSetkaPlusStickerPacksUnderlyingReturnValue: Result<[SetkaPlusStickerPack], ClientProxyError>!
+    var fetchSetkaPlusStickerPacksReturnValue: Result<[SetkaPlusStickerPack], ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusStickerPacksUnderlyingReturnValue
+            } else {
+                var returnValue: Result<[SetkaPlusStickerPack], ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusStickerPacksUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusStickerPacksUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusStickerPacksUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusStickerPacksClosure: (() async -> Result<[SetkaPlusStickerPack], ClientProxyError>)?
+
+    func fetchSetkaPlusStickerPacks() async -> Result<[SetkaPlusStickerPack], ClientProxyError> {
+        fetchSetkaPlusStickerPacksCallsCount += 1
+        if let fetchSetkaPlusStickerPacksClosure = fetchSetkaPlusStickerPacksClosure {
+            return await fetchSetkaPlusStickerPacksClosure()
+        } else {
+            return fetchSetkaPlusStickerPacksReturnValue
+        }
+    }
+    //MARK: - fetchSetkaPlusPayments
+
+    var fetchSetkaPlusPaymentsUnderlyingCallsCount = 0
+    var fetchSetkaPlusPaymentsCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusPaymentsUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusPaymentsUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusPaymentsUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusPaymentsUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusPaymentsCalled: Bool {
+        return fetchSetkaPlusPaymentsCallsCount > 0
+    }
+
+    var fetchSetkaPlusPaymentsUnderlyingReturnValue: Result<[SetkaPlusPayment], ClientProxyError>!
+    var fetchSetkaPlusPaymentsReturnValue: Result<[SetkaPlusPayment], ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusPaymentsUnderlyingReturnValue
+            } else {
+                var returnValue: Result<[SetkaPlusPayment], ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusPaymentsUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusPaymentsUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusPaymentsUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusPaymentsClosure: (() async -> Result<[SetkaPlusPayment], ClientProxyError>)?
+
+    func fetchSetkaPlusPayments() async -> Result<[SetkaPlusPayment], ClientProxyError> {
+        fetchSetkaPlusPaymentsCallsCount += 1
+        if let fetchSetkaPlusPaymentsClosure = fetchSetkaPlusPaymentsClosure {
+            return await fetchSetkaPlusPaymentsClosure()
+        } else {
+            return fetchSetkaPlusPaymentsReturnValue
+        }
+    }
+    //MARK: - fetchSetkaPlusStatusEmoji
+
+    var fetchSetkaPlusStatusEmojiUserIDUnderlyingCallsCount = 0
+    var fetchSetkaPlusStatusEmojiUserIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusStatusEmojiUserIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusStatusEmojiUserIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusStatusEmojiUserIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusStatusEmojiUserIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusStatusEmojiUserIDCalled: Bool {
+        return fetchSetkaPlusStatusEmojiUserIDCallsCount > 0
+    }
+    var fetchSetkaPlusStatusEmojiUserIDReceivedUserID: String?
+    var fetchSetkaPlusStatusEmojiUserIDReceivedInvocations: [String?] = []
+
+    var fetchSetkaPlusStatusEmojiUserIDUnderlyingReturnValue: Result<SetkaPlusStatusEmoji, ClientProxyError>!
+    var fetchSetkaPlusStatusEmojiUserIDReturnValue: Result<SetkaPlusStatusEmoji, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusStatusEmojiUserIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<SetkaPlusStatusEmoji, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusStatusEmojiUserIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusStatusEmojiUserIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusStatusEmojiUserIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusStatusEmojiUserIDClosure: ((String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError>)?
+
+    func fetchSetkaPlusStatusEmoji(userID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError> {
+        fetchSetkaPlusStatusEmojiUserIDCallsCount += 1
+        fetchSetkaPlusStatusEmojiUserIDReceivedUserID = userID
+        DispatchQueue.main.async {
+            self.fetchSetkaPlusStatusEmojiUserIDReceivedInvocations.append(userID)
+        }
+        if let fetchSetkaPlusStatusEmojiUserIDClosure = fetchSetkaPlusStatusEmojiUserIDClosure {
+            return await fetchSetkaPlusStatusEmojiUserIDClosure(userID)
+        } else {
+            return fetchSetkaPlusStatusEmojiUserIDReturnValue
+        }
+    }
+    //MARK: - updateSetkaPlusStatusEmoji
+
+    var updateSetkaPlusStatusEmojiEmojiPackIDStickerIDUnderlyingCallsCount = 0
+    var updateSetkaPlusStatusEmojiEmojiPackIDStickerIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return updateSetkaPlusStatusEmojiEmojiPackIDStickerIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = updateSetkaPlusStatusEmojiEmojiPackIDStickerIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                updateSetkaPlusStatusEmojiEmojiPackIDStickerIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    updateSetkaPlusStatusEmojiEmojiPackIDStickerIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var updateSetkaPlusStatusEmojiEmojiPackIDStickerIDCalled: Bool {
+        return updateSetkaPlusStatusEmojiEmojiPackIDStickerIDCallsCount > 0
+    }
+    var updateSetkaPlusStatusEmojiEmojiPackIDStickerIDReceivedArguments: (emoji: String?, packID: String?, stickerID: String?)?
+    var updateSetkaPlusStatusEmojiEmojiPackIDStickerIDReceivedInvocations: [(emoji: String?, packID: String?, stickerID: String?)] = []
+
+    var updateSetkaPlusStatusEmojiEmojiPackIDStickerIDUnderlyingReturnValue: Result<SetkaPlusStatusEmoji, ClientProxyError>!
+    var updateSetkaPlusStatusEmojiEmojiPackIDStickerIDReturnValue: Result<SetkaPlusStatusEmoji, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return updateSetkaPlusStatusEmojiEmojiPackIDStickerIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<SetkaPlusStatusEmoji, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = updateSetkaPlusStatusEmojiEmojiPackIDStickerIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                updateSetkaPlusStatusEmojiEmojiPackIDStickerIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    updateSetkaPlusStatusEmojiEmojiPackIDStickerIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var updateSetkaPlusStatusEmojiEmojiPackIDStickerIDClosure: ((String?, String?, String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError>)?
+
+    func updateSetkaPlusStatusEmoji(emoji: String?, packID: String?, stickerID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError> {
+        updateSetkaPlusStatusEmojiEmojiPackIDStickerIDCallsCount += 1
+        updateSetkaPlusStatusEmojiEmojiPackIDStickerIDReceivedArguments = (emoji: emoji, packID: packID, stickerID: stickerID)
+        DispatchQueue.main.async {
+            self.updateSetkaPlusStatusEmojiEmojiPackIDStickerIDReceivedInvocations.append((emoji: emoji, packID: packID, stickerID: stickerID))
+        }
+        if let updateSetkaPlusStatusEmojiEmojiPackIDStickerIDClosure = updateSetkaPlusStatusEmojiEmojiPackIDStickerIDClosure {
+            return await updateSetkaPlusStatusEmojiEmojiPackIDStickerIDClosure(emoji, packID, stickerID)
+        } else {
+            return updateSetkaPlusStatusEmojiEmojiPackIDStickerIDReturnValue
+        }
+    }
+    //MARK: - createSetkaPlusYooMoneyPayment
+
+    var createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDUnderlyingCallsCount = 0
+    var createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDCalled: Bool {
+        return createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDCallsCount > 0
+    }
+    var createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDReceivedArguments: (amount: Double?, description: String?, planID: String?)?
+    var createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDReceivedInvocations: [(amount: Double?, description: String?, planID: String?)] = []
+
+    var createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDUnderlyingReturnValue: Result<SetkaPlusPaymentRequest, ClientProxyError>!
+    var createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDReturnValue: Result<SetkaPlusPaymentRequest, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<SetkaPlusPaymentRequest, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDClosure: ((Double?, String?, String?) async -> Result<SetkaPlusPaymentRequest, ClientProxyError>)?
+
+    func createSetkaPlusYooMoneyPayment(amount: Double?, description: String?, planID: String?) async -> Result<SetkaPlusPaymentRequest, ClientProxyError> {
+        createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDCallsCount += 1
+        createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDReceivedArguments = (amount: amount, description: description, planID: planID)
+        DispatchQueue.main.async {
+            self.createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDReceivedInvocations.append((amount: amount, description: description, planID: planID))
+        }
+        if let createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDClosure = createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDClosure {
+            return await createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDClosure(amount, description, planID)
+        } else {
+            return createSetkaPlusYooMoneyPaymentAmountDescriptionPlanIDReturnValue
+        }
+    }
+    //MARK: - processSetkaPlusYooMoneyPayment
+
+    var processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDUnderlyingCallsCount = 0
+    var processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDCalled: Bool {
+        return processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDCallsCount > 0
+    }
+    var processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDReceivedArguments: (requestID: String, moneySource: String, planID: String?)?
+    var processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDReceivedInvocations: [(requestID: String, moneySource: String, planID: String?)] = []
+
+    var processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDUnderlyingReturnValue: Result<SetkaPlusPaymentProcessResult, ClientProxyError>!
+    var processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDReturnValue: Result<SetkaPlusPaymentProcessResult, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<SetkaPlusPaymentProcessResult, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDClosure: ((String, String, String?) async -> Result<SetkaPlusPaymentProcessResult, ClientProxyError>)?
+
+    func processSetkaPlusYooMoneyPayment(requestID: String, moneySource: String, planID: String?) async -> Result<SetkaPlusPaymentProcessResult, ClientProxyError> {
+        processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDCallsCount += 1
+        processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDReceivedArguments = (requestID: requestID, moneySource: moneySource, planID: planID)
+        DispatchQueue.main.async {
+            self.processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDReceivedInvocations.append((requestID: requestID, moneySource: moneySource, planID: planID))
+        }
+        if let processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDClosure = processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDClosure {
+            return await processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDClosure(requestID, moneySource, planID)
+        } else {
+            return processSetkaPlusYooMoneyPaymentRequestIDMoneySourcePlanIDReturnValue
+        }
+    }
     //MARK: - roomDirectorySearchProxy
 
     var roomDirectorySearchProxyUnderlyingCallsCount = 0

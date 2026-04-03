@@ -84,7 +84,11 @@ struct RoomDetailsScreen: View {
                                                             alias: draft.alias,
                                                             userID: draft.userID,
                                                             email: draft.email,
-                                                            phone: draft.phone)
+                                                            phone: draft.phone,
+                                                            tags: draft.normalizedTags,
+                                                            isFavorite: draft.isFavorite,
+                                                            syncEmailToServer: draft.syncEmailToServer,
+                                                            syncPhoneToServer: draft.syncPhoneToServer)
                 }
             }
         }

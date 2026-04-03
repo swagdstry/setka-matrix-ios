@@ -20,15 +20,24 @@ final class AppThemeService: ObservableObject {
     @Published private(set) var currentTheme: SetkaThemeConfiguration = .default
     
     private weak var appSettings: AppSettings?
-    private static let homeWallpaperCacheDirectory = "SetkaThemeCache"
+    private static let homeWallpaperLegacyCacheDirectory = "SetkaThemeCache"
+    private static let homeWallpaperDirectory = "SetkaTheme"
     private static let homeWallpaperFilename = "home-wallpaper.jpg"
     
     private init() { }
     
     func configure(appSettings: AppSettings) {
         self.appSettings = appSettings
-        currentTheme = appSettings.setkaThemeConfiguration
-        appSettings.appAppearance = currentTheme.themeMode.appAppearance
+        
+        var theme = appSettings.setkaThemeConfiguration
+        theme = migrateWallpaperStorageIfNeeded(for: theme)
+        
+        if theme != appSettings.setkaThemeConfiguration {
+            appSettings.setkaThemeConfiguration = theme
+        }
+        
+        currentTheme = theme
+        appSettings.appAppearance = theme.themeMode.appAppearance
     }
     
     func apply(theme: SetkaThemeConfiguration) {
@@ -197,8 +206,7 @@ final class AppThemeService: ObservableObject {
     
     var homeWallpaperURL: URL? {
         guard let path = currentTheme.homeWallpaperImagePath,
-              let url = URL(string: path),
-              url.isFileURL else {
+              let url = wallpaperURL(forStoredPath: path) else {
             return nil
         }
         
@@ -227,14 +235,21 @@ final class AppThemeService: ObservableObject {
     func setHomeWallpaper(imageData: Data) {
         guard let image = UIImage(data: imageData),
               let normalizedData = image.jpegData(compressionQuality: 0.92),
-              let localFileURL = homeWallpaperFileURL() else {
+              let wallpaperDirectoryURL = homeWallpaperFileURL(createDirectory: true)?.deletingLastPathComponent() else {
             return
         }
         
+        let newFilename = "home-wallpaper-\(UUID().uuidString).jpg"
+        let localFileURL = wallpaperDirectoryURL.appendingPathComponent(newFilename)
+        
         do {
+            if let existingURL = homeWallpaperURL {
+                try? FileManager.default.removeItem(at: existingURL)
+            }
+            
             try normalizedData.write(to: localFileURL, options: .atomic)
             var updatedTheme = currentTheme
-            updatedTheme.homeWallpaperImagePath = localFileURL.absoluteString
+            updatedTheme.homeWallpaperImagePath = newFilename
             updatedTheme.homeBackgroundStyle = .image
             apply(theme: updatedTheme)
         } catch {
@@ -247,6 +262,11 @@ final class AppThemeService: ObservableObject {
             try? FileManager.default.removeItem(at: existingURL)
         }
         
+        if let managedURL = homeWallpaperFileURL(createDirectory: false),
+           managedURL != homeWallpaperURL {
+            try? FileManager.default.removeItem(at: managedURL)
+        }
+        
         var updatedTheme = currentTheme
         updatedTheme.homeWallpaperImagePath = nil
         if updatedTheme.homeBackgroundStyle == .image {
@@ -255,19 +275,97 @@ final class AppThemeService: ObservableObject {
         apply(theme: updatedTheme)
     }
     
-    private func homeWallpaperFileURL() -> URL? {
+    private func homeWallpaperFileURL(createDirectory: Bool) -> URL? {
         do {
-            let cachesDirectory = try FileManager.default.url(for: .cachesDirectory,
-                                                              in: .userDomainMask,
-                                                              appropriateFor: nil,
-                                                              create: true)
-            let themeDirectory = cachesDirectory.appendingPathComponent(Self.homeWallpaperCacheDirectory, isDirectory: true)
-            try FileManager.default.createDirectory(at: themeDirectory, withIntermediateDirectories: true)
+            let applicationSupportDirectory = try FileManager.default.url(for: .applicationSupportDirectory,
+                                                                          in: .userDomainMask,
+                                                                          appropriateFor: nil,
+                                                                          create: true)
+            let themeDirectory = applicationSupportDirectory.appendingPathComponent(Self.homeWallpaperDirectory, isDirectory: true)
+            if createDirectory {
+                try FileManager.default.createDirectory(at: themeDirectory, withIntermediateDirectories: true)
+            }
             return themeDirectory.appendingPathComponent(Self.homeWallpaperFilename)
         } catch {
             MXLog.error("Failed preparing home wallpaper directory: \(error)")
             return nil
         }
+    }
+    
+    private func legacyHomeWallpaperFileURL() -> URL? {
+        do {
+            let cachesDirectory = try FileManager.default.url(for: .cachesDirectory,
+                                                              in: .userDomainMask,
+                                                              appropriateFor: nil,
+                                                              create: false)
+            let legacyDirectory = cachesDirectory.appendingPathComponent(Self.homeWallpaperLegacyCacheDirectory, isDirectory: true)
+            return legacyDirectory.appendingPathComponent(Self.homeWallpaperFilename)
+        } catch {
+            MXLog.error("Failed resolving legacy home wallpaper directory: \(error)")
+            return nil
+        }
+    }
+    
+    private func wallpaperURL(forStoredPath path: String) -> URL? {
+        if let url = URL(string: path), url.isFileURL {
+            return url
+        }
+        
+        guard let baseURL = homeWallpaperFileURL(createDirectory: false)?.deletingLastPathComponent() else {
+            return nil
+        }
+        
+        return baseURL.appendingPathComponent(path)
+    }
+    
+    private func migrateWallpaperStorageIfNeeded(for theme: SetkaThemeConfiguration) -> SetkaThemeConfiguration {
+        guard let storedPath = theme.homeWallpaperImagePath, !storedPath.isBlank else {
+            return theme
+        }
+        
+        guard let managedWallpaperURL = homeWallpaperFileURL(createDirectory: true) else {
+            return theme
+        }
+        
+        let fileManager = FileManager.default
+        var updatedTheme = theme
+        
+        // If we already use a stable relative identifier and the file exists, keep as-is.
+        if storedPath == Self.homeWallpaperFilename,
+           fileManager.fileExists(atPath: managedWallpaperURL.path(percentEncoded: false)) {
+            return updatedTheme
+        }
+        
+        if let storedURL = wallpaperURL(forStoredPath: storedPath),
+           fileManager.fileExists(atPath: storedURL.path(percentEncoded: false)) {
+            if storedURL != managedWallpaperURL {
+                try? fileManager.createDirectory(at: managedWallpaperURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try? fileManager.removeItem(at: managedWallpaperURL)
+                
+                do {
+                    try fileManager.copyItem(at: storedURL, to: managedWallpaperURL)
+                } catch {
+                    MXLog.error("Failed migrating wallpaper to managed location: \(error)")
+                }
+            }
+            
+            updatedTheme.homeWallpaperImagePath = Self.homeWallpaperFilename
+            return updatedTheme
+        }
+        
+        if let legacyURL = legacyHomeWallpaperFileURL(),
+           fileManager.fileExists(atPath: legacyURL.path(percentEncoded: false)) {
+            try? fileManager.createDirectory(at: managedWallpaperURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? fileManager.removeItem(at: managedWallpaperURL)
+            do {
+                try fileManager.copyItem(at: legacyURL, to: managedWallpaperURL)
+                updatedTheme.homeWallpaperImagePath = Self.homeWallpaperFilename
+            } catch {
+                MXLog.error("Failed migrating legacy wallpaper cache: \(error)")
+            }
+        }
+        
+        return updatedTheme
     }
     
     private func resolveThemeColor(hex: String, fallback: Color, colorScheme: ColorScheme, darkFallbackHex: String) -> Color {

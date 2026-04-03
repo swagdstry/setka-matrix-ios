@@ -45,6 +45,12 @@ struct RoomAttachmentPicker: View {
                 Label(L10n.screenRoomAttachmentSourcePoll, icon: \.polls)
             }
             .accessibilityIdentifier(A11yIdentifiers.roomScreen.attachmentPickerPoll)
+
+            Button {
+                context.send(viewAction: .attach(.setkaPlusSticker))
+            } label: {
+                Label(L10n.commonSticker, icon: \.image)
+            }
             
             if context.viewState.isLocationSharingEnabled {
                 Button {

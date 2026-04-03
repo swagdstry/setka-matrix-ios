@@ -19,7 +19,8 @@ class MediaUploadPreviewScreenViewModel: MediaUploadPreviewScreenViewModelType, 
     private let mediaUploadingPreprocessor: MediaUploadingPreprocessor
     private var mediaURLs: [URL]
     
-    private var processingTask: Task<Result<[MediaInfo], MediaUploadingPreprocessorError>, Never>
+    private var processingTask: Task<Result<[MediaInfo], MediaUploadingPreprocessorError>, Never>?
+    private var mediaEditDebounceTask: Task<Void, Never>?
     private var requestHandle: SendAttachmentJoinHandleProtocol?
     private let clientProxy: ClientProxyProtocol
     
@@ -43,10 +44,8 @@ class MediaUploadPreviewScreenViewModel: MediaUploadPreviewScreenViewModelType, 
         self.clientProxy = clientProxy
         self.userIndicatorController = userIndicatorController
         
-        // Start processing the media whilst the user is reviewing it/adding a caption.
-        processingTask = Self.processMedia(at: mediaURLs, preprocessor: mediaUploadingPreprocessor, clientProxy: clientProxy)
-        
-        super.init(initialViewState: MediaUploadPreviewScreenViewState(mediaURLs: mediaURLs,
+        super.init(initialViewState: MediaUploadPreviewScreenViewState(originalMediaURLs: mediaURLs,
+                                                                       mediaURLs: mediaURLs,
                                                                        title: title,
                                                                        shouldShowCaptionWarning: shouldShowCaptionWarning,
                                                                        isRoomEncrypted: isRoomEncrypted))
@@ -58,10 +57,19 @@ class MediaUploadPreviewScreenViewModel: MediaUploadPreviewScreenViewModelType, 
         
         switch viewAction {
         case .send:
+            guard !state.isApplyingMediaEdits else {
+                MXLog.info("Send requested while media edits are still being applied.")
+                return
+            }
+            
             startLoading()
             
             Task {
                 defer { stopLoading() }
+                
+                processingTask?.cancel()
+                let processingTask = Self.processMedia(at: mediaURLs, preprocessor: mediaUploadingPreprocessor, clientProxy: clientProxy)
+                self.processingTask = processingTask
                 
                 switch await processingTask.value {
                 case .success(let mediaInfos):
@@ -84,15 +92,38 @@ class MediaUploadPreviewScreenViewModel: MediaUploadPreviewScreenViewModelType, 
                     MXLog.error("Failed processing media to upload with error: \(error)")
                     showError(label: L10n.screenMediaUploadPreviewErrorFailedProcessing)
                 }
+                
+                self.processingTask = nil
             }
         case .cancel:
+            mediaEditDebounceTask?.cancel()
             requestHandle?.cancel()
             actionsSubject.send(.dismiss)
+        case .mediaEdited(let index, let url):
+            guard mediaURLs.indices.contains(index) else {
+                MXLog.error("Received edited media index out of bounds: \(index)")
+                return
+            }
+            
+            mediaURLs[index] = persistedEditedMediaURL(from: url)
+            state.mediaURLs = mediaURLs
+            scheduleMediaEditsSettleTracking()
+        case .resetMediaEdits(let index):
+            guard mediaURLs.indices.contains(index), state.originalMediaURLs.indices.contains(index) else {
+                MXLog.error("Received reset media edits index out of bounds: \(index)")
+                return
+            }
+            
+            mediaURLs[index] = state.originalMediaURLs[index]
+            state.mediaURLs = mediaURLs
+            state.isApplyingMediaEdits = false
+            mediaEditDebounceTask?.cancel()
         }
     }
     
     func stopProcessing() {
-        processingTask.cancel()
+        mediaEditDebounceTask?.cancel()
+        processingTask?.cancel()
     }
     
     // MARK: - Private
@@ -139,6 +170,37 @@ class MediaUploadPreviewScreenViewModel: MediaUploadPreviewScreenViewModelType, 
     
     private static let loadingIndicatorIdentifier = "\(MediaUploadPreviewScreenViewModel.self)-Loading"
     
+    private func persistedEditedMediaURL(from url: URL) -> URL {
+        let fileManager = FileManager.default
+        let destinationURL = URL.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(url.pathExtension)
+        
+        do {
+            if fileManager.fileExists(atPath: destinationURL.path(percentEncoded: false)) {
+                try fileManager.removeItem(at: destinationURL)
+            }
+            try fileManager.copyItem(at: url, to: destinationURL)
+            return destinationURL
+        } catch {
+            MXLog.error("Failed persisting edited media: \(error)")
+            return url
+        }
+    }
+    
+    private func scheduleMediaEditsSettleTracking() {
+        state.isApplyingMediaEdits = true
+        mediaEditDebounceTask?.cancel()
+        
+        mediaEditDebounceTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(450))
+            
+            await MainActor.run { [weak self] in
+                self?.state.isApplyingMediaEdits = false
+            }
+        }
+    }
+    
     private func startLoading() {
         userIndicatorController.submitIndicator(UserIndicator(id: Self.loadingIndicatorIdentifier,
                                                               type: .modal(progress: .indeterminate, interactiveDismissDisabled: false, allowsInteraction: true),
@@ -166,9 +228,7 @@ class MediaUploadPreviewScreenViewModel: MediaUploadPreviewScreenViewModelType, 
                                              title: L10n.commonSomethingWentWrong,
                                              message: L10n.screenMediaUploadPreviewErrorCouldNotBeUploaded,
                                              primaryButton: .init(title: L10n.actionTryAgain) { [weak self] in
-                                                 guard let self else { return }
-                                                 processingTask = Self.processMedia(at: mediaURLs, preprocessor: mediaUploadingPreprocessor, clientProxy: clientProxy)
-                                                 process(viewAction: .send)
+                                                 self?.process(viewAction: .send)
                                              },
                                              secondaryButton: .init(title: L10n.actionCancel, role: .cancel) { })
         case .maxUploadSizeExceeded(let limit):

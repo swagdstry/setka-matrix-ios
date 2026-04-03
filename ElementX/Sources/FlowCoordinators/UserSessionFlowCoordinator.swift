@@ -622,7 +622,11 @@ private struct ContactsTabScreen: View {
                                                                 alias: draft.alias,
                                                                 userID: draft.userID,
                                                                 email: draft.email,
-                                                                phone: draft.phone)
+                                                                phone: draft.phone,
+                                                                tags: draft.normalizedTags,
+                                                                isFavorite: draft.isFavorite,
+                                                                syncEmailToServer: draft.syncEmailToServer,
+                                                                syncPhoneToServer: draft.syncPhoneToServer)
                     }
                 }
             }
@@ -642,8 +646,8 @@ private struct ContactsTabScreen: View {
         if !contactsService.contacts.isEmpty {
             Section {
                 ForEach(contactsService.contacts) { contact in
-                    ListRow(label: .default(title: contact.alias, icon: \.userProfile),
-                            details: .title(contact.subtitle),
+                    ListRow(label: .default(title: contact.isFavorite ? "[Fav] \(contact.alias)" : contact.alias, icon: \.userProfile),
+                            details: .title(contact.tags.isEmpty ? contact.subtitle : "\(contact.subtitle) · \(contact.tags.joined(separator: ", "))"),
                             kind: .button {
                                 contactEditorDraft = .init(contact: contact)
                             })

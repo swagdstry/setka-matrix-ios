@@ -54,6 +54,9 @@ struct RoomScreenViewState: BindableState {
     var canJoinCall = false
     /// Whether or not this room currently has a call in progress.
     var hasOngoingCall: Bool
+    /// Controls the start call button icon:
+    /// direct/small rooms show voice call, larger rooms show video call.
+    var shouldUseVideoCallButton = true
     /// Whether or not the user is already part of a call in another room.
     var isParticipatingInOngoingCall = false
     var shouldShowCallButton: Bool {

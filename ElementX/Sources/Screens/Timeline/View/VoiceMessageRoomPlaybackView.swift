@@ -6,8 +6,6 @@
 // Please see LICENSE files in the repository root for full details.
 //
 
-import DSWaveformImage
-import DSWaveformImageViews
 import SwiftUI
 
 struct VoiceMessageRoomPlaybackView: View {
@@ -82,18 +80,8 @@ struct VoiceMessageRoomPlaybackView: View {
         }
     }
 
-    @ViewBuilder
     private var waveformView: some View {
-        if let url = playerState.fileURL {
-            WaveformView(audioURL: url,
-                         configuration: .init(style: .striped(.init(color: .black, width: waveformLineWidth, spacing: waveformLinePadding)),
-                                              verticalScalingFactor: 1.0)) {
-                estimatedWaveformView
-            }
-            .progressMask(progress: playerState.progress)
-        } else {
-            estimatedWaveformView
-        }
+        estimatedWaveformView
     }
 
     private var estimatedWaveformView: some View {

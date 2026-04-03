@@ -40,6 +40,22 @@ struct HomeScreen: View {
                     .navigationTransition(.zoom(sourceID: NavigationTransitionSourceID.spaceFilters,
                                                 in: navigationTransitionNamespace))
             }
+            .sheet(isPresented: $context.setkaPlusStatusPickerPresented) {
+                SetkaPlusStatusPickerSheet(isSetkaPlusActive: context.viewState.isSetkaPlusActive,
+                                           selectedEmoji: context.viewState.currentStatusEmojiGlyph,
+                                           selectedStickerID: context.viewState.currentStatusStickerID,
+                                           emojiPacks: context.viewState.setkaPlusEmojiPacks,
+                                           mediaProvider: context.mediaProvider,
+                                           onSelectEmoji: { emoji in
+                                               context.send(viewAction: .setSetkaPlusStatusEmoji(emoji))
+                                           },
+                                           onSelectSticker: { packID, stickerID in
+                                               context.send(viewAction: .setSetkaPlusStatusSticker(packID: packID, stickerID: stickerID))
+                                           },
+                                           onClear: {
+                                               context.send(viewAction: .clearSetkaPlusStatusEmoji)
+                                           })
+            }
     }
     
     // MARK: - Private
@@ -84,9 +100,13 @@ struct HomeScreen: View {
         
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .navigationBarLeading) {
+        ToolbarItemGroup(placement: .navigationBarLeading) {
             settingsButton
                 .buttonStyle(.borderless)
+            
+            if context.viewState.selectedSpaceFilter == nil {
+                setkaPlusStatusButton
+            }
         }
         
         ToolbarItem(placement: .primaryAction) {
@@ -111,6 +131,20 @@ struct HomeScreen: View {
                                          in: navigationTransitionNamespace)
             }
         }
+    }
+    
+    private var setkaPlusStatusButton: some View {
+        Button {
+            context.send(viewAction: .setkaPlusStatusTapped)
+        } label: {
+            Text(context.viewState.currentStatusEmojiGlyph ?? "✨")
+                .font(.system(size: 19))
+                .frame(width: 28, height: 28)
+                .background(Color.compound.bgSubtlePrimary)
+                .clipShape(.rect(cornerRadius: 7))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(SetkaPlusL10n.statusPickerTitle)
     }
     
     private var settingsButton: some View {

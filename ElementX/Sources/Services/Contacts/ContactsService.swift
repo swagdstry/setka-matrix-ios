@@ -15,6 +15,65 @@ struct ManagedContact: Identifiable, Codable, Equatable, Hashable {
     var userID: String?
     var email: String?
     var phone: String?
+    var tags: [String]
+    var isFavorite: Bool
+    var updatedAt: Date?
+    var lastInteractionAt: Date?
+    var syncEmailToServer: Bool
+    var syncPhoneToServer: Bool
+    
+    init(roomID: String,
+         alias: String,
+         userID: String? = nil,
+         email: String? = nil,
+         phone: String? = nil,
+         tags: [String] = [],
+         isFavorite: Bool = false,
+         updatedAt: Date? = nil,
+         lastInteractionAt: Date? = nil,
+         syncEmailToServer: Bool = true,
+         syncPhoneToServer: Bool = true) {
+        self.roomID = roomID
+        self.alias = alias
+        self.userID = userID
+        self.email = email
+        self.phone = phone
+        self.tags = tags
+        self.isFavorite = isFavorite
+        self.updatedAt = updatedAt
+        self.lastInteractionAt = lastInteractionAt
+        self.syncEmailToServer = syncEmailToServer
+        self.syncPhoneToServer = syncPhoneToServer
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case roomID
+        case alias
+        case userID
+        case email
+        case phone
+        case tags
+        case isFavorite
+        case updatedAt
+        case lastInteractionAt
+        case syncEmailToServer
+        case syncPhoneToServer
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        roomID = try container.decode(String.self, forKey: .roomID)
+        alias = try container.decode(String.self, forKey: .alias)
+        userID = try container.decodeIfPresent(String.self, forKey: .userID)
+        email = try container.decodeIfPresent(String.self, forKey: .email)
+        phone = try container.decodeIfPresent(String.self, forKey: .phone)
+        tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
+        lastInteractionAt = try container.decodeIfPresent(Date.self, forKey: .lastInteractionAt)
+        syncEmailToServer = try container.decodeIfPresent(Bool.self, forKey: .syncEmailToServer) ?? true
+        syncPhoneToServer = try container.decodeIfPresent(Bool.self, forKey: .syncPhoneToServer) ?? true
+    }
     
     var id: String {
         roomID
@@ -85,12 +144,23 @@ final class ContactsService: ObservableObject {
             return sortedContacts(contacts)
         }
         
+        let tokens = trimmedQuery
+            .split(whereSeparator: \.isWhitespace)
+            .map { String($0).lowercased() }
+        
         return sortedContacts(contacts.filter { contact in
-            contact.alias.localizedCaseInsensitiveContains(trimmedQuery) ||
-                contact.roomID.localizedCaseInsensitiveContains(trimmedQuery) ||
-                (contact.userID?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
-                (contact.email?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
-                (contact.phone?.localizedCaseInsensitiveContains(trimmedQuery) ?? false)
+            let indexedValues = [
+                contact.alias,
+                contact.roomID,
+                contact.userID ?? "",
+                contact.email ?? "",
+                contact.phone ?? "",
+                contact.tags.joined(separator: " ")
+            ].map { $0.lowercased() }
+            
+            return tokens.allSatisfy { token in
+                indexedValues.contains { $0.contains(token) }
+            }
         })
     }
     
@@ -113,7 +183,11 @@ final class ContactsService: ObservableObject {
                        alias: String,
                        userID: String?,
                        email: String? = nil,
-                       phone: String? = nil) async -> Bool {
+                       phone: String? = nil,
+                       tags: [String] = [],
+                       isFavorite: Bool = false,
+                       syncEmailToServer: Bool = true,
+                       syncPhoneToServer: Bool = true) async -> Bool {
         guard let clientProxy else {
             return false
         }
@@ -124,14 +198,37 @@ final class ContactsService: ObservableObject {
         }
         
         let normalizedUserID = userID?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        let normalizedEmail = normalizedEmail(email)
+        let normalizedPhone = normalizedPhone(phone)
+        let normalizedTags = normalizedTags(tags)
+        
+        if let rawEmail = email?.nilIfEmpty,
+           normalizedEmail == nil,
+           !rawEmail.isEmpty {
+            return false
+        }
+        
+        if let rawPhone = phone?.nilIfEmpty,
+           normalizedPhone == nil,
+           !rawPhone.isEmpty {
+            return false
+        }
+        
         let normalizedRoomID = resolveRoomID(for: roomID, userID: normalizedUserID, clientProxy: clientProxy)
         
         var contact = ManagedContact(roomID: normalizedRoomID,
                                      alias: trimmedAlias,
                                      userID: normalizedUserID,
-                                     email: email?.nilIfEmpty,
-                                     phone: phone?.nilIfEmpty)
+                                     email: normalizedEmail,
+                                     phone: normalizedPhone,
+                                     tags: normalizedTags,
+                                     isFavorite: isFavorite,
+                                     updatedAt: .now,
+                                     lastInteractionAt: contact(forRoomID: normalizedRoomID)?.lastInteractionAt,
+                                     syncEmailToServer: syncEmailToServer,
+                                     syncPhoneToServer: syncPhoneToServer)
         contact = hydratedContact(contact, clientProxy: clientProxy)
+        let duplicateRoomIDs = duplicateRoomIDs(for: contact, excluding: Set([roomID, normalizedRoomID]))
         
         switch await clientProxy.saveContact(contact) {
         case .success:
@@ -144,6 +241,12 @@ final class ContactsService: ObservableObject {
             pendingDeletes.remove(roomID)
             pendingUpserts[normalizedRoomID] = nil
             pendingDeletes.remove(normalizedRoomID)
+            for duplicateRoomID in duplicateRoomIDs {
+                _ = await clientProxy.deleteContact(roomID: duplicateRoomID)
+                pendingDeletes.remove(duplicateRoomID)
+                pendingUpserts[duplicateRoomID] = nil
+                contacts.removeAll { $0.roomID == duplicateRoomID }
+            }
             updateLocalContact(contact)
             refresh()
             return true
@@ -155,6 +258,11 @@ final class ContactsService: ObservableObject {
             pendingDeletes.remove(normalizedRoomID)
             if normalizedRoomID != roomID {
                 contacts.removeAll { $0.roomID == roomID }
+            }
+            for duplicateRoomID in duplicateRoomIDs {
+                pendingDeletes.insert(duplicateRoomID)
+                pendingUpserts[duplicateRoomID] = nil
+                contacts.removeAll { $0.roomID == duplicateRoomID }
             }
             updateLocalContact(contact)
             schedulePendingSync()
@@ -197,7 +305,11 @@ final class ContactsService: ObservableObject {
         
         switch await clientProxy.fetchContacts() {
         case .success(let contacts):
-            var hydratedContacts = contacts.map { hydratedContact($0, clientProxy: clientProxy) }
+            let localContactsByRoomID = Dictionary(uniqueKeysWithValues: self.contacts.map { ($0.roomID, $0) })
+            var hydratedContacts = contacts.map { remoteContact in
+                let hydrated = hydratedContact(remoteContact, clientProxy: clientProxy)
+                return mergeLocalMetadata(remoteContact: hydrated, localContact: localContactsByRoomID[remoteContact.roomID])
+            }
             hydratedContacts.removeAll { pendingDeletes.contains($0.roomID) }
             
             for pendingContact in pendingUpserts.values {
@@ -267,8 +379,102 @@ final class ContactsService: ObservableObject {
     
     private func sortedContacts(_ contacts: [ManagedContact]) -> [ManagedContact] {
         contacts.sorted { lhs, rhs in
-            lhs.alias.localizedCaseInsensitiveCompare(rhs.alias) == .orderedAscending
+            if lhs.isFavorite != rhs.isFavorite {
+                return lhs.isFavorite
+            }
+            
+            if lhs.alias.localizedCaseInsensitiveCompare(rhs.alias) == .orderedSame {
+                return (lhs.updatedAt ?? .distantPast) > (rhs.updatedAt ?? .distantPast)
+            }
+            
+            return lhs.alias.localizedCaseInsensitiveCompare(rhs.alias) == .orderedAscending
         }
+    }
+    
+    private func duplicateRoomIDs(for contact: ManagedContact, excluding excludedRoomIDs: Set<String>) -> [String] {
+        contacts.compactMap { existing in
+            guard !excludedRoomIDs.contains(existing.roomID) else {
+                return nil
+            }
+            
+            let hasSameUserID = contact.userID != nil && existing.userID == contact.userID
+            let hasSameEmail = contact.email != nil && existing.email?.caseInsensitiveCompare(contact.email ?? "") == .orderedSame
+            let hasSamePhone = contact.phone != nil && existing.phone == contact.phone
+            
+            return (hasSameUserID || hasSameEmail || hasSamePhone) ? existing.roomID : nil
+        }
+    }
+    
+    private func mergeLocalMetadata(remoteContact: ManagedContact, localContact: ManagedContact?) -> ManagedContact {
+        guard let localContact else {
+            return remoteContact
+        }
+        
+        var merged = remoteContact
+        merged.tags = localContact.tags
+        merged.isFavorite = localContact.isFavorite
+        let localUpdatedAt = localContact.updatedAt ?? .distantPast
+        let remoteUpdatedAt = remoteContact.updatedAt ?? .distantPast
+        let mergedUpdatedAt = max(localUpdatedAt, remoteUpdatedAt)
+        merged.updatedAt = mergedUpdatedAt == .distantPast ? nil : mergedUpdatedAt
+        merged.lastInteractionAt = localContact.lastInteractionAt ?? remoteContact.lastInteractionAt
+        merged.syncEmailToServer = localContact.syncEmailToServer
+        merged.syncPhoneToServer = localContact.syncPhoneToServer
+        
+        if !localContact.syncEmailToServer {
+            merged.email = localContact.email
+        }
+        
+        if !localContact.syncPhoneToServer {
+            merged.phone = localContact.phone
+        }
+        
+        return merged
+    }
+    
+    private func normalizedEmail(_ value: String?) -> String? {
+        guard let value = value?.nilIfEmpty else {
+            return nil
+        }
+        
+        let normalized = value.lowercased()
+        let parts = normalized.split(separator: "@", omittingEmptySubsequences: false)
+        guard parts.count == 2,
+              !parts[0].isEmpty,
+              !parts[1].isEmpty,
+              parts[1].contains(".") else {
+            return nil
+        }
+        
+        return normalized
+    }
+    
+    private func normalizedPhone(_ value: String?) -> String? {
+        guard let value = value?.nilIfEmpty else {
+            return nil
+        }
+        
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        var digits = trimmed.filter(\.isNumber)
+        if trimmed.hasPrefix("+") {
+            digits = "+\(digits)"
+        } else if trimmed.hasPrefix("00"), digits.count > 2 {
+            digits = "+\(digits.dropFirst(2))"
+        }
+        
+        let digitCount = digits.filter(\.isNumber).count
+        guard digitCount >= 7 else {
+            return nil
+        }
+        
+        return digits
+    }
+    
+    private func normalizedTags(_ tags: [String]) -> [String] {
+        let normalizedValues = tags
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .filter { !$0.isEmpty }
+        return Array(Set(normalizedValues)).sorted()
     }
     
     private func persistContactsCache() {

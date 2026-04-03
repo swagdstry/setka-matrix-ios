@@ -21,6 +21,7 @@ struct RoomScreen: View {
     @ObservedObject private var roomWallpaperService = RoomWallpaperService.shared
     @ObservedObject private var appThemeService = AppThemeService.shared
     @StateObject private var recordingOverlayController = RoomRecordingOverlayController()
+    @State private var setkaPlusComposerPickerData: SetkaPlusComposerPickerData?
     let composerToolbar: ComposerToolbar
     let timelineActions: AnyPublisher<TimelineViewModelAction, Never>
     @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverEnabled
@@ -45,6 +46,16 @@ struct RoomScreen: View {
     private var contentView: some View {
         baseTimelineView
             .onReceive(timelineActions, perform: handleAction)
+            .sheet(item: $setkaPlusComposerPickerData) { data in
+                SetkaPlusComposerPickerSheet(packs: data.packs,
+                                             mediaProvider: context.mediaProvider,
+                                             onSendEmoji: { emoji in
+                                                 timelineContext.send(viewAction: .sendSetkaPlusEmojiMessage(emoji))
+                                             },
+                                             onSendSticker: { packID, stickerID in
+                                                 timelineContext.send(viewAction: .sendSetkaPlusSticker(packID: packID, stickerID: stickerID))
+                                             })
+            }
             .overlay { recordingOverlay }
             .onAppear {
                 GlobalMediaPlayerController.shared.setCurrentRoomID(timelineContext.viewState.roomID)
@@ -64,7 +75,9 @@ struct RoomScreen: View {
     }
 
     private func handleAction(_ action: TimelineViewModelAction) {
-        if case .displayVideoNoteRecorder = action {
+        if case let .displaySetkaPlusComposerPicker(packs) = action {
+            setkaPlusComposerPickerData = .init(packs: packs)
+        } else if case .displayVideoNoteRecorder = action {
             recordingOverlayController.beginRecording(.video)
         }
     }
@@ -341,12 +354,17 @@ struct RoomScreen: View {
             Button {
                 context.send(viewAction: .displayCall)
             } label: {
-                CompoundIcon(\.videoCallSolid)
+                CompoundIcon(context.viewState.shouldUseVideoCallButton ? \.videoCallSolid : \.voiceCallSolid)
             }
             .accessibilityLabel(L10n.a11yStartCall)
             .accessibilityIdentifier(A11yIdentifiers.roomScreen.joinCall)
         }
     }
+}
+
+private struct SetkaPlusComposerPickerData: Identifiable {
+    let id = UUID()
+    let packs: [SetkaPlusStickerPack]
 }
 
 final class RoomRecordingOverlayController: ObservableObject {

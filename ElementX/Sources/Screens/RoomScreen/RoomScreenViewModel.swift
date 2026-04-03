@@ -20,6 +20,7 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
     private let appSettings: AppSettings
     private let analyticsService: AnalyticsService
     private let userIndicatorController: UserIndicatorControllerProtocol
+    private var directPeerStatusEmoji: SetkaPlusStatusEmoji?
     
     private var initialSelectedPinnedEventID: String?
     private let pinnedEventStringBuilder: RoomEventStringBuilder
@@ -76,8 +77,9 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
         
         let initialRoomName = ContactsService.shared.preferredName(forRoomID: roomProxy.id,
                                                                    fallback: roomProxy.infoPublisher.value.displayName ?? roomProxy.id)
-        
-        let viewState = RoomScreenViewState(roomTitle: initialRoomName,
+        let initialTitle = initialRoomName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let viewState = RoomScreenViewState(roomTitle: initialTitle,
                                             roomAvatar: roomProxy.infoPublisher.value.avatar,
                                             hasOngoingCall: roomProxy.infoPublisher.value.hasRoomCall,
                                             hasSuccessor: roomProxy.infoPublisher.value.successor != nil,
@@ -336,10 +338,12 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
     }
     
     private func updateRoomInfo(_ roomInfo: RoomInfoProxyProtocol) {
-        state.roomTitle = ContactsService.shared.preferredName(forRoomID: roomProxy.id,
-                                                               fallback: roomInfo.displayName ?? roomProxy.id)
+        let baseTitle = ContactsService.shared.preferredName(forRoomID: roomProxy.id,
+                                                             fallback: roomInfo.displayName ?? roomProxy.id)
+        state.roomTitle = decoratedName(baseTitle, status: directPeerStatusEmoji)
         state.roomAvatar = roomInfo.avatar
         state.hasOngoingCall = roomInfo.hasRoomCall
+        state.shouldUseVideoCallButton = roomInfo.activeMembersCount > 2
         state.hasSuccessor = roomInfo.successor != nil
         
         let pinnedEventIDs = roomInfo.pinnedEventIDs
@@ -370,6 +374,48 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
         if appSettings.enableKeyShareOnInvite {
             state.roomHistorySharingState = roomInfo.historySharingState
         }
+
+        if roomProxy.isDirectOneToOneRoom,
+           directPeerStatusEmoji == nil,
+           let userID = directCounterpartUserID(from: roomInfo.avatar) {
+            Task {
+                if case let .success(statusEmoji) = await clientProxy.fetchSetkaPlusStatusEmoji(userID: userID) {
+                    directPeerStatusEmoji = statusEmoji
+                    let fallbackName = roomInfo.displayName ?? roomProxy.id
+                    let title = ContactsService.shared.preferredName(forRoomID: roomProxy.id,
+                                                                     fallback: fallbackName)
+                    state.roomTitle = decoratedName(title, status: statusEmoji)
+                }
+            }
+        }
+    }
+
+    private func directCounterpartUserID(from avatar: RoomAvatar) -> String? {
+        if case let .heroes(users) = avatar {
+            return users.first(where: { $0.userID != roomProxy.ownUserID })?.userID ?? users.first?.userID
+        }
+        
+        return ContactsService.shared.contact(forRoomID: roomProxy.id)?.userID
+    }
+
+    private func decoratedName(_ name: String, status: SetkaPlusStatusEmoji?) -> String {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let status else { return trimmedName }
+
+        let rawEmoji = (status.emoji ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let glyph: String
+        if !rawEmoji.isEmpty {
+            glyph = rawEmoji
+        } else if status.stickerID != nil {
+            glyph = "✨"
+        } else {
+            return trimmedName
+        }
+
+        if trimmedName.hasSuffix(glyph) {
+            return trimmedName
+        }
+        return "\(trimmedName) \(glyph)"
     }
     
     private func setupPinnedEventsTimelineItemProviderIfNeeded() {

@@ -643,6 +643,10 @@ extension AccessibilityTests {
         try await performAccessibilityAudit(named: "SessionVerification_Previews")
     }
 
+    func testSetkaPlusScreen() async throws {
+        try await performAccessibilityAudit(named: "SetkaPlusScreen_Previews")
+    }
+
     func testSettingsScreen() async throws {
         try await performAccessibilityAudit(named: "SettingsScreen_Previews")
     }

@@ -120,6 +120,8 @@ class SettingsScreenViewModel: SettingsScreenViewModelType, SettingsScreenViewMo
             actionsSubject.send(.notifications)
         case .appTheme:
             actionsSubject.send(.appTheme)
+        case .setkaPlus:
+            actionsSubject.send(.setkaPlus)
         case .advancedSettings:
             actionsSubject.send(.advancedSettings)
         case .labs:

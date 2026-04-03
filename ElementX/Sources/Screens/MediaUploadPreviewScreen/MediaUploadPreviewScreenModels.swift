@@ -13,11 +13,13 @@ enum MediaUploadPreviewScreenViewModelAction {
 }
 
 struct MediaUploadPreviewScreenViewState: BindableState {
-    let mediaURLs: [URL]
+    let originalMediaURLs: [URL]
+    var mediaURLs: [URL]
     let title: String?
     let shouldShowCaptionWarning: Bool
     let isRoomEncrypted: Bool
     var shouldDisableInteraction = false
+    var isApplyingMediaEdits = false
     
     var bindings = MediaUploadPreviewScreenBindings()
 }
@@ -39,4 +41,6 @@ enum MediaUploadPreviewAlertType: Hashable {
 enum MediaUploadPreviewScreenViewAction {
     case send
     case cancel
+    case mediaEdited(index: Int, url: URL)
+    case resetMediaEdits(index: Int)
 }

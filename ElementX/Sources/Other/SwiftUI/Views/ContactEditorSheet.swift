@@ -16,21 +16,40 @@ struct ContactEditorSheet: View {
         var alias: String
         var email: String
         var phone: String
+        var tags: String
+        var isFavorite: Bool
+        var syncEmailToServer: Bool
+        var syncPhoneToServer: Bool
         
         var id: String {
             roomID
+        }
+        
+        var normalizedTags: [String] {
+            tags
+                .split(separator: ",")
+                .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
         }
         
         init(roomID: String,
              userID: String?,
              alias: String,
              email: String? = nil,
-             phone: String? = nil) {
+             phone: String? = nil,
+             tags: [String] = [],
+             isFavorite: Bool = false,
+             syncEmailToServer: Bool = true,
+             syncPhoneToServer: Bool = true) {
             self.roomID = roomID
             self.userID = userID
             self.alias = alias
             self.email = email ?? ""
             self.phone = phone ?? ""
+            self.tags = tags.joined(separator: ", ")
+            self.isFavorite = isFavorite
+            self.syncEmailToServer = syncEmailToServer
+            self.syncPhoneToServer = syncPhoneToServer
         }
         
         init(contact: ManagedContact) {
@@ -38,7 +57,11 @@ struct ContactEditorSheet: View {
                       userID: contact.userID,
                       alias: contact.alias,
                       email: contact.email,
-                      phone: contact.phone)
+                      phone: contact.phone,
+                      tags: contact.tags,
+                      isFavorite: contact.isFavorite,
+                      syncEmailToServer: contact.syncEmailToServer,
+                      syncPhoneToServer: contact.syncPhoneToServer)
         }
     }
     
@@ -73,6 +96,21 @@ struct ContactEditorSheet: View {
                     
                     TextField(UntranslatedL10n.screenContactsEditorPhone, text: $draft.phone)
                         .keyboardType(.phonePad)
+                    
+                    Toggle("Favorite", isOn: $draft.isFavorite)
+                    TextField("Tags (comma-separated)", text: $draft.tags)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                }
+                
+                Section {
+                    Toggle("Sync email to server", isOn: $draft.syncEmailToServer)
+                    Toggle("Sync phone to server", isOn: $draft.syncPhoneToServer)
+                    
+                    if !draft.syncEmailToServer || !draft.syncPhoneToServer {
+                        Text("Disabled fields are stored only on this device.")
+                            .compoundListSectionFooter()
+                    }
                 }
             }
             .compoundList()

@@ -50,6 +50,10 @@ enum HomeScreenViewAction {
     
     case acceptInvite(roomIdentifier: String)
     case declineInvite(roomIdentifier: String)
+    case setkaPlusStatusTapped
+    case setSetkaPlusStatusEmoji(String)
+    case setSetkaPlusStatusSticker(packID: String, stickerID: String)
+    case clearSetkaPlusStatusEmoji
 }
 
 enum HomeScreenRoomListMode: CustomStringConvertible {
@@ -107,6 +111,10 @@ struct HomeScreenViewState: BindableState {
     var selectedRoomID: String?
     
     var hideInviteAvatars = false
+    var setkaPlusSubscription: SetkaPlusSubscription?
+    var setkaPlusStatusEmoji: SetkaPlusStatusEmoji?
+    var setkaPlusEmojiPacks: [SetkaPlusStickerPack] = []
+    var setkaPlusUserStatuses: [String: SetkaPlusStatusEmoji] = [:]
     
     var reportRoomEnabled = false
         
@@ -147,6 +155,42 @@ struct HomeScreenViewState: BindableState {
     var shouldShowBanner: Bool {
         securityBannerMode.isShown || shouldShowNewSoundBanner
     }
+
+    var isSetkaPlusActive: Bool {
+        setkaPlusSubscription?.isConsideredActive == true
+    }
+
+    var currentStatusEmojiGlyph: String? {
+        SetkaPlusStatusDisplay.glyph(for: setkaPlusStatusEmoji)
+    }
+
+    var currentStatusStickerID: String? {
+        setkaPlusStatusEmoji?.stickerID
+    }
+}
+
+private extension SetkaPlusSubscription {
+    var isConsideredActive: Bool {
+        if isActive == true {
+            return true
+        }
+        
+        let normalizedStatus = status?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        
+        if let normalizedStatus,
+           ["active", "trial", "granted", "paid", "pending"].contains(normalizedStatus) {
+            return true
+        }
+        
+        if let expiresAt {
+            let nowInMilliseconds = Int(Date().timeIntervalSince1970 * 1000)
+            return expiresAt > nowInMilliseconds
+        }
+        
+        return false
+    }
 }
 
 struct HomeScreenViewStateBindings {
@@ -158,6 +202,7 @@ struct HomeScreenViewStateBindings {
     var leaveRoomAlertItem: LeaveRoomAlertItem?
     
     var spaceFiltersViewModel: ChatsSpaceFiltersScreenViewModel?
+    var setkaPlusStatusPickerPresented = false
 }
 
 struct HomeScreenRoom: Identifiable, Equatable {

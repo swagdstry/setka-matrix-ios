@@ -152,6 +152,8 @@ final class RoomScreenCoordinator: CoordinatorProtocol {
                     roomViewModel.timelineHasScrolled(direction: direction)
                 case .displayRoom(let roomID, let via):
                     actionsSubject.send(.presentRoom(roomID: roomID, via: via))
+                case .displaySetkaPlusComposerPicker:
+                    break
                 case .displayVideoNoteRecorder:
                     break
                 case .viewInRoomTimeline, .displayMediaDetails:

@@ -93,6 +93,12 @@ struct SettingsScreen: View {
                     })
                     .accessibilityIdentifier(A11yIdentifiers.settingsScreen.screenLock)
             
+            ListRow(label: .default(title: SetkaPlusL10n.title,
+                                    icon: \.settings),
+                    kind: .navigationLink {
+                        context.send(viewAction: .setkaPlus)
+                    })
+            
             switch context.viewState.securitySectionMode {
             case .secureBackup:
                 ListRow(label: .default(title: L10n.commonEncryption,

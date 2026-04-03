@@ -66,6 +66,7 @@ enum ComposerToolbarViewAction {
 }
 
 enum ComposerAttachmentType {
+    case setkaPlusSticker
     case camera
     case photoLibrary
     case file

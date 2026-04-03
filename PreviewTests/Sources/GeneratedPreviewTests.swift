@@ -1284,6 +1284,14 @@ extension PreviewTests {
     }
 
     @Test
+    func setkaPlusScreen() async throws {
+        AppSettings.resetAllSettings() // Ensure this test's previews start with fresh settings.
+        for (index, preview) in SetkaPlusScreen_Previews._allPreviews.enumerated() {
+            try await assertSnapshots(matching: preview, step: index)
+        }
+    }
+
+    @Test
     func settingsScreen() async throws {
         AppSettings.resetAllSettings() // Ensure this test's previews start with fresh settings.
         for (index, preview) in SettingsScreen_Previews._allPreviews.enumerated() {

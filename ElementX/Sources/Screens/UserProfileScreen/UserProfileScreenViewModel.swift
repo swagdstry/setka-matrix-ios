@@ -74,10 +74,19 @@ class UserProfileScreenViewModel: UserProfileScreenViewModelType, UserProfileScr
     private func loadProfile() async {
         async let profileResult = userSession.clientProxy.profile(for: state.userID)
         async let identityResult = userSession.clientProxy.userIdentity(for: state.userID, fallBackToServer: true)
+        async let statusEmojiResult = userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: state.userID)
+        let statusEmoji = await statusEmojiResult
         
         switch await profileResult {
         case .success(let userProfile):
-            state.userProfile = userProfile
+            var resolvedUserProfile = userProfile
+            if case let .success(statusEmoji) = statusEmoji,
+               let displayName = userProfile.displayName {
+                resolvedUserProfile = UserProfileProxy(userID: userProfile.userID,
+                                                       displayName: decoratedName(displayName, status: statusEmoji),
+                                                       avatarURL: userProfile.avatarURL)
+            }
+            state.userProfile = resolvedUserProfile
             state.permalink = (try? matrixToUserPermalink(userId: state.userID)).flatMap(URL.init(string:))
             
             switch userSession.clientProxy.directRoomForUserID(userProfile.userID) {
@@ -179,5 +188,25 @@ class UserProfileScreenViewModel: UserProfileScreenViewModelType, UserProfileScr
                                                               type: .toast,
                                                               title: L10n.errorUnknown,
                                                               iconName: "xmark"))
+    }
+
+    private func decoratedName(_ name: String, status: SetkaPlusStatusEmoji?) -> String {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let status else { return trimmedName }
+
+        let rawEmoji = (status.emoji ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let glyph: String
+        if !rawEmoji.isEmpty {
+            glyph = rawEmoji
+        } else if status.stickerID != nil {
+            glyph = "✨"
+        } else {
+            return trimmedName
+        }
+
+        if trimmedName.hasSuffix(glyph) {
+            return trimmedName
+        }
+        return "\(trimmedName) \(glyph)"
     }
 }

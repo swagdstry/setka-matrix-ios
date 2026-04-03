@@ -68,10 +68,11 @@ struct VoiceMessagePreviewComposer: View {
         let configuration: Waveform.Configuration = .init(style: .striped(.init(color: .black, width: waveformLineWidth, spacing: waveformLinePadding)),
                                                           verticalScalingFactor: 1.0)
         switch waveform {
-        case .url(let url):
-            WaveformView(audioURL: url,
-                         configuration: configuration)
-                .progressMask(progress: playerState.progress)
+        case .url:
+            EstimatedWaveformView(lineWidth: waveformLineWidth,
+                                  linePadding: waveformLinePadding,
+                                  waveform: playerState.waveform,
+                                  progress: playerState.progress)
         case .data(let array):
             WaveformLiveCanvas(samples: array,
                                configuration: configuration)

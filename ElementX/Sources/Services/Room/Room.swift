@@ -11,11 +11,17 @@ import MatrixRustSDK
 extension RoomProtocol {
     var joinCallIntent: Intent {
         get async {
-            switch await (hasActiveRoomCall(), isDirect()) {
-            case (true, true): .joinExistingDm
-            case (true, false): .joinExisting
-            case (false, true): .startCallDm
-            case (false, false): .startCall
+            let activeMembersCount = await (try? roomInfo().activeMembersCount) ?? UInt64.max
+            let isOneToOne = activeMembersCount <= 2
+            switch (hasActiveRoomCall(), isOneToOne) {
+            case (true, true):
+                return Intent.joinExistingDm
+            case (true, false):
+                return Intent.joinExisting
+            case (false, true):
+                return Intent.startCallDm
+            case (false, false):
+                return Intent.startCall
             }
         }
     }

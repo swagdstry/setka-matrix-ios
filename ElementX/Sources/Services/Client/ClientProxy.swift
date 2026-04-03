@@ -861,8 +861,8 @@ class ClientProxy: ClientProxyProtocol {
         do {
             let payload = ContactMetadataPayload(displayName: contact.alias,
                                                  userID: contact.userID,
-                                                 email: contact.email,
-                                                 phone: contact.phone)
+                                                 email: contact.syncEmailToServer ? contact.email : nil,
+                                                 phone: contact.syncPhoneToServer ? contact.phone : nil)
             let body = try JSONEncoder().encode(payload)
             _ = try await performContactsRequest(method: "PUT",
                                                  path: "/user/\(encodedUserID())/contact_list/rooms/\(encodedPathSegment(contact.roomID))",
@@ -946,6 +946,124 @@ class ClientProxy: ClientProxyProtocol {
             return .failure(error)
         } catch {
             MXLog.error("Failed deleting room wallpaper with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
+    func fetchSetkaPlusSubscription() async -> Result<SetkaPlusSubscription, ClientProxyError> {
+        do {
+            let data = try await performSetkaPlusRequest(method: "GET",
+                                                         path: "/user/\(encodedUserID())/setka_plus/subscription")
+            let subscription = try JSONDecoder().decode(SetkaPlusSubscription.self, from: data)
+            return .success(subscription)
+        } catch {
+            MXLog.error("Failed fetching Setka Plus subscription with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
+    func fetchSetkaPlusPlans() async -> Result<[SetkaPlusPlan], ClientProxyError> {
+        do {
+            let data = try await performSetkaPlusRequest(method: "GET",
+                                                         path: "/user/\(encodedUserID())/setka_plus/plans")
+            let response = try JSONDecoder().decode(SetkaPlusPlansResponse.self, from: data)
+            return .success(response.plans)
+        } catch {
+            MXLog.error("Failed fetching Setka Plus plans with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+
+    func fetchSetkaPlusStickerPacks() async -> Result<[SetkaPlusStickerPack], ClientProxyError> {
+        do {
+            let data = try await performSetkaPlusRequest(method: "GET",
+                                                         path: "/user/\(encodedUserID())/setka_plus/sticker_packs")
+            let response = try JSONDecoder().decode(SetkaPlusStickerPacksResponse.self, from: data)
+            return .success(response.packs)
+        } catch {
+            MXLog.error("Failed fetching Setka Plus sticker packs with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
+    func fetchSetkaPlusPayments() async -> Result<[SetkaPlusPayment], ClientProxyError> {
+        do {
+            let data = try await performSetkaPlusRequest(method: "GET",
+                                                         path: "/user/\(encodedUserID())/setka_plus/payments")
+            let response = try JSONDecoder().decode(SetkaPlusPaymentsResponse.self, from: data)
+            return .success(response.payments)
+        } catch {
+            MXLog.error("Failed fetching Setka Plus payments with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+
+    func fetchSetkaPlusStatusEmoji(userID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError> {
+        do {
+            let targetUserID = userID?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let path: String
+            if let targetUserID, !targetUserID.isEmpty, targetUserID != self.userID {
+                path = "/setka_plus/users/\(encodedPathSegment(targetUserID))/status_emoji"
+            } else {
+                path = "/user/\(encodedUserID())/setka_plus/status_emoji"
+            }
+
+            let data = try await performSetkaPlusRequest(method: "GET", path: path)
+            let statusEmoji = try JSONDecoder().decode(SetkaPlusStatusEmoji.self, from: data)
+            return .success(statusEmoji)
+        } catch {
+            MXLog.error("Failed fetching Setka Plus status emoji with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+
+    func updateSetkaPlusStatusEmoji(emoji: String?, packID: String?, stickerID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError> {
+        do {
+            let payload = SetkaPlusStatusEmojiPayload(emoji: emoji,
+                                                      packID: packID,
+                                                      stickerID: stickerID)
+            let body = try JSONEncoder().encode(payload)
+            let data = try await performSetkaPlusRequest(method: "PUT",
+                                                         path: "/user/\(encodedUserID())/setka_plus/status_emoji",
+                                                         body: body)
+            let statusEmoji = try JSONDecoder().decode(SetkaPlusStatusEmoji.self, from: data)
+            return .success(statusEmoji)
+        } catch {
+            MXLog.error("Failed updating Setka Plus status emoji with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
+    func createSetkaPlusYooMoneyPayment(amount: Double?, description: String?, planID: String?) async -> Result<SetkaPlusPaymentRequest, ClientProxyError> {
+        do {
+            let payload = SetkaPlusCreateYooMoneyPaymentPayload(amount: amount,
+                                                                description: description,
+                                                                planID: planID)
+            let body = try JSONEncoder().encode(payload)
+            let data = try await performSetkaPlusRequest(method: "POST",
+                                                         path: "/user/\(encodedUserID())/setka_plus/payments/yoomoney/create",
+                                                         body: body)
+            let response = try JSONDecoder().decode(SetkaPlusPaymentRequest.self, from: data)
+            return .success(response)
+        } catch {
+            MXLog.error("Failed creating Setka Plus YooMoney payment with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
+    func processSetkaPlusYooMoneyPayment(requestID: String, moneySource: String, planID: String?) async -> Result<SetkaPlusPaymentProcessResult, ClientProxyError> {
+        do {
+            let payload = SetkaPlusProcessYooMoneyPaymentPayload(requestID: requestID,
+                                                                 moneySource: moneySource,
+                                                                 planID: planID)
+            let body = try JSONEncoder().encode(payload)
+            let data = try await performSetkaPlusRequest(method: "POST",
+                                                         path: "/user/\(encodedUserID())/setka_plus/payments/yoomoney/process",
+                                                         body: body)
+            let response = try JSONDecoder().decode(SetkaPlusPaymentProcessResult.self, from: data)
+            return .success(response)
+        } catch {
+            MXLog.error("Failed processing Setka Plus YooMoney payment with error: \(error)")
             return .failure(.sdkError(error))
         }
     }
@@ -1406,6 +1524,17 @@ class ClientProxy: ClientProxyProtocol {
         return data
     }
     
+    private func performSetkaPlusRequest(method: String,
+                                         path: String,
+                                         body: Data? = nil) async throws -> Data {
+        let (data, response) = try await performUserMetadataRequest(method: method, path: path, body: body)
+        guard 200..<300 ~= response.statusCode else {
+            throw ClientProxyError.invalidResponse
+        }
+        
+        return data
+    }
+    
     private func performUserMetadataRequest(method: String,
                                             path: String,
                                             body: Data? = nil) async throws -> (Data, HTTPURLResponse) {
@@ -1436,6 +1565,54 @@ class ClientProxy: ClientProxyProtocol {
 
 private struct ContactsResponse: Decodable {
     let rooms: [String: ContactMetadataPayload]
+}
+
+private struct SetkaPlusPlansResponse: Decodable {
+    let plans: [SetkaPlusPlan]
+}
+
+private struct SetkaPlusPaymentsResponse: Decodable {
+    let payments: [SetkaPlusPayment]
+}
+
+private struct SetkaPlusStickerPacksResponse: Decodable {
+    let packs: [SetkaPlusStickerPack]
+}
+
+private struct SetkaPlusCreateYooMoneyPaymentPayload: Codable {
+    let amount: Double?
+    let description: String?
+    let planID: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case amount
+        case description
+        case planID = "plan_id"
+    }
+}
+
+private struct SetkaPlusProcessYooMoneyPaymentPayload: Codable {
+    let requestID: String
+    let moneySource: String
+    let planID: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case requestID = "request_id"
+        case moneySource = "money_source"
+        case planID = "plan_id"
+    }
+}
+
+private struct SetkaPlusStatusEmojiPayload: Codable {
+    let emoji: String?
+    let packID: String?
+    let stickerID: String?
+
+    enum CodingKeys: String, CodingKey {
+        case emoji
+        case packID = "pack_id"
+        case stickerID = "sticker_id"
+    }
 }
 
 private struct ContactMetadataPayload: Codable {

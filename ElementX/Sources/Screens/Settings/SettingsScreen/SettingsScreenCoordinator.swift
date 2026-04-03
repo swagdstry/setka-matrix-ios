@@ -29,6 +29,7 @@ enum SettingsScreenCoordinatorAction {
     case manageAccount(url: URL)
     case notifications
     case appTheme
+    case setkaPlus
     case advancedSettings
     case labs
     case developerOptions
@@ -81,6 +82,8 @@ final class SettingsScreenCoordinator: CoordinatorProtocol {
                     actionsSubject.send(.notifications)
                 case .appTheme:
                     actionsSubject.send(.appTheme)
+                case .setkaPlus:
+                    actionsSubject.send(.setkaPlus)
                 case .advancedSettings:
                     actionsSubject.send(.advancedSettings)
                 case .labs:

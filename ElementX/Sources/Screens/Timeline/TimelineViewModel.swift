@@ -8,9 +8,11 @@
 
 import Algorithms
 import Combine
+import ImageIO
 import MatrixRustSDK
 import OrderedCollections
 import SwiftUI
+import UniformTypeIdentifiers
 
 typealias TimelineViewModelType = StateStoreViewModel<TimelineViewState, TimelineViewAction>
 
@@ -46,6 +48,7 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
     
     private var paginateBackwardsTask: Task<Void, Never>?
     private var paginateForwardsTask: Task<Void, Never>?
+    private var cachedSetkaPlusStickerPacks: [SetkaPlusStickerPack] = []
 
     init(roomProxy: JoinedRoomProxyProtocol,
          focussedEventID: String? = nil,
@@ -216,6 +219,10 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             actionsSubject.send(.displayRoom(roomID: predecessorID, via: Array(serverNames)))
         case .displayMediaUploadPreviewScreen(let mediaURLs):
             actionsSubject.send(.displayMediaUploadPreviewScreen(mediaURLs: mediaURLs))
+        case .sendSetkaPlusEmojiMessage(let emoji):
+            Task { await sendSetkaPlusEmojiMessage(emoji) }
+        case .sendSetkaPlusSticker(let packID, let stickerID):
+            Task { await sendSetkaPlusSticker(packID: packID, stickerID: stickerID) }
         }
     }
 
@@ -346,6 +353,8 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
     
     private func attach(_ attachment: ComposerAttachmentType) {
         switch attachment {
+        case .setkaPlusSticker:
+            Task { await presentSetkaPlusComposerPicker() }
         case .camera:
             actionsSubject.send(.displayCameraPicker)
         case .photoLibrary:
@@ -357,6 +366,99 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
         case .poll:
             actionsSubject.send(.displayPollForm(mode: .new))
         }
+    }
+
+    private func presentSetkaPlusComposerPicker() async {
+        switch await userSession.clientProxy.fetchSetkaPlusStickerPacks() {
+        case .success(let packs):
+            cachedSetkaPlusStickerPacks = packs
+            actionsSubject.send(.displaySetkaPlusComposerPicker(packs: packs))
+        case .failure(let error):
+            MXLog.error("Failed fetching Setka Plus sticker packs for composer with error: \(error)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+        }
+    }
+
+    private func sendSetkaPlusEmojiMessage(_ emoji: String) async {
+        let trimmedEmoji = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedEmoji.isEmpty else {
+            return
+        }
+
+        _ = await timelineController.sendMessage(trimmedEmoji,
+                                                 html: nil,
+                                                 inReplyToEventID: nil,
+                                                 intentionalMentions: .empty)
+    }
+
+    private func sendSetkaPlusSticker(packID: String, stickerID: String) async {
+        guard let sticker = sticker(forPackID: packID, stickerID: stickerID) else {
+            MXLog.error("Failed sending Setka Plus sticker: sticker not found for packID=\(packID), stickerID=\(stickerID)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            return
+        }
+
+        guard let mxcURL = URL(string: sticker.mxcURL),
+              let source = try? MediaSourceProxy(url: mxcURL, mimeType: sticker.mimeType) else {
+            MXLog.error("Failed sending Setka Plus sticker: invalid MXC URL \(sticker.mxcURL)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            return
+        }
+
+        let filename = sticker.name.nilIfEmpty ?? sticker.id
+        switch await userSession.mediaProvider.loadFileFromSource(source, filename: filename) {
+        case .success(let fileHandle):
+            guard let localURL = fileHandle.url else {
+                userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+                return
+            }
+
+            guard let imageInfo = imageInfoForSticker(at: localURL, mimeType: sticker.mimeType) else {
+                userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+                return
+            }
+
+            let result = await timelineController.sendImage(url: localURL,
+                                                            thumbnailURL: localURL,
+                                                            imageInfo: imageInfo,
+                                                            caption: sticker.name) { _ in }
+            if case .failure(let error) = result {
+                MXLog.error("Failed sending Setka Plus sticker with error: \(error)")
+                userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            }
+        case .failure(let error):
+            MXLog.error("Failed loading Setka Plus sticker media with error: \(error)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+        }
+    }
+
+    private func sticker(forPackID packID: String, stickerID: String) -> SetkaPlusStickerItem? {
+        guard let pack = cachedSetkaPlusStickerPacks.first(where: { $0.id == packID }) else {
+            return nil
+        }
+
+        return pack.stickers.first(where: { $0.id == stickerID })
+    }
+
+    private func imageInfoForSticker(at url: URL, mimeType: String?) -> ImageInfo? {
+        guard let source = CGImageSourceCreateWithURL(url as NSURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? CGFloat,
+              let height = properties[kCGImagePropertyPixelHeight] as? CGFloat else {
+            return nil
+        }
+
+        let fileSize = (try? FileManager.default.sizeForItem(at: url)).map(UInt64.init) ?? 0
+        let resolvedMimeType = mimeType ?? UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/webp"
+
+        return ImageInfo(height: UInt64(height),
+                         width: UInt64(width),
+                         mimetype: resolvedMimeType,
+                         size: fileSize,
+                         thumbnailInfo: nil,
+                         thumbnailSource: nil,
+                         blurhash: nil,
+                         isAnimated: nil)
     }
     
     private func handlePollAction(_ action: TimelineViewPollAction) {
