@@ -210,7 +210,9 @@ struct VideoNoteRecorderViewNew: View {
     private func cleanup() {
         timer?.invalidate()
         timer = nil
-        session.stopRunning()
+        DispatchQueue.global(qos: .userInitiated).async {
+            session.stopRunning()
+        }
     }
     
     private func formatTime(_ time: TimeInterval) -> String {

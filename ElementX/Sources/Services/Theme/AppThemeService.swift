@@ -62,6 +62,14 @@ final class AppThemeService: ObservableObject {
         currentTheme.enableBlurEffects
     }
     
+    var seasonalEffectsEnabled: Bool {
+        currentTheme.enableSeasonalEffects
+    }
+    
+    var shouldReduceSeasonalMotion: Bool {
+        currentTheme.seasonalEffectsReduceMotion
+    }
+    
     var uiScale: CGFloat {
         CGFloat(max(0.9, min(1.2, currentTheme.uiScale)))
     }

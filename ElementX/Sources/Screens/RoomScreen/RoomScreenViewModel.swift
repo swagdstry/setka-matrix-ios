@@ -21,6 +21,7 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
     private let analyticsService: AnalyticsService
     private let userIndicatorController: UserIndicatorControllerProtocol
     private var directPeerStatusEmoji: SetkaPlusStatusEmoji?
+    private var directPeerLastSeenText: String?
     
     private var initialSelectedPinnedEventID: String?
     private let pinnedEventStringBuilder: RoomEventStringBuilder
@@ -341,6 +342,7 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
         let baseTitle = ContactsService.shared.preferredName(forRoomID: roomProxy.id,
                                                              fallback: roomInfo.displayName ?? roomProxy.id)
         state.roomTitle = decoratedName(baseTitle, status: directPeerStatusEmoji)
+        state.roomSubtitle = roomProxy.isDirectOneToOneRoom ? directPeerLastSeenText : nil
         state.roomAvatar = roomInfo.avatar
         state.hasOngoingCall = roomInfo.hasRoomCall
         state.shouldUseVideoCallButton = roomInfo.activeMembersCount > 2
@@ -381,10 +383,14 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
             Task {
                 if case let .success(statusEmoji) = await clientProxy.fetchSetkaPlusStatusEmoji(userID: userID) {
                     directPeerStatusEmoji = statusEmoji
+                    if case let .success(details) = await clientProxy.fetchSetkaPlusUserProfileDetails(userID: userID) {
+                        directPeerLastSeenText = details.lastSeenText?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+                    }
                     let fallbackName = roomInfo.displayName ?? roomProxy.id
                     let title = ContactsService.shared.preferredName(forRoomID: roomProxy.id,
                                                                      fallback: fallbackName)
                     state.roomTitle = decoratedName(title, status: statusEmoji)
+                    state.roomSubtitle = directPeerLastSeenText
                 }
             }
         }

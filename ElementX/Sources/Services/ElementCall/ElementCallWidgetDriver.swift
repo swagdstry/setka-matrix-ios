@@ -48,11 +48,11 @@ struct ElementCallWidgetMessage: Codable {
     }
 }
 
-final class ElementCallWidgetDriver: WidgetCapabilitiesProvider, ElementCallWidgetDriverProtocol {
+final class ElementCallWidgetDriver: WidgetCapabilitiesProvider, ElementCallWidgetDriverProtocol, @unchecked Sendable {
     private let room: RoomProtocol
     private let deviceID: String
     
-    private var widgetDriver: WidgetDriverAndHandle?
+    private nonisolated(unsafe) var widgetDriver: WidgetDriverAndHandle?
     
     let widgetID = UUID().uuidString
     let messagePublisher = PassthroughSubject<String, Never>()

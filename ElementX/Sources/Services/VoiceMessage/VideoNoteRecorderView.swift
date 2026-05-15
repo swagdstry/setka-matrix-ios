@@ -25,67 +25,70 @@ struct VideoNoteRecorderView: View {
     @State private var recordingTime: TimeInterval = 0
     @State private var timer: Timer?
     @State private var cameraPosition: AVCaptureDevice.Position = .front
+    @State private var opacity: CGFloat = 0 // Анимация появления
     
     private let maxRecordingDuration: TimeInterval = 60.0
     private let lockThreshold = -70.0
     
     var body: some View {
-        VStack(spacing: 28) {
-            Text(formattedTime)
-                .font(.compound.bodySMSemibold)
-                .foregroundStyle(.white)
-                .monospacedDigit()
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(Color.black.opacity(0.45), in: Capsule())
-            
+        GeometryReader { geometry in
             ZStack {
-                Circle()
-                    .fill(Color.black.opacity(0.75))
-                    .frame(width: 260, height: 260)
-                
-                CameraPreview(session: session)
-                    .clipShape(Circle())
-                    .frame(width: 244, height: 244)
-                
-                Circle()
-                    .trim(from: 0, to: min(recordingTime / maxRecordingDuration, 1))
-                    .stroke(Color.red, style: .init(lineWidth: 6, lineCap: .round))
-                    .frame(width: 276, height: 276)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.linear(duration: 0.1), value: recordingTime)
-            }
-            
-            if !isLocked {
-                CompoundIcon(\.lockSolid, size: .small, relativeTo: .compound.bodyMD)
-                    .foregroundStyle(.compound.iconPrimary)
-                    .padding(12)
-                    .background(.ultraThinMaterial, in: Capsule())
-            }
-            
-            HStack(spacing: 24) {
-                Button(action: cancelRecording) {
-                    CompoundIcon(\.delete, size: .medium, relativeTo: .compound.headingLG)
-                        .foregroundStyle(.compound.iconPrimary)
-                        .padding(14)
-                        .background(Color.compound.bgSubtleSecondary, in: Circle())
+                VStack(spacing: 28) {
+                    Text(formattedTime)
+                        .font(.compound.bodySMSemibold)
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color.black.opacity(0.45), in: Capsule())
+                    
+                    Spacer()
                 }
+                .padding(.top, 24)
                 
-                recordControl
+                videoPreview
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 
-                Button(action: switchCamera) {
-                    Image(systemName: "camera.rotate")
-                        .font(.title2)
-                        .foregroundStyle(.compound.iconPrimary)
-                        .padding(14)
-                        .background(Color.compound.bgSubtleSecondary, in: Circle())
+                VStack(spacing: 14) {
+                    if !isLocked {
+                        CompoundIcon(\.lockSolid, size: .small, relativeTo: .compound.bodyMD)
+                            .foregroundStyle(.compound.iconPrimary)
+                            .padding(12)
+                            .background(.ultraThinMaterial, in: Capsule())
+                    }
+                    
+                    HStack(spacing: 24) {
+                        Button(action: cancelRecording) {
+                            CompoundIcon(\.delete, size: .medium, relativeTo: .compound.headingLG)
+                                .foregroundStyle(.compound.iconPrimary)
+                                .padding(14)
+                                .background(Color.compound.bgSubtleSecondary, in: Circle())
+                        }
+                        
+                        recordControl
+                        
+                        Button(action: switchCamera) {
+                            Image(systemName: "camera.rotate")
+                                .font(.title2)
+                                .foregroundStyle(.compound.iconPrimary)
+                                .padding(14)
+                                .background(Color.compound.bgSubtleSecondary, in: Circle())
+                        }
+                    }
                 }
+                .padding(.bottom, max(geometry.safeAreaInsets.bottom + 24, 32))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
+        .opacity(opacity) // Анимация появления
         .onAppear {
             setup()
             DispatchQueue.main.async {
                 handleCommand(command)
+            }
+            // Добавляем анимацию появления
+            withAnimation(.easeOut(duration: 0.3)) {
+                opacity = 1
             }
         }
         .onChange(of: command) { _, newValue in
@@ -99,32 +102,78 @@ struct VideoNoteRecorderView: View {
             startRecordingIfNeeded()
             return
         }
-        
+
         session.beginConfiguration()
-        session.sessionPreset = .high
-        
+        session.sessionPreset = .hd1280x720
+
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera,
                                                    for: .video,
                                                    position: cameraPosition),
             let input = try? AVCaptureDeviceInput(device: device) else { return }
-        
+
+        // Configure camera for 1:1 aspect ratio
+        do {
+            try device.lockForConfiguration()
+            device.videoZoomFactor = 1.0
+
+            if device.isFocusModeSupported(.continuousAutoFocus) {
+                device.focusMode = .continuousAutoFocus
+            }
+
+            device.unlockForConfiguration()
+        } catch {
+            MXLog.error("Failed to configure camera: \(error)")
+        }
+
         if session.canAddInput(input) {
             session.addInput(input)
         }
-        
+
         if let audioDevice = AVCaptureDevice.default(for: .audio),
            let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
            session.canAddInput(audioInput) {
             session.addInput(audioInput)
         }
-        
+
         if session.canAddOutput(output) {
             session.addOutput(output)
+
+            // Configure output for 1:1 aspect ratio
+            if let connection = output.connection(with: .video) {
+                if connection.isVideoOrientationSupported {
+                    connection.videoOrientation = .portrait
+                }
+                if connection.isVideoMirroringSupported {
+                    connection.isVideoMirrored = cameraPosition == .front
+                }
+            }
         }
-        
+
         session.commitConfiguration()
-        session.startRunning()
+        DispatchQueue.global(qos: .userInitiated).async {
+            session.startRunning()
+        }
         startRecordingIfNeeded()
+    }
+
+    private var videoPreview: some View {
+        ZStack {
+            Circle()
+                .fill(Color.black.opacity(0.75))
+                .frame(width: 280, height: 280)
+
+            CameraPreview(session: session)
+                .clipShape(Circle())
+                .frame(width: 260, height: 260)
+                .aspectRatio(1, contentMode: .fill)
+
+            Circle()
+                .trim(from: 0, to: min(recordingTime / maxRecordingDuration, 1))
+                .stroke(Color.red, style: .init(lineWidth: 6, lineCap: .round))
+                .frame(width: 280, height: 280)
+                .rotationEffect(.degrees(-90))
+                .animation(.linear(duration: 0.1), value: recordingTime)
+        }
     }
     
     private func startRecordingIfNeeded() {
@@ -142,7 +191,7 @@ struct VideoNoteRecorderView: View {
         guard !output.isRecording else {
             return
         }
-        
+
         isRecording = true
         recordingTime = 0
         timer?.invalidate()
@@ -152,9 +201,22 @@ struct VideoNoteRecorderView: View {
                 stopRecording()
             }
         }
-        
+
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(UUID().uuidString).mov")
+
+        // Configure output for 1:1 aspect ratio
+        if let connection = output.connection(with: .video) {
+            if connection.isVideoOrientationSupported {
+                connection.videoOrientation = .portrait
+            }
+            if connection.isVideoMirroringSupported {
+                connection.isVideoMirrored = cameraPosition == .front
+            }
+
+            // Set max recorded duration to 60 seconds
+            output.maxRecordedDuration = CMTime(seconds: maxRecordingDuration, preferredTimescale: 1)
+        }
         
         let delegate = RecorderDelegate { recordedURL in
             DispatchQueue.main.async {
@@ -186,15 +248,17 @@ struct VideoNoteRecorderView: View {
     private func cleanup() {
         timer?.invalidate()
         timer = nil
-        
+
         if output.isRecording {
             output.stopRecording()
         }
-        
+
         isRecording = false
-        
+
         if session.isRunning {
-            session.stopRunning()
+            DispatchQueue.global(qos: .userInitiated).async {
+                session.stopRunning()
+            }
         }
     }
     

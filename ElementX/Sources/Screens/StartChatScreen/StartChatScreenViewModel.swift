@@ -20,6 +20,7 @@ class StartChatScreenViewModel: StartChatScreenViewModelType, StartChatScreenVie
     private let appSettings: AppSettings
     
     private var suggestedUsers = [UserProfileProxy]()
+    private var contactsUsers = [UserProfileProxy]()
     
     private let actionsSubject: PassthroughSubject<StartChatScreenViewModelAction, Never> = .init()
     var actions: AnyPublisher<StartChatScreenViewModelAction, Never> {
@@ -39,12 +40,13 @@ class StartChatScreenViewModel: StartChatScreenViewModelType, StartChatScreenVie
         
         super.init(initialViewState: StartChatScreenViewState(userID: userSession.clientProxy.userID), mediaProvider: userSession.mediaProvider)
         setupBindings()
+        setupContacts()
         
         Task {
-            suggestedUsers = await userSession.clientProxy.recentConversationCounterparts()
-            
-            if state.usersSection.type == .suggestions {
-                state.usersSection = .init(type: .suggestions, users: suggestedUsers)
+            let counterparts = await userSession.clientProxy.recentConversationCounterparts()
+            suggestedUsers = await hydrateProfiles(counterparts)
+            await MainActor.run {
+                updateSuggestionsSection()
             }
         }
     }
@@ -126,6 +128,21 @@ class StartChatScreenViewModel: StartChatScreenViewModelType, StartChatScreenVie
             }
             .store(in: &cancellables)
     }
+
+    private func setupContacts() {
+        ContactsService.shared.configure(clientProxy: userSession.clientProxy)
+        ContactsService.shared.$contacts
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] contacts in
+                guard let self else { return }
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    contactsUsers = await profiles(from: contacts)
+                    updateSuggestionsSection()
+                }
+            }
+            .store(in: &cancellables)
+    }
     
     private func resolveRoomAddress(_ roomAddress: String) {
         guard !roomAddress.isEmpty,
@@ -180,6 +197,68 @@ class StartChatScreenViewModel: StartChatScreenViewModelType, StartChatScreenVie
             case .failure:
                 break
             }
+        }
+    }
+
+    private func profiles(from contacts: [ManagedContact]) async -> [UserProfileProxy] {
+        var result: [UserProfileProxy] = []
+        result.reserveCapacity(contacts.count)
+
+        for contact in contacts {
+            let fallbackID = contact.userID ?? contact.roomID
+            let fallbackName = contact.alias.nilIfEmpty
+            let avatarURL = userSession.clientProxy.roomSummaryForIdentifier(contact.roomID)?.avatarURL
+            result.append(.init(userID: fallbackID,
+                                displayName: fallbackName,
+                                avatarURL: avatarURL))
+        }
+
+        return await hydrateProfiles(result)
+    }
+
+    private func hydrateProfiles(_ users: [UserProfileProxy]) async -> [UserProfileProxy] {
+        var hydrated: [UserProfileProxy] = []
+        hydrated.reserveCapacity(users.count)
+
+        for user in users {
+            if user.avatarURL != nil, user.displayName != nil {
+                hydrated.append(user)
+                continue
+            }
+
+            var resolved = user
+            if let roomID = try? userSession.clientProxy.directRoomForUserID(user.userID).get(),
+               let roomID,
+               let summary = userSession.clientProxy.roomSummaryForIdentifier(roomID) {
+                resolved = .init(userID: user.userID,
+                                 displayName: user.displayName ?? summary.name,
+                                 avatarURL: user.avatarURL ?? summary.avatarURL)
+            }
+
+            if resolved.avatarURL == nil || resolved.displayName == nil {
+                if case let .success(profile) = await userSession.clientProxy.profile(for: user.userID) {
+                    resolved = .init(userID: resolved.userID,
+                                     displayName: resolved.displayName ?? profile.displayName,
+                                     avatarURL: resolved.avatarURL ?? profile.avatarURL)
+                }
+            }
+
+            hydrated.append(resolved)
+        }
+
+        return uniqueUsers(hydrated)
+    }
+
+    @MainActor
+    private func updateSuggestionsSection() {
+        guard !state.isSearching else { return }
+        state.usersSection = .init(type: .suggestions, users: uniqueUsers(contactsUsers + suggestedUsers))
+    }
+
+    private func uniqueUsers(_ users: [UserProfileProxy]) -> [UserProfileProxy] {
+        var seen = Set<String>()
+        return users.filter { user in
+            seen.insert(user.userID).inserted
         }
     }
         

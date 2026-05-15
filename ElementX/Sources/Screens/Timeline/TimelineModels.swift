@@ -87,6 +87,7 @@ enum TimelineViewAction {
     case displayMediaUploadPreviewScreen(mediaURLs: [URL])
     case sendSetkaPlusEmojiMessage(String)
     case sendSetkaPlusSticker(packID: String, stickerID: String)
+    case addSetkaPlusStickerPack(packID: String)
 }
 
 enum TimelineComposerAction {
@@ -203,6 +204,7 @@ enum TimelineAlertInfoType: Hashable {
     case audioRecodingPermissionError
     case pollEndConfirmation(String)
     case sendingFailed
+    case videoNoteUploadFailed
     case encryptionAuthenticity(String)
     case encryptionForwarder(String)
     case inviteAgain

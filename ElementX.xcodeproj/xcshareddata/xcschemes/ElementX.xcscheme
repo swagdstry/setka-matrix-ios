@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1620"
+   LastUpgradeVersion = "2620"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES"
-      runPostActionsOnFailure = "NO">
+      buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -15,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C0FAEB81CFD9776CD78CE489"
+               BlueprintIdentifier = "7715090D3A20F929B5190C63"
                BuildableName = "ElementX.app"
                BlueprintName = "ElementX"
                ReferencedContainer = "container:ElementX.xcodeproj">
@@ -30,34 +29,30 @@
       shouldUseLaunchSchemeArgsEnv = "YES"
       codeCoverageEnabled = "YES"
       onlyGenerateCoverageForSpecifiedTargets = "YES">
-      <TestPlans>
-         <TestPlanReference
-            default = "YES"
-            reference = "container:UnitTests/SupportingFiles/UnitTests.xctestplan">
-         </TestPlanReference>
-      </TestPlans>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C0FAEB81CFD9776CD78CE489"
+            BlueprintIdentifier = "7715090D3A20F929B5190C63"
             BuildableName = "ElementX.app"
             BlueprintName = "ElementX"
             ReferencedContainer = "container:ElementX.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <Testables>
-      </Testables>
-      <CommandLineArguments>
-      </CommandLineArguments>
       <CodeCoverageTargets>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C0FAEB81CFD9776CD78CE489"
+            BlueprintIdentifier = "7715090D3A20F929B5190C63"
             BuildableName = "ElementX.app"
             BlueprintName = "ElementX"
             ReferencedContainer = "container:ElementX.xcodeproj">
          </BuildableReference>
       </CodeCoverageTargets>
+      <TestPlans>
+         <TestPlanReference
+            reference = "container:UnitTests/SupportingFiles/UnitTests.xctestplan"
+            default = "YES">
+         </TestPlanReference>
+      </TestPlans>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -73,14 +68,12 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C0FAEB81CFD9776CD78CE489"
+            BlueprintIdentifier = "7715090D3A20F929B5190C63"
             BuildableName = "ElementX.app"
             BlueprintName = "ElementX"
             ReferencedContainer = "container:ElementX.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-      </CommandLineArguments>
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "HTTPS_PROXY"
@@ -109,14 +102,12 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C0FAEB81CFD9776CD78CE489"
+            BlueprintIdentifier = "7715090D3A20F929B5190C63"
             BuildableName = "ElementX.app"
             BlueprintName = "ElementX"
             ReferencedContainer = "container:ElementX.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

@@ -271,6 +271,74 @@ struct SetkaPlusStatusEmoji: Codable, Equatable {
         case packID = "pack_id"
         case stickerID = "sticker_id"
         case updatedAt = "updated_at"
+        case statusEmoji = "status_emoji"
+        case setkaPlusStatusEmoji = "setka_plus_status_emoji"
+        case value
+        case data
+        case status
+    }
+    
+    init(emoji: String?, packID: String?, stickerID: String?, updatedAt: Int?) {
+        self.emoji = emoji
+        self.packID = packID
+        self.stickerID = stickerID
+        self.updatedAt = updatedAt
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let status = Self.decode(from: container) {
+            self = status
+            return
+        }
+        
+        for nestedKey in [CodingKeys.statusEmoji, .setkaPlusStatusEmoji, .value, .data, .status] {
+            if let nestedContainer = try? container.nestedContainer(keyedBy: CodingKeys.self, forKey: nestedKey),
+               let status = Self.decode(from: nestedContainer) {
+                self = status
+                return
+            }
+        }
+        
+        self = .init(emoji: nil, packID: nil, stickerID: nil, updatedAt: nil)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(emoji, forKey: .emoji)
+        try container.encodeIfPresent(packID, forKey: .packID)
+        try container.encodeIfPresent(stickerID, forKey: .stickerID)
+        try container.encodeIfPresent(updatedAt, forKey: .updatedAt)
+    }
+    
+    private static func decode(from container: KeyedDecodingContainer<CodingKeys>) -> SetkaPlusStatusEmoji? {
+        let emoji = try? container.decodeIfPresent(String.self, forKey: .emoji)
+        let packID = try? container.decodeIfPresent(String.self, forKey: .packID)
+        let stickerID = try? container.decodeIfPresent(String.self, forKey: .stickerID)
+        let updatedAt = try? container.decodeIfPresent(Int.self, forKey: .updatedAt)
+        
+        if emoji != nil || packID != nil || stickerID != nil || updatedAt != nil {
+            return .init(emoji: emoji.flatMap { $0 },
+                         packID: packID.flatMap { $0 },
+                         stickerID: stickerID.flatMap { $0 },
+                         updatedAt: updatedAt.flatMap { $0 })
+        }
+        
+        return nil
+    }
+}
+
+struct SetkaPlusUserProfileDetails: Codable, Equatable {
+    let bio: String?
+    let backgroundURL: String?
+    let lastSeenText: String?
+    let shareURL: String?
+
+    enum CodingKeys: String, CodingKey {
+        case bio
+        case backgroundURL = "background_url"
+        case lastSeenText = "last_seen_text"
+        case shareURL = "share_url"
     }
 }
 
@@ -471,8 +539,10 @@ protocol ClientProxyProtocol: AnyObject {
     func fetchSetkaPlusSubscription() async -> Result<SetkaPlusSubscription, ClientProxyError>
     func fetchSetkaPlusPlans() async -> Result<[SetkaPlusPlan], ClientProxyError>
     func fetchSetkaPlusStickerPacks() async -> Result<[SetkaPlusStickerPack], ClientProxyError>
+    func addSetkaPlusStickerPack(packID: String) async -> Result<Void, ClientProxyError>
     func fetchSetkaPlusPayments() async -> Result<[SetkaPlusPayment], ClientProxyError>
     func fetchSetkaPlusStatusEmoji(userID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError>
+    func fetchSetkaPlusUserProfileDetails(userID: String) async -> Result<SetkaPlusUserProfileDetails, ClientProxyError>
     func updateSetkaPlusStatusEmoji(emoji: String?, packID: String?, stickerID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError>
     func createSetkaPlusYooMoneyPayment(amount: Double?, description: String?, planID: String?) async -> Result<SetkaPlusPaymentRequest, ClientProxyError>
     func processSetkaPlusYooMoneyPayment(requestID: String, moneySource: String, planID: String?) async -> Result<SetkaPlusPaymentProcessResult, ClientProxyError>
@@ -519,4 +589,14 @@ protocol ClientProxyProtocol: AnyObject {
     
     func setTimelineMediaVisibility(_ value: TimelineMediaVisibility) async -> Result<Void, ClientProxyError>
     func setHideInviteAvatars(_ value: Bool) async -> Result<Void, ClientProxyError>
+}
+
+extension ClientProxyProtocol {
+    func fetchSetkaPlusUserProfileDetails(userID: String) async -> Result<SetkaPlusUserProfileDetails, ClientProxyError> {
+        .success(.init(bio: nil, backgroundURL: nil, lastSeenText: nil, shareURL: nil))
+    }
+
+    func addSetkaPlusStickerPack(packID: String) async -> Result<Void, ClientProxyError> {
+        .failure(.invalidResponse)
+    }
 }

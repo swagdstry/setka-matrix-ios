@@ -5,8 +5,8 @@
 // Please see LICENSE files in the repository root for full details.
 //
 
-import AVKit
 import SwiftUI
+import AVKit
 
 struct VideoNoteRoomTimelineView: View {
     let text: String
@@ -14,28 +14,58 @@ struct VideoNoteRoomTimelineView: View {
     @State private var player = AVPlayer()
     @State private var isPlaying = true
     @State private var progress: Double = 0
+    @State private var opacity: CGFloat = 0
     
     var body: some View {
         if let url = extractURL() {
             ZStack {
-                VideoPlayer(player: player)
+                // Кружок как в Telegram
+                Circle()
+                    .fill(Color.black.opacity(0.8))
+                    .frame(width: 200, height: 200)
+                    .overlay {
+                        // Видео внутри кружка
+                        VideoPlayer(player: player)
+                            .onAppear {
+                                player = AVPlayer(url: url)
+                                player.isMuted = true
+                                player.play()
+                            }
+                            .onTapGesture {
+                                toggle()
+                            }
+                            .clipShape(Circle())
+                            .frame(width: 180, height: 180)
+                        
+                        // Кнопка play/pause
+                        if !isPlaying {
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 30))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .overlay {
+                        // Флаг в правом нижнем углу как в Telegram
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                Image(systemName: "flag.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.white)
+                                    .padding(4)
+                            }
+                        }
+                        .padding(8)
+                    }
+                    .opacity(opacity)
                     .onAppear {
-                        player = AVPlayer(url: url)
-                        player.isMuted = true
-                        player.play()
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            opacity = 1
+                        }
                     }
-                    .onTapGesture {
-                        toggle()
-                    }
-                
-                if !isPlaying {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.white)
-                }
             }
             .frame(width: 200, height: 200)
-            .clipShape(Circle())
         }
     }
     

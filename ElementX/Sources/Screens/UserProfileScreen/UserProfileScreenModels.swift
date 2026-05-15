@@ -23,6 +23,10 @@ struct UserProfileScreenViewState: BindableState {
     var isVerified: Bool?
     var permalink: URL?
     var dmRoomID: String?
+    var setkaPlusStatusEmoji: String?
+    var bio: String?
+    var backgroundURL: URL?
+    var lastSeenText: String?
 
     var bindings: UserProfileScreenViewStateBindings
     

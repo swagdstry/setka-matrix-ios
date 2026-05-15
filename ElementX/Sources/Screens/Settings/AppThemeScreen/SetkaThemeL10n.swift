@@ -164,6 +164,14 @@ enum SetkaThemeL10n {
     static var behaviorBlurEffects: String {
         tr("screen_app_theme_behavior_blur_effects")
     }
+    
+    static var behaviorSeasonalEffects: String {
+        tr("screen_app_theme_behavior_seasonal_effects")
+    }
+    
+    static var behaviorSeasonalEffectsReduceMotion: String {
+        tr("screen_app_theme_behavior_seasonal_effects_reduce_motion")
+    }
 
     static var behaviorDisableLiquidGlass: String {
         tr("screen_app_theme_behavior_disable_liquid_glass")

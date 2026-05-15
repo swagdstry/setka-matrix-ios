@@ -153,7 +153,11 @@ struct RoomScreen: View {
     private var recordingOverlay: some View {
         if recordingOverlayController.activeMode == .voice,
            case .recordVoiceMessage(let recorderState) = composerContext.viewState.composerMode {
-            RecordingOverlayBackdrop {
+            // Без блюра для аудио записи
+            ZStack {
+                Color.black.opacity(0.1)
+                    .ignoresSafeArea()
+                
                 VoiceRecordingOverlay(recorderState: recorderState,
                                       isLocked: recordingOverlayController.isLocked,
                                       lockDragProgress: recordingOverlayController.lockDragProgress,
@@ -166,8 +170,13 @@ struct RoomScreen: View {
                                           composerContext.send(viewAction: .voiceMessage(.stopRecording))
                                           recordingOverlayController.dismissVoiceRecording()
                                       })
+                                      .padding(.horizontal, 24)
+                                      .padding(.bottom, 32)
+                                      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
+            .transition(.opacity)
         } else if recordingOverlayController.activeMode == .video {
+            // С блюром только для видео записи
             RecordingOverlayBackdrop {
                 VideoNoteRecorderView(command: recordingOverlayController.videoRecorderCommand,
                                       isLocked: recordingOverlayController.isLocked,
@@ -238,40 +247,46 @@ struct RoomScreen: View {
         let blurRadius = appThemeService.wallpaperBlurRadius
         let overlayOpacity = appThemeService.resolvedTimelineOverlayOpacity(for: colorScheme)
         let defaultWallpaperStyle = appThemeService.resolvedDefaultRoomWallpaperStyle(for: colorScheme)
-        
-        if let imageURL = roomWallpaperService.wallpaperURL(forRoomID: timelineContext.viewState.roomID) ??
-            roomWallpaperService.defaultWallpaperURL(themeStyle: defaultWallpaperStyle) {
-            if roomWallpaperService.shouldUseMediaProvider(for: imageURL) {
-                LoadableImage(url: imageURL,
-                              mediaProvider: context.mediaProvider,
-                              transformer: { view in
-                                  AnyView(view
-                                      .scaledToFill()
-                                      .blur(radius: blurRadius))
-                              },
-                              placeholder: {
-                                  appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
-                              })
-                              .ignoresSafeArea()
-            } else {
-                AsyncImage(url: imageURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .blur(radius: blurRadius)
-                    default:
-                        appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
+
+        GeometryReader { geometry in
+            if let imageURL = roomWallpaperService.wallpaperURL(forRoomID: timelineContext.viewState.roomID) ??
+                roomWallpaperService.defaultWallpaperURL(themeStyle: defaultWallpaperStyle) {
+                if roomWallpaperService.shouldUseMediaProvider(for: imageURL) {
+                    LoadableImage(url: imageURL,
+                                  mediaProvider: context.mediaProvider,
+                                  transformer: { view in
+                                      AnyView(view
+                                          .scaledToFill()
+                                          .frame(width: geometry.size.width, height: geometry.size.height)
+                                          .clipped()
+                                          .blur(radius: blurRadius))
+                                  },
+                                  placeholder: {
+                                      appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
+                                  })
+                                  .ignoresSafeArea()
+                } else {
+                    AsyncImage(url: imageURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: geometry.size.width, height: geometry.size.height)
+                                .clipped()
+                                .blur(radius: blurRadius)
+                        default:
+                            appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
+                        }
                     }
+                    .ignoresSafeArea()
                 }
-                .ignoresSafeArea()
+                
+                Color.black.opacity(overlayOpacity)
+                    .ignoresSafeArea()
+            } else {
+                appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
             }
-            
-            Color.black.opacity(overlayOpacity)
-                .ignoresSafeArea()
-        } else {
-            appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
         }
     }
     
@@ -325,6 +340,7 @@ struct RoomScreen: View {
         // as the latter disables interaction in the action button for rooms with long names
         ToolbarItem(placement: .principal) {
             RoomHeaderView(roomName: context.viewState.roomTitle,
+                           roomSubtitle: context.viewState.roomSubtitle,
                            roomAvatar: context.viewState.roomAvatar,
                            dmRecipientVerificationState: context.viewState.dmRecipientVerificationState,
                            roomHistorySharingState: context.viewState.roomHistorySharingState,

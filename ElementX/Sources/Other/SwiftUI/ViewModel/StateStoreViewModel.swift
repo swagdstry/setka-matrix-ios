@@ -71,7 +71,12 @@ class StateStoreViewModel<State: BindableState, ViewAction> {
         /// Set-able/Bindable access to the bindable state.
         subscript<T>(dynamicMember keyPath: WritableKeyPath<State.BindStateType, T>) -> T {
             get { viewState.bindings[keyPath: keyPath] }
-            set { viewState.bindings[keyPath: keyPath] = newValue }
+            set {
+                // Use a task to avoid publishing changes during view updates
+                Task { @MainActor in
+                    viewState.bindings[keyPath: keyPath] = newValue
+                }
+            }
         }
     
         /// Send a `ViewAction` to the `ViewModel` for processing.

@@ -28,6 +28,7 @@ struct RoomAttachmentPicker: View {
         .buttonStyle(RoomAttachmentPickerButtonStyle())
         .accessibilityLabel(L10n.actionAddToTimeline)
         .accessibilityIdentifier(A11yIdentifiers.roomScreen.composerToolbar.openComposeOptions)
+        .frame(width: 44, height: 44) // Fixed frame to prevent shifting
     }
     
     var menuContent: some View {
@@ -46,12 +47,6 @@ struct RoomAttachmentPicker: View {
             }
             .accessibilityIdentifier(A11yIdentifiers.roomScreen.attachmentPickerPoll)
 
-            Button {
-                context.send(viewAction: .attach(.setkaPlusSticker))
-            } label: {
-                Label(L10n.commonSticker, icon: \.image)
-            }
-            
             if context.viewState.isLocationSharingEnabled {
                 Button {
                     context.send(viewAction: .attach(.location))

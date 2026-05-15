@@ -11,22 +11,31 @@ import SwiftUI
 struct RoomListFilterView: View {
     let filter: RoomListFilter
     @Binding var isActive: Bool
+    @ObservedObject private var appThemeService = AppThemeService.shared
 
     var body: some View {
         Toggle(isOn: $isActive) {
             Text(filter.localizedName)
         }
-        .toggleStyle(FilterToggleStyle())
+        .toggleStyle(FilterToggleStyle(isBubbleStyleEnabled: appThemeService.isHomeChatListBubbled))
     }
 }
 
 private struct FilterToggleStyle: ToggleStyle {
+    let isBubbleStyleEnabled: Bool
+    
     private func strokeColor(isOn: Bool) -> Color {
-        isOn ? .compound.bgActionPrimaryRest : .compound.borderInteractiveSecondary
+        if isBubbleStyleEnabled {
+            return isOn ? .compound.bgActionPrimaryRest.opacity(0.92) : .compound.borderInteractiveSecondary.opacity(0.75)
+        }
+        return isOn ? .compound.bgActionPrimaryRest : .compound.borderInteractiveSecondary
     }
     
     private func backgroundColor(isOn: Bool) -> Color {
-        isOn ? .compound.bgActionPrimaryRest : .compound.bgCanvasDefault
+        if isBubbleStyleEnabled {
+            return isOn ? .compound.bgActionPrimaryRest.opacity(0.44) : .white.opacity(0.08)
+        }
+        return isOn ? .compound.bgActionPrimaryRest : .compound.bgCanvasDefault
     }
     
     private func foregroundColor(isOn: Bool) -> Color {

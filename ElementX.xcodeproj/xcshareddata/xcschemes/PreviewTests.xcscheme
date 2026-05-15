@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1620"
+   LastUpgradeVersion = "2620"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES"
-      runPostActionsOnFailure = "NO">
+      buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -15,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "7A17BE29BAC81ADBAC6349D9"
+               BlueprintIdentifier = "2573A7F75542C7FD90E7F99B"
                BuildableName = "PreviewTests.xctest"
                BlueprintName = "PreviewTests"
                ReferencedContainer = "container:ElementX.xcodeproj">
@@ -30,34 +29,30 @@
       shouldUseLaunchSchemeArgsEnv = "YES"
       codeCoverageEnabled = "YES"
       onlyGenerateCoverageForSpecifiedTargets = "YES">
-      <TestPlans>
-         <TestPlanReference
-            default = "YES"
-            reference = "container:PreviewTests/SupportingFiles/PreviewTests.xctestplan">
-         </TestPlanReference>
-      </TestPlans>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "7A17BE29BAC81ADBAC6349D9"
+            BlueprintIdentifier = "2573A7F75542C7FD90E7F99B"
             BuildableName = "PreviewTests.xctest"
             BlueprintName = "PreviewTests"
             ReferencedContainer = "container:ElementX.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <Testables>
-      </Testables>
-      <CommandLineArguments>
-      </CommandLineArguments>
       <CodeCoverageTargets>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C0FAEB81CFD9776CD78CE489"
+            BlueprintIdentifier = "7715090D3A20F929B5190C63"
             BuildableName = "ElementX.app"
             BlueprintName = "ElementX"
             ReferencedContainer = "container:ElementX.xcodeproj">
          </BuildableReference>
       </CodeCoverageTargets>
+      <TestPlans>
+         <TestPlanReference
+            reference = "container:PreviewTests/SupportingFiles/PreviewTests.xctestplan"
+            default = "YES">
+         </TestPlanReference>
+      </TestPlans>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -72,14 +67,12 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "7A17BE29BAC81ADBAC6349D9"
+            BlueprintIdentifier = "2573A7F75542C7FD90E7F99B"
             BuildableName = "PreviewTests.xctest"
             BlueprintName = "PreviewTests"
             ReferencedContainer = "container:ElementX.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -87,12 +80,10 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <CommandLineArguments>
-      </CommandLineArguments>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "7A17BE29BAC81ADBAC6349D9"
+            BlueprintIdentifier = "2573A7F75542C7FD90E7F99B"
             BuildableName = "PreviewTests.xctest"
             BlueprintName = "PreviewTests"
             ReferencedContainer = "container:ElementX.xcodeproj">

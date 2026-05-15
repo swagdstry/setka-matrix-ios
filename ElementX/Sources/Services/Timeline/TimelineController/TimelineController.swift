@@ -345,6 +345,16 @@ class TimelineController: TimelineControllerProtocol {
                                        caption: caption,
                                        requestHandle: requestHandle).mapError(TimelineControllerError.timelineProxyError)
     }
+
+    func sendVideoNote(url: URL,
+                       thumbnailURL: URL,
+                       videoInfo: MatrixRustSDK.VideoInfo,
+                       requestHandle: @MainActor (SendAttachmentJoinHandleProtocol) -> Void) async -> Result<Void, TimelineControllerError> {
+        await activeTimeline.sendVideoNote(url: url,
+                                           thumbnailURL: thumbnailURL,
+                                           videoInfo: videoInfo,
+                                           requestHandle: requestHandle).mapError(TimelineControllerError.timelineProxyError)
+    }
     
     func sendLocation(body: String,
                       geoURI: GeoURI,

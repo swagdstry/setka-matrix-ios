@@ -17,6 +17,7 @@ struct TextRoomTimelineView: View, TextBasedRoomTimelineViewProtocol {
     let timelineItem: TextRoomTimelineItem
     
     @State private var linkMetadata: OrderedDictionary<URL, LinkMetadataProviderItem>
+    @State private var selectedSetkaPack: SetkaPackLinkCardView.PackData?
     
     init(timelineItem: TextRoomTimelineItem, linkMetadata: OrderedDictionary<URL, LinkMetadataProviderItem> = [:]) {
         self.timelineItem = timelineItem
@@ -38,9 +39,21 @@ struct TextRoomTimelineView: View, TextBasedRoomTimelineViewProtocol {
                 
                 if context?.viewState.linkPreviewsEnabled ?? false, !linkMetadata.keys.isEmpty {
                     VStack(spacing: 8) {
-                        ForEach(linkMetadata.keys, id: \.absoluteString) { url in
+                        ForEach(linkPreviewURLs, id: \.absoluteString) { url in
                             let metadata = linkMetadata[url]?.metadata ?? context?.viewState.linkMetadataProvider?.metadataItems[url]?.metadata
                             LinkPreviewView(url: url, metadata: metadata)
+                        }
+                    }
+                    .padding(.bottom, 16)
+                }
+
+                if !setkaPackLinks.isEmpty {
+                    VStack(spacing: 8) {
+                        ForEach(setkaPackLinks, id: \.id) { pack in
+                            SetkaPackLinkCardView(pack: pack,
+                                                  mediaProvider: context?.mediaProvider) {
+                                selectedSetkaPack = pack
+                            }
                         }
                     }
                     .padding(.bottom, 16)
@@ -48,6 +61,12 @@ struct TextRoomTimelineView: View, TextBasedRoomTimelineViewProtocol {
             }
         }
         .task { await fetchLinkPreviews() }
+        .sheet(item: $selectedSetkaPack) { pack in
+            SetkaPackPreviewSheet(pack: pack,
+                                  mediaProvider: context?.mediaProvider) { packID in
+                context?.send(viewAction: .addSetkaPlusStickerPack(packID: packID))
+            }
+        }
     }
     
     private func fetchLinkPreviews() async {
@@ -65,6 +84,16 @@ struct TextRoomTimelineView: View, TextBasedRoomTimelineViewProtocol {
                     }
                 }
             }
+        }
+    }
+
+    private var setkaPackLinks: [SetkaPackLinkCardView.PackData] {
+        timelineItem.links.compactMap(SetkaPackLinkParser.parse(url:))
+    }
+
+    private var linkPreviewURLs: [URL] {
+        linkMetadata.keys.filter { url in
+            SetkaPackLinkParser.parse(url: url) == nil
         }
     }
 }

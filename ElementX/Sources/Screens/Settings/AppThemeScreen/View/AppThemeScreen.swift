@@ -234,6 +234,11 @@ struct AppThemeScreen: View {
                     kind: .toggle(Binding(get: { draftTheme.enableChatAnimations }, set: { draftTheme.enableChatAnimations = $0 })))
             ListRow(label: .plain(title: SetkaThemeL10n.behaviorBlurEffects),
                     kind: .toggle(Binding(get: { draftTheme.enableBlurEffects }, set: { draftTheme.enableBlurEffects = $0 })))
+            ListRow(label: .plain(title: SetkaThemeL10n.behaviorSeasonalEffects),
+                    kind: .toggle(Binding(get: { draftTheme.enableSeasonalEffects }, set: { draftTheme.enableSeasonalEffects = $0 })))
+            ListRow(label: .plain(title: SetkaThemeL10n.behaviorSeasonalEffectsReduceMotion),
+                    kind: .toggle(Binding(get: { draftTheme.seasonalEffectsReduceMotion }, set: { draftTheme.seasonalEffectsReduceMotion = $0 })))
+                .disabled(!draftTheme.enableSeasonalEffects)
             ListRow(label: .plain(title: SetkaThemeL10n.behaviorDisableLiquidGlass),
                     kind: .toggle(Binding(get: { draftTheme.disableLiquidGlassEffects }, set: { draftTheme.disableLiquidGlassEffects = $0 })))
             ListRow(label: .plain(title: SetkaThemeL10n.behaviorShowEncryptionStatus),

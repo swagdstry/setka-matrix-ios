@@ -14,7 +14,9 @@ struct UserProfileScreen: View {
     
     var body: some View {
         Form {
+            backgroundSection
             headerSection
+            aboutSection
         }
         .compoundList()
         .navigationTitle(L10n.screenRoomMemberDetailsTitle)
@@ -34,10 +36,34 @@ struct UserProfileScreen: View {
     // MARK: - Private
     
     @ViewBuilder
+    private var backgroundSection: some View {
+        if let backgroundURL = context.viewState.backgroundURL {
+            LoadableImage(url: backgroundURL,
+                          mediaProvider: context.mediaProvider,
+                          transformer: { view in
+                              AnyView(view
+                                  .scaledToFill()
+                                  .frame(maxWidth: .infinity)
+                                  .frame(height: 160)
+                                  .clipped()
+                                  .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)))
+                          },
+                          placeholder: {
+                              Color.compound.bgSubtleSecondary
+                                  .frame(height: 160)
+                                  .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                          })
+                          .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                          .listRowBackground(Color.clear)
+        }
+    }
+
+    @ViewBuilder
     private var headerSection: some View {
         if let userProfile = context.viewState.userProfile {
             AvatarHeaderView(user: userProfile,
                              isVerified: context.viewState.showVerifiedBadge,
+                             titleTrailingText: context.viewState.setkaPlusStatusEmoji,
                              avatarSize: .user(on: .memberDetails),
                              mediaProvider: context.mediaProvider) { url in
                 context.send(viewAction: .displayAvatar(url))
@@ -47,8 +73,26 @@ struct UserProfileScreen: View {
         } else {
             AvatarHeaderView(user: UserProfileProxy(userID: context.viewState.userID),
                              isVerified: context.viewState.showVerifiedBadge,
+                             titleTrailingText: context.viewState.setkaPlusStatusEmoji,
                              avatarSize: .user(on: .memberDetails),
                              mediaProvider: context.mediaProvider) { }
+        }
+    }
+
+    @ViewBuilder
+    private var aboutSection: some View {
+        if context.viewState.bio != nil || context.viewState.lastSeenText != nil {
+            Section {
+                if let bio = context.viewState.bio {
+                    ListRow(label: .plain(title: bio),
+                            kind: .label)
+                }
+
+                if let lastSeenText = context.viewState.lastSeenText {
+                    ListRow(label: .plain(title: lastSeenText),
+                            kind: .label)
+                }
+            }
         }
     }
     

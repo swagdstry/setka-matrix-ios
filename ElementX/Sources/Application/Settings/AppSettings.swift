@@ -93,10 +93,12 @@ struct SetkaThemeConfiguration: Codable, Equatable {
     var defaultRoomWallpaperStyle: String
     var enableChatAnimations: Bool
     var enableBlurEffects: Bool
+    var enableSeasonalEffects: Bool
+    var seasonalEffectsReduceMotion: Bool
     var initialTimelineItemCount: Int
     var disableLiquidGlassEffects: Bool
     
-    static let `default` = SetkaThemeConfiguration(version: 7,
+    static let `default` = SetkaThemeConfiguration(version: 8,
                                                    themeMode: .system,
                                                    accentColorHex: "#0A84FF",
                                                    uiScale: 1.0,
@@ -126,6 +128,8 @@ struct SetkaThemeConfiguration: Codable, Equatable {
                                                    defaultRoomWallpaperStyle: "none",
                                                    enableChatAnimations: true,
                                                    enableBlurEffects: true,
+                                                   enableSeasonalEffects: true,
+                                                   seasonalEffectsReduceMotion: false,
                                                    initialTimelineItemCount: 20,
                                                    disableLiquidGlassEffects: false)
     
@@ -159,6 +163,8 @@ struct SetkaThemeConfiguration: Codable, Equatable {
          defaultRoomWallpaperStyle: String,
          enableChatAnimations: Bool,
          enableBlurEffects: Bool,
+         enableSeasonalEffects: Bool,
+         seasonalEffectsReduceMotion: Bool,
          initialTimelineItemCount: Int,
          disableLiquidGlassEffects: Bool) {
         self.version = version
@@ -191,6 +197,8 @@ struct SetkaThemeConfiguration: Codable, Equatable {
         self.defaultRoomWallpaperStyle = defaultRoomWallpaperStyle
         self.enableChatAnimations = enableChatAnimations
         self.enableBlurEffects = enableBlurEffects
+        self.enableSeasonalEffects = enableSeasonalEffects
+        self.seasonalEffectsReduceMotion = seasonalEffectsReduceMotion
         self.initialTimelineItemCount = initialTimelineItemCount
         self.disableLiquidGlassEffects = disableLiquidGlassEffects
     }
@@ -229,6 +237,8 @@ struct SetkaThemeConfiguration: Codable, Equatable {
         defaultRoomWallpaperStyle = try container.decodeIfPresent(String.self, forKey: .defaultRoomWallpaperStyle) ?? defaults.defaultRoomWallpaperStyle
         enableChatAnimations = try container.decodeIfPresent(Bool.self, forKey: .enableChatAnimations) ?? defaults.enableChatAnimations
         enableBlurEffects = try container.decodeIfPresent(Bool.self, forKey: .enableBlurEffects) ?? defaults.enableBlurEffects
+        enableSeasonalEffects = try container.decodeIfPresent(Bool.self, forKey: .enableSeasonalEffects) ?? defaults.enableSeasonalEffects
+        seasonalEffectsReduceMotion = try container.decodeIfPresent(Bool.self, forKey: .seasonalEffectsReduceMotion) ?? defaults.seasonalEffectsReduceMotion
         initialTimelineItemCount = try container.decodeIfPresent(Int.self, forKey: .initialTimelineItemCount) ?? defaults.initialTimelineItemCount
         disableLiquidGlassEffects = try container.decodeIfPresent(Bool.self, forKey: .disableLiquidGlassEffects) ?? defaults.disableLiquidGlassEffects
     }

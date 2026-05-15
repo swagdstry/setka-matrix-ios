@@ -80,22 +80,46 @@ struct ComposerToolbar: View {
     private var topBar: some View {
         topBarLayout {
             mainTopBarContent
-            
+
             if !context.composerFormattingEnabled {
-                if context.viewState.isUploading {
-                    ProgressView()
-                        .scaledFrame(size: 44, relativeTo: .compound.headingLG)
-                        .padding(.leading, 3)
-                } else if context.viewState.showSendButton {
-                    sendButton
-                        .padding(.leading, 3)
-                } else {
-                    voiceMessageRecordingButton()
-                        .padding(.leading, 3)
-                }
+                stickerButton
+                    .padding(.leading, 3)
+                    .frame(width: 44, height: 44, alignment: .center)
+
+                trailingActionControl
+                    .padding(.leading, 3)
+                    .frame(width: 52, height: 52, alignment: .center)
+                    .animation(.linear(duration: 0.15), value: context.viewState.composerMode)
+                    .animation(.linear(duration: 0.15), value: context.viewState.showSendButton)
+                    .animation(.linear(duration: 0.15), value: context.viewState.isUploading)
             }
         }
-        .animation(.linear(duration: 0.15), value: context.viewState.composerMode)
+    }
+
+    @ViewBuilder
+    private var trailingActionControl: some View {
+        if context.viewState.isUploading {
+            ProgressView()
+                .scaledFrame(size: 44, relativeTo: .compound.headingLG)
+        } else if context.viewState.showSendButton {
+            sendButton
+        } else {
+            voiceMessageRecordingButton()
+        }
+    }
+
+    private var stickerButton: some View {
+        Button {
+            context.send(viewAction: .attach(.setkaPlusSticker))
+        } label: {
+            Image(systemName: "face.smiling")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.compound.iconPrimary)
+                .frame(width: 36, height: 36)
+                .background(Color.compound.bgSubtleSecondary, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.commonSticker)
     }
     
     private var bottomBar: some View {

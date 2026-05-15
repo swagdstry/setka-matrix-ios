@@ -256,6 +256,20 @@ class MockTimelineController: TimelineControllerProtocol {
         return .success(())
     }
     
+    func sendVideoNote(url: URL,
+                       thumbnailURL: URL,
+                       videoInfo: MatrixRustSDK.VideoInfo,
+                       requestHandle: @MainActor (any SendAttachmentJoinHandleProtocol) -> Void) async -> Result<Void, TimelineControllerError> {
+        if let timelineProxy {
+            return await timelineProxy.sendVideoNote(url: url,
+                                                     thumbnailURL: thumbnailURL,
+                                                     videoInfo: videoInfo,
+                                                     requestHandle: requestHandle).mapError(TimelineControllerError.timelineProxyError)
+        }
+        
+        return .success(())
+    }
+    
     // MARK: - Polls
     
     func createPoll(question: String, answers: [String], pollKind: Poll.Kind) async -> Result<Void, TimelineControllerError> {

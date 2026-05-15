@@ -95,7 +95,7 @@ final class PinnedEventsTimelineScreenCoordinator: CoordinatorProtocol {
             case .displayEmojiPicker, .displayReportContent, .displayCameraPicker, .displayMediaPicker,
                  .displayDocumentPicker, .displayLocationPicker, .displayPollForm, .displayMediaUploadPreviewScreen,
                  .displayResolveSendFailure, .displayThread, .composer, .hasScrolled, .displayRoom, .displayMediaDetails,
-                 .displayVideoNoteRecorder:
+                 .displayVideoNoteRecorder, .displaySetkaPlusComposerPicker:
                 // These actions are not handled in this coordinator
                 break
             }

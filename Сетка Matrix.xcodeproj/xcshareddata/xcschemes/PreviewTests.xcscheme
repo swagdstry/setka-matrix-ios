@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2573A7F75542C7FD90E7F99B"
+               BlueprintIdentifier = "DBF4A201CF1BE96420160C4D"
                BuildableName = "PreviewTests.xctest"
                BlueprintName = "PreviewTests"
-               ReferencedContainer = "container:Сетка.xcodeproj">
+               ReferencedContainer = "container:Сетка Matrix.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -39,10 +39,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2573A7F75542C7FD90E7F99B"
+            BlueprintIdentifier = "DBF4A201CF1BE96420160C4D"
             BuildableName = "PreviewTests.xctest"
             BlueprintName = "PreviewTests"
-            ReferencedContainer = "container:Сетка.xcodeproj">
+            ReferencedContainer = "container:Сетка Matrix.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -52,10 +52,10 @@
       <CodeCoverageTargets>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "7715090D3A20F929B5190C63"
+            BlueprintIdentifier = "83317FB2E1373F4FF5E4934D"
             BuildableName = "ElementX.app"
             BlueprintName = "ElementX"
-            ReferencedContainer = "container:Сетка.xcodeproj">
+            ReferencedContainer = "container:Сетка Matrix.xcodeproj">
          </BuildableReference>
       </CodeCoverageTargets>
    </TestAction>
@@ -72,10 +72,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2573A7F75542C7FD90E7F99B"
+            BlueprintIdentifier = "DBF4A201CF1BE96420160C4D"
             BuildableName = "PreviewTests.xctest"
             BlueprintName = "PreviewTests"
-            ReferencedContainer = "container:Сетка.xcodeproj">
+            ReferencedContainer = "container:Сетка Matrix.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <CommandLineArguments>
@@ -92,10 +92,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2573A7F75542C7FD90E7F99B"
+            BlueprintIdentifier = "DBF4A201CF1BE96420160C4D"
             BuildableName = "PreviewTests.xctest"
             BlueprintName = "PreviewTests"
-            ReferencedContainer = "container:Сетка.xcodeproj">
+            ReferencedContainer = "container:Сетка Matrix.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

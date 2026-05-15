@@ -25,6 +25,7 @@ struct AvatarHeaderView<Footer: View>: View {
     
     private let avatarInfo: AvatarInfo
     private let title: String
+    private let titleTrailingText: String?
     private let subtitle: String?
     private let badges: [Badge]
     
@@ -40,6 +41,7 @@ struct AvatarHeaderView<Footer: View>: View {
          @ViewBuilder footer: @escaping () -> Footer) {
         avatarInfo = .room(room.avatar)
         title = room.name ?? room.id
+        titleTrailingText = nil
         
         if let roomAlias = room.canonicalAlias {
             subtitle = roomAlias
@@ -73,6 +75,7 @@ struct AvatarHeaderView<Footer: View>: View {
         let dmRecipientProfile = UserProfileProxy(member: dmRecipient)
         avatarInfo = .room(.heroes([dmRecipientProfile, UserProfileProxy(member: accountOwner)]))
         title = dmRecipientProfile.displayName ?? dmRecipientProfile.userID
+        titleTrailingText = nil
         subtitle = dmRecipientProfile.displayName == nil ? nil : dmRecipientProfile.userID
         
         avatarSize = .user(on: .dmDetails)
@@ -101,12 +104,14 @@ struct AvatarHeaderView<Footer: View>: View {
     
     init(user: UserProfileProxy,
          isVerified: Bool,
+         titleTrailingText: String? = nil,
          avatarSize: Avatars.Size,
          mediaProvider: MediaProviderProtocol? = nil,
          onAvatarTap: ((URL) -> Void)? = nil,
          @ViewBuilder footer: @escaping () -> Footer) {
         avatarInfo = .user(user)
         title = user.displayName ?? user.userID
+        self.titleTrailingText = titleTrailingText
         subtitle = user.displayName == nil ? nil : user.userID
         
         self.avatarSize = avatarSize
@@ -213,11 +218,19 @@ struct AvatarHeaderView<Footer: View>: View {
             Spacer()
                 .frame(height: 9)
             
-            Text(title)
-                .foregroundColor(.compound.textPrimary)
-                .font(.compound.headingMDBold)
-                .multilineTextAlignment(.center)
-                .textSelection(.enabled)
+            HStack(spacing: 6) {
+                Text(title)
+                    .foregroundColor(.compound.textPrimary)
+                    .font(.compound.headingMDBold)
+                    .multilineTextAlignment(.center)
+                    .textSelection(.enabled)
+
+                if let titleTrailingText {
+                    Text(titleTrailingText)
+                        .font(.compound.bodyMDSemibold)
+                        .foregroundStyle(.compound.textSecondary)
+                }
+            }
             
             if let subtitle {
                 Text(subtitle)

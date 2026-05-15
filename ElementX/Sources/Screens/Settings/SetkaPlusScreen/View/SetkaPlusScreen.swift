@@ -96,19 +96,14 @@ struct SetkaPlusScreen: View {
                         }
 
                         Button {
-                            context.send(viewAction: .buyPlan(id: plan.id))
+                            // Заглушка - в бета-тесте
                         } label: {
-                            if context.viewState.purchasingPlanID == plan.id {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity)
-                            } else {
-                                Text(SetkaPlusL10n.buy)
-                                    .font(.compound.bodyMDSemibold)
-                                    .frame(maxWidth: .infinity)
-                            }
+                            Text("В бета-тесте")
+                                .font(.compound.bodyMDSemibold)
+                                .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.compound(.primary))
-                        .disabled(context.viewState.purchasingPlanID != nil)
+                        .buttonStyle(.compound(.secondary))
+                        .disabled(true)
                     }
                     .padding(.vertical, 6)
                 }

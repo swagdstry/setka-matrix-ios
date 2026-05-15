@@ -10,7 +10,7 @@ import Combine
 import Foundation
 import MatrixRustSDK
 
-private final class WeakSessionVerificationControllerProxy: SessionVerificationControllerDelegate {
+private final class WeakSessionVerificationControllerProxy: SessionVerificationControllerDelegate, @unchecked Sendable {
     private weak var proxy: SessionVerificationControllerProxy?
     
     init(proxy: SessionVerificationControllerProxy) {

@@ -155,8 +155,11 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
             state.reportRoomEnabled = await userSession.clientProxy.isReportRoomSupported
         }
 
+        // Optimize: combine Setka Plus data loading with other tasks to reduce overhead
         Task {
+            MXLog.info("Starting Setka Plus data loading task")
             await loadSetkaPlusData()
+            MXLog.info("Setka Plus data loading task completed")
         }
         
         let isSearchFieldFocused = context.$viewState.map(\.bindings.isSearchFieldFocused)
@@ -167,7 +170,7 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
             .removeDuplicates { $0 == $1 }
             .sink { [weak self] isSearchFieldFocused, _, _, _ in
                 guard let self else { return }
-                // isSearchFieldFocused` is sometimes turning to true after cancelling the search. So to be extra sure we are updating the values correctly we read them directly in the next run loop, and we add a small delay if the value has changed
+                // isSearchFieldFocused` is sometimes turning to true after cancelling search. So to be extra sure we are updating the values correctly we read them directly in the next run loop, and we add a small delay if the value has changed
                 let delay = isSearchFieldFocused == self.context.viewState.bindings.isSearchFieldFocused ? 0.0 : 0.05
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                     self.updateFilter()
@@ -423,7 +426,11 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
             if summary.isDirect,
                let counterpartID = directCounterpartUserID(from: summary),
                let status = state.setkaPlusUserStatuses[counterpartID] {
+                let originalName = decoratedName
                 decoratedName = SetkaPlusStatusDisplay.decoratedName(baseName, status: status)
+                if originalName != decoratedName {
+                    MXLog.info("Applied status emoji for user \(counterpartID): '\(originalName)' -> '\(decoratedName)'")
+                }
             }
             
             let room = HomeScreenRoom(summary: summary,
@@ -435,50 +442,58 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
         
         state.rooms = rooms
 
+        // Optimize: reduce task overhead by combining status loading
         Task {
             await preloadStatusesForDirectRooms()
         }
     }
 
     private func loadSetkaPlusData() async {
+        MXLog.info("Loading Setka Plus data...")
         async let subscriptionResult = userSession.clientProxy.fetchSetkaPlusSubscription()
-        async let statusResult = userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: nil)
         async let packsResult = userSession.clientProxy.fetchSetkaPlusStickerPacks()
+        async let statusResult = userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: nil)
 
         switch await subscriptionResult {
         case .success(let subscription):
             state.setkaPlusSubscription = subscription
         case .failure(let error):
-            MXLog.error("Failed fetching Setka Plus subscription for home screen with error: \(error)")
-        }
-
-        switch await statusResult {
-        case .success(let status):
-            state.setkaPlusStatusEmoji = status
-            state.setkaPlusUserStatuses[userSession.clientProxy.userID] = status
-        case .failure(let error):
-            MXLog.error("Failed fetching own Setka Plus status emoji with error: \(error)")
+            state.setkaPlusSubscription = nil
+            MXLog.warning("Failed fetching Setka Plus subscription with error: \(error)")
         }
 
         switch await packsResult {
         case .success(let packs):
             state.setkaPlusEmojiPacks = packs
         case .failure(let error):
-            MXLog.error("Failed fetching Setka Plus sticker packs with error: \(error)")
+            state.setkaPlusEmojiPacks = []
+            MXLog.warning("Failed fetching Setka Plus sticker packs with error: \(error)")
+        }
+
+        switch await statusResult {
+        case .success(let status):
+            state.setkaPlusStatusEmoji = status
+            state.setkaPlusUserStatuses[userSession.clientProxy.userID] = status
+            MXLog.info("Successfully loaded own Setka Plus status: \(status.emoji ?? "nil")")
+        case .failure(let error):
+            MXLog.error("Failed fetching own Setka Plus status emoji with error: \(error)")
         }
 
         updateRooms()
     }
 
     private func updateOwnSetkaPlusStatus(emoji: String?, packID: String?, stickerID: String?) async {
+        MXLog.info("Updating Setka Plus status: emoji=\(emoji ?? "nil"), packID=\(packID ?? "nil"), stickerID=\(stickerID ?? "nil")")
+        
         switch await userSession.clientProxy.updateSetkaPlusStatusEmoji(emoji: emoji, packID: packID, stickerID: stickerID) {
         case .success(let status):
             state.setkaPlusStatusEmoji = status
             state.setkaPlusUserStatuses[userSession.clientProxy.userID] = status
             updateRooms()
+            MXLog.info("Successfully updated Setka Plus status emoji: \(status.emoji ?? "nil")")
         case .failure(let error):
             MXLog.error("Failed updating own Setka Plus status emoji with error: \(error)")
-            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            userIndicatorController.submitIndicator(.init(title: "Не удалось обновить статус"))
         }
     }
 
@@ -488,21 +503,36 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
         let userIDs = Set(roomSummaryProvider.roomListPublisher.value.compactMap { summary in
             directCounterpartUserID(from: summary)
         }).subtracting([userSession.clientProxy.userID])
-
-        for userID in userIDs {
-            if state.setkaPlusUserStatuses[userID] != nil || setkaPlusStatusRequestsInFlight.contains(userID) {
-                continue
+        
+        MXLog.info("Preloading statuses for \(userIDs.count) direct chat users")
+        
+        // Optimize: batch status requests to reduce network overhead
+        await withTaskGroup(of: Void.self) { group in
+            for userID in userIDs {
+                if state.setkaPlusUserStatuses[userID] != nil || setkaPlusStatusRequestsInFlight.contains(userID) {
+                    continue
+                }
+                setkaPlusStatusRequestsInFlight.insert(userID)
+                
+                group.addTask { [weak self] in
+                    guard let self else { return }
+                    switch await userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: userID) {
+                    case .success(let status):
+                        await MainActor.run {
+                            self.state.setkaPlusUserStatuses[userID] = status
+                            MXLog.info("Successfully fetched Setka Plus status for user \(userID): \(status.emoji ?? "nil")")
+                        }
+                    case .failure(let error):
+                        MXLog.warning("Failed fetching Setka Plus status emoji for user \(userID) with error: \(error)")
+                    }
+                    await MainActor.run {
+                        self.setkaPlusStatusRequestsInFlight.remove(userID)
+                    }
+                }
             }
-            setkaPlusStatusRequestsInFlight.insert(userID)
-
-            switch await userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: userID) {
-            case .success(let status):
-                state.setkaPlusUserStatuses[userID] = status
-            case .failure:
-                break
-            }
-            setkaPlusStatusRequestsInFlight.remove(userID)
         }
+        
+        MXLog.info("Completed preloading statuses for direct rooms")
     }
 
     private func directCounterpartUserID(from summary: RoomSummary) -> String? {

@@ -7,6 +7,7 @@
 //
 
 import Algorithms
+import AVFoundation
 import Combine
 import ImageIO
 import MatrixRustSDK
@@ -223,6 +224,8 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             Task { await sendSetkaPlusEmojiMessage(emoji) }
         case .sendSetkaPlusSticker(let packID, let stickerID):
             Task { await sendSetkaPlusSticker(packID: packID, stickerID: stickerID) }
+        case .addSetkaPlusStickerPack(let packID):
+            Task { await addSetkaPlusStickerPack(packID: packID) }
         }
     }
 
@@ -250,7 +253,7 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
         case .voiceMessage(let voiceMessageAction):
             processVoiceMessageAction(voiceMessageAction)
         case .sendVideoNote(let url):
-            actionsSubject.send(.displayMediaUploadPreviewScreen(mediaURLs: [url]))
+            Task { await sendVideoNote(url) }
         case .contentChanged(let isEmpty):
             guard appSettings.sharePresence else {
                 return
@@ -405,7 +408,8 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             return
         }
 
-        let filename = sticker.name.nilIfEmpty ?? sticker.id
+        let trimmedStickerName = sticker.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filename = trimmedStickerName.isEmpty ? sticker.id : trimmedStickerName
         switch await userSession.mediaProvider.loadFileFromSource(source, filename: filename) {
         case .success(let fileHandle):
             guard let localURL = fileHandle.url else {
@@ -673,12 +677,165 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
     }
     
     func sendVideoNote(_ url: URL) async {
-        let text = "[video_note:\(url.absoluteString)]"
-        
-        _ = await timelineController.sendMessage(text,
-                                                 html: nil,
-                                                 inReplyToEventID: nil,
-                                                 intentionalMentions: .empty)
+        let preparedVideoURL = await prepareSquareVideoNote(from: url) ?? url
+
+        // Generate thumbnail from video
+        guard let thumbnailURL = await generateVideoThumbnail(from: preparedVideoURL) else {
+            MXLog.error("Failed to generate thumbnail for video note")
+            return
+        }
+
+        // Get video info using modern API
+        let asset = AVURLAsset(url: preparedVideoURL)
+
+        do {
+            let duration = try await asset.load(.duration)
+            let tracks = try await asset.loadTracks(withMediaType: .video)
+            let track = tracks.first
+
+            var size = CGSize(width: 1, height: 1)
+            if let track = track {
+                let naturalSize = try await track.load(.naturalSize)
+                let preferredTransform = try await track.load(.preferredTransform)
+                size = naturalSize.applying(preferredTransform)
+            }
+
+            let side = UInt64(max(1, min(abs(size.width), abs(size.height))))
+            let videoInfo = VideoInfo(duration: .some(duration),
+                                      height: side,
+                                      width: side,
+                                      mimetype: "video/mp4",
+                                      size: nil,
+                                      thumbnailInfo: nil,
+                                      thumbnailSource: nil,
+                                      blurhash: nil)
+
+            let result = await timelineController.sendVideoNote(url: preparedVideoURL,
+                                                                thumbnailURL: thumbnailURL,
+                                                                videoInfo: videoInfo) { _ in
+                // Handle the attachment if needed
+            }
+
+            switch result {
+            case .success:
+                MXLog.info("Video note sent successfully")
+            case .failure(let error):
+                MXLog.error("Failed to send video note: \(error)")
+                displayAlert(.videoNoteUploadFailed)
+            }
+        } catch {
+            MXLog.error("Failed to load video info: \(error)")
+            displayAlert(.videoNoteUploadFailed)
+        }
+    }
+
+    private func generateVideoThumbnail(from url: URL) async -> URL? {
+        let asset = AVURLAsset(url: url)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 200, height: 200)
+
+        let time = CMTime(seconds: 0, preferredTimescale: 1)
+
+        do {
+            let cgImage = try await generator.image(for: time).image
+            let thumbnail = UIImage(cgImage: cgImage)
+
+            let thumbnailURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(UUID().uuidString).jpg")
+
+            if let jpegData = thumbnail.jpegData(compressionQuality: 0.8) {
+                try jpegData.write(to: thumbnailURL)
+                return thumbnailURL
+            }
+        } catch {
+            MXLog.error("Failed to generate thumbnail: \(error)")
+        }
+
+        return nil
+    }
+
+    private func addSetkaPlusStickerPack(packID: String) async {
+        switch await userSession.clientProxy.addSetkaPlusStickerPack(packID: packID) {
+        case .success:
+            userIndicatorController.submitIndicator(.init(title: "Пак добавлен"))
+            if case let .success(packs) = await userSession.clientProxy.fetchSetkaPlusStickerPacks() {
+                cachedSetkaPlusStickerPacks = packs
+            }
+        case .failure(let error):
+            MXLog.error("Failed adding Setka Plus sticker pack with error: \(error)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+        }
+    }
+
+    private func prepareSquareVideoNote(from url: URL) async -> URL? {
+        let asset = AVURLAsset(url: url)
+        guard let track = try? await asset.loadTracks(withMediaType: .video).first else {
+            return nil
+        }
+
+        let composition = AVMutableComposition()
+        guard let compositionTrack = composition.addMutableTrack(withMediaType: .video,
+                                                                 preferredTrackID: kCMPersistentTrackID_Invalid) else {
+            return nil
+        }
+
+        do {
+            let duration = try await asset.load(.duration)
+            try compositionTrack.insertTimeRange(CMTimeRange(start: .zero, duration: duration),
+                                                 of: track,
+                                                 at: .zero)
+            compositionTrack.preferredTransform = try await track.load(.preferredTransform)
+        } catch {
+            MXLog.error("Failed preparing square video note composition: \(error)")
+            return nil
+        }
+
+        let videoComposition = AVMutableVideoComposition()
+        let instruction = AVMutableVideoCompositionInstruction()
+        instruction.timeRange = CMTimeRange(start: .zero, duration: composition.duration)
+
+        let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compositionTrack)
+        instruction.layerInstructions = [layerInstruction]
+        videoComposition.instructions = [instruction]
+
+        guard let naturalSize = try? await track.load(.naturalSize),
+              let preferredTransform = try? await track.load(.preferredTransform) else {
+            return nil
+        }
+
+        let transformed = naturalSize.applying(preferredTransform)
+        let absSize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
+        let side = min(absSize.width, absSize.height)
+        let x = (absSize.width - side) / 2.0
+        let y = (absSize.height - side) / 2.0
+        videoComposition.renderSize = CGSize(width: side, height: side)
+        videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
+
+        let cropRect = CGRect(x: x, y: y, width: side, height: side)
+        layerInstruction.setCropRectangle(cropRect, at: .zero)
+
+        let outputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(UUID().uuidString)-video-note-square.mp4")
+
+        guard let exportSession = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else {
+            return nil
+        }
+
+        exportSession.videoComposition = videoComposition
+        exportSession.outputURL = outputURL
+        exportSession.outputFileType = .mp4
+        exportSession.shouldOptimizeForNetworkUse = true
+
+        await exportSession.export()
+        if exportSession.status == .completed {
+            return outputURL
+        }
+
+        if let error = exportSession.error {
+            MXLog.error("Failed exporting square video note: \(error)")
+        }
+        return nil
     }
 
     private func setupDirectRoomSubscriptionsIfNeeded() {
@@ -1115,6 +1272,10 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
                                              primaryButton: .init(title: L10n.actionCancel, role: .cancel, action: nil),
                                              secondaryButton: .init(title: L10n.actionOk) { self.timelineInteractionHandler.endPoll(pollStartID: pollStartID) })
         case .sendingFailed:
+            state.bindings.alertInfo = .init(id: type,
+                                             title: L10n.commonSendingFailed,
+                                             primaryButton: .init(title: L10n.actionOk, action: nil))
+        case .videoNoteUploadFailed:
             state.bindings.alertInfo = .init(id: type,
                                              title: L10n.commonSendingFailed,
                                              primaryButton: .init(title: L10n.actionOk, action: nil))

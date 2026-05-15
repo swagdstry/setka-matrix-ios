@@ -10,8 +10,8 @@ import Combine
 import Foundation
 import MatrixRustSDK
 
-private final class WeakNotificationSettingsProxy: NotificationSettingsDelegate {
-    private weak var proxy: NotificationSettingsProxy?
+private final class WeakNotificationSettingsProxy: NotificationSettingsDelegate, @unchecked Sendable {
+    private nonisolated(unsafe) weak var proxy: NotificationSettingsProxy?
     
     init(proxy: NotificationSettingsProxy) {
         self.proxy = proxy

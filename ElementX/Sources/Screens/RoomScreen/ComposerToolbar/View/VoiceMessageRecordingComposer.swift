@@ -14,6 +14,7 @@ struct VoiceMessageRecordingComposer: View {
     @ObservedObject var recorderState: AudioRecorderState
     
     var body: some View {
+        // Интерфейс записи аудио без поля ввода
         VoiceMessageRecordingView(recorderState: recorderState)
             .padding(.vertical, 8.0)
             .padding(.horizontal, 12.0)
@@ -24,6 +25,7 @@ struct VoiceMessageRecordingComposer: View {
                         .fill(Color.compound.bgSubtleSecondary)
                 }
             }
+            .frame(maxHeight: 80) // Ограничиваем высоту чтобы не растягивался
     }
 }
 

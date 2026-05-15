@@ -11,7 +11,7 @@ import Foundation
 enum SetkaPlusStatusDisplay {
     static func glyph(for status: SetkaPlusStatusEmoji?) -> String? {
         guard let status else { return nil }
-        if let emoji = normalized(status.emoji) {
+        if let emoji = normalized(status.emoji), isValidEmoji(emoji) {
             return emoji
         }
         if normalized(status.stickerID) != nil {
@@ -20,6 +20,17 @@ enum SetkaPlusStatusDisplay {
             return "✨"
         }
         return nil
+    }
+    
+    static func isValidEmoji(_ emoji: String?) -> Bool {
+        guard let emoji = emoji?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !emoji.isEmpty else { return false }
+        
+        // Basic emoji validation - check if it contains emoji characters
+        let emojiScalars = emoji.unicodeScalars
+        return emojiScalars.contains { scalar in
+            scalar.properties.isEmoji
+        }
     }
 
     static func decoratedName(_ name: String, status: SetkaPlusStatusEmoji?) -> String {

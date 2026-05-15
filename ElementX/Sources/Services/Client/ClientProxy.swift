@@ -985,6 +985,33 @@ class ClientProxy: ClientProxyProtocol {
             return .failure(.sdkError(error))
         }
     }
+
+    func addSetkaPlusStickerPack(packID: String) async -> Result<Void, ClientProxyError> {
+        let normalizedPackID = packID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedPackID.isEmpty else {
+            return .failure(.invalidResponse)
+        }
+
+        let body = try? JSONEncoder().encode(SetkaPlusAddStickerPackPayload(packID: normalizedPackID))
+        let candidateRequests: [(String, String, Data?)] = [
+            ("POST", "/user/\(encodedUserID())/setka_plus/sticker_packs", body),
+            ("PUT", "/user/\(encodedUserID())/setka_plus/sticker_packs/\(encodedPathSegment(normalizedPackID))", nil),
+            ("POST", "/setka_plus/sticker_packs/\(encodedPathSegment(normalizedPackID))/add", nil)
+        ]
+
+        for (method, path, requestBody) in candidateRequests {
+            do {
+                let (_, response) = try await performUserMetadataRequest(method: method, path: path, body: requestBody)
+                if 200..<300 ~= response.statusCode {
+                    return .success(())
+                }
+            } catch {
+                MXLog.warning("Failed adding Setka Plus sticker pack using \(method) \(path): \(error)")
+            }
+        }
+
+        return .failure(.invalidResponse)
+    }
     
     func fetchSetkaPlusPayments() async -> Result<[SetkaPlusPayment], ClientProxyError> {
         do {
@@ -1004,30 +1031,88 @@ class ClientProxy: ClientProxyProtocol {
             let path: String
             if let targetUserID, !targetUserID.isEmpty, targetUserID != self.userID {
                 path = "/setka_plus/users/\(encodedPathSegment(targetUserID))/status_emoji"
+                MXLog.info("Fetching Setka Plus status for user: \(targetUserID)")
             } else {
                 path = "/user/\(encodedUserID())/setka_plus/status_emoji"
+                MXLog.info("Fetching own Setka Plus status")
             }
 
-            let data = try await performSetkaPlusRequest(method: "GET", path: path)
-            let statusEmoji = try JSONDecoder().decode(SetkaPlusStatusEmoji.self, from: data)
+            let (data, response) = try await performUserMetadataRequest(method: "GET", path: path)
+            MXLog.info("Setka Plus status fetch response: \(response.statusCode)")
+            
+            if response.statusCode == 404 {
+                MXLog.info("Setka Plus status not found (404) - returning empty status")
+                return .success(.init(emoji: nil, packID: nil, stickerID: nil, updatedAt: nil))
+            }
+            
+            guard 200..<300 ~= response.statusCode else {
+                MXLog.error("Setka Plus status fetch failed with status code: \(response.statusCode)")
+                throw ClientProxyError.invalidResponse
+            }
+            
+            let statusEmoji = try decodeSetkaPlusStatusEmojiResponse(data)
+            MXLog.info("Setka Plus status fetch successful: \(statusEmoji.emoji ?? "nil")")
             return .success(statusEmoji)
+        } catch let error as ClientProxyError {
+            MXLog.error("Failed fetching Setka Plus status emoji with ClientProxyError: \(error)")
+            return .failure(error)
         } catch {
             MXLog.error("Failed fetching Setka Plus status emoji with error: \(error)")
             return .failure(.sdkError(error))
         }
     }
 
+    func fetchSetkaPlusUserProfileDetails(userID: String) async -> Result<SetkaPlusUserProfileDetails, ClientProxyError> {
+        do {
+            let path = "/setka_plus/users/\(encodedPathSegment(userID))/profile"
+            let (data, response) = try await performUserMetadataRequest(method: "GET", path: path)
+
+            if response.statusCode == 404 {
+                return .success(.init(bio: nil, backgroundURL: nil, lastSeenText: nil, shareURL: nil))
+            }
+
+            guard 200..<300 ~= response.statusCode else {
+                MXLog.error("Setka Plus user profile fetch failed with status code: \(response.statusCode)")
+                return .failure(.invalidResponse)
+            }
+
+            let details = try JSONDecoder().decode(SetkaPlusUserProfileDetails.self, from: data)
+            return .success(details)
+        } catch let error as ClientProxyError {
+            MXLog.error("Failed fetching Setka Plus user profile details with ClientProxyError: \(error)")
+            return .failure(error)
+        } catch {
+            MXLog.error("Failed fetching Setka Plus user profile details with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+
     func updateSetkaPlusStatusEmoji(emoji: String?, packID: String?, stickerID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError> {
         do {
+            MXLog.info("Updating Setka Plus status emoji via API: emoji=\(emoji ?? "nil"), packID=\(packID ?? "nil"), stickerID=\(stickerID ?? "nil")")
+            
             let payload = SetkaPlusStatusEmojiPayload(emoji: emoji,
                                                       packID: packID,
                                                       stickerID: stickerID)
             let body = try JSONEncoder().encode(payload)
-            let data = try await performSetkaPlusRequest(method: "PUT",
-                                                         path: "/user/\(encodedUserID())/setka_plus/status_emoji",
-                                                         body: body)
-            let statusEmoji = try JSONDecoder().decode(SetkaPlusStatusEmoji.self, from: data)
+            let (data, response) = try await performUserMetadataRequest(method: "PUT",
+                                                                        path: "/user/\(encodedUserID())/setka_plus/status_emoji",
+                                                                        body: body)
+            
+            MXLog.info("Setka Plus status update response: \(response.statusCode)")
+            
+            guard 200..<300 ~= response.statusCode else {
+                MXLog.error("Setka Plus status update failed with status code: \(response.statusCode)")
+                throw ClientProxyError.invalidResponse
+            }
+            
+            let fallbackStatus = SetkaPlusStatusEmoji(emoji: emoji, packID: packID, stickerID: stickerID, updatedAt: nil)
+            let statusEmoji = try decodeSetkaPlusStatusEmojiResponse(data, fallback: fallbackStatus)
+            MXLog.info("Setka Plus status update successful: \(statusEmoji.emoji ?? "nil")")
             return .success(statusEmoji)
+        } catch let error as ClientProxyError {
+            MXLog.error("Failed updating Setka Plus status emoji with ClientProxyError: \(error)")
+            return .failure(error)
         } catch {
             MXLog.error("Failed updating Setka Plus status emoji with error: \(error)")
             return .failure(.sdkError(error))
@@ -1561,6 +1646,21 @@ class ClientProxy: ClientProxyProtocol {
         
         return (data, httpResponse)
     }
+    
+    private func decodeSetkaPlusStatusEmojiResponse(_ data: Data,
+                                                    fallback: SetkaPlusStatusEmoji = .init(emoji: nil, packID: nil, stickerID: nil, updatedAt: nil)) throws -> SetkaPlusStatusEmoji {
+        guard !data.isEmpty else {
+            return fallback
+        }
+        
+        let decoded = try JSONDecoder().decode(SetkaPlusStatusEmoji.self, from: data)
+        let hasPayload = [decoded.emoji, decoded.packID, decoded.stickerID].contains { value in
+            guard let value else { return false }
+            return !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        } || decoded.updatedAt != nil
+        
+        return hasPayload ? decoded : fallback
+    }
 }
 
 private struct ContactsResponse: Decodable {
@@ -1612,6 +1712,14 @@ private struct SetkaPlusStatusEmojiPayload: Codable {
         case emoji
         case packID = "pack_id"
         case stickerID = "sticker_id"
+    }
+}
+
+private struct SetkaPlusAddStickerPackPayload: Codable {
+    let packID: String
+
+    enum CodingKeys: String, CodingKey {
+        case packID = "pack_id"
     }
 }
 

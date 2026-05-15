@@ -15,6 +15,7 @@ struct HomeScreenContent: View {
     
     @ObservedObject var context: HomeScreenViewModel.Context
     @ObservedObject private var mediaPlayerController = GlobalMediaPlayerController.shared
+    @ObservedObject private var appThemeService = AppThemeService.shared
     @State private var isMiniPlayerCollapsed = false
     let scrollViewAdapter: ScrollViewAdapter
     
@@ -137,7 +138,7 @@ struct HomeScreenContent: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .scrollDismissesKeyboard(.immediately)
+                        .scrollDismissesKeyboard(.immediately)
             .scrollDisabled(context.viewState.roomListMode == .skeletons)
             .scrollBounceBehavior(context.viewState.roomListMode == .empty ? .basedOnSize : .automatic)
             .animation(.elementDefault, value: context.viewState.roomListMode)
@@ -164,7 +165,7 @@ struct HomeScreenContent: View {
                     HomeScreenNewSoundBanner { context.send(viewAction: .dismissNewSoundBanner) }
                 }
             }
-            .background(Color.compound.bgCanvasDefault)
+            .background(appThemeService.isHomeChatListBubbled ? Color.clear : Color.compound.bgCanvasDefault)
         }
     }
     

@@ -75,18 +75,13 @@ class UserProfileScreenViewModel: UserProfileScreenViewModelType, UserProfileScr
         async let profileResult = userSession.clientProxy.profile(for: state.userID)
         async let identityResult = userSession.clientProxy.userIdentity(for: state.userID, fallBackToServer: true)
         async let statusEmojiResult = userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: state.userID)
+        async let profileDetailsResult = userSession.clientProxy.fetchSetkaPlusUserProfileDetails(userID: state.userID)
         let statusEmoji = await statusEmojiResult
+        let profileDetails = await profileDetailsResult
         
         switch await profileResult {
         case .success(let userProfile):
-            var resolvedUserProfile = userProfile
-            if case let .success(statusEmoji) = statusEmoji,
-               let displayName = userProfile.displayName {
-                resolvedUserProfile = UserProfileProxy(userID: userProfile.userID,
-                                                       displayName: decoratedName(displayName, status: statusEmoji),
-                                                       avatarURL: userProfile.avatarURL)
-            }
-            state.userProfile = resolvedUserProfile
+            state.userProfile = userProfile
             state.permalink = (try? matrixToUserPermalink(userId: state.userID)).flatMap(URL.init(string:))
             
             switch userSession.clientProxy.directRoomForUserID(userProfile.userID) {
@@ -104,6 +99,26 @@ class UserProfileScreenViewModel: UserProfileScreenViewModelType, UserProfileScr
             state.isVerified = identity.verificationState == .verified
         } else {
             MXLog.error("Failed to find the user's identity.")
+        }
+
+        switch statusEmoji {
+        case .success(let status):
+            state.setkaPlusStatusEmoji = statusGlyph(status)
+        case .failure:
+            state.setkaPlusStatusEmoji = nil
+        }
+
+        switch profileDetails {
+        case .success(let details):
+            state.bio = details.bio?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            state.lastSeenText = details.lastSeenText?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            state.backgroundURL = details.backgroundURL.flatMap(URL.init(string:))
+            if let shareURL = details.shareURL,
+               let url = URL(string: shareURL) {
+                state.permalink = url
+            }
+        case .failure(let error):
+            MXLog.warning("Failed loading extended Setka Plus user profile details: \(error)")
         }
     }
     
@@ -190,23 +205,15 @@ class UserProfileScreenViewModel: UserProfileScreenViewModelType, UserProfileScr
                                                               iconName: "xmark"))
     }
 
-    private func decoratedName(_ name: String, status: SetkaPlusStatusEmoji?) -> String {
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let status else { return trimmedName }
-
+    private func statusGlyph(_ status: SetkaPlusStatusEmoji?) -> String? {
+        guard let status else { return nil }
         let rawEmoji = (status.emoji ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let glyph: String
         if !rawEmoji.isEmpty {
-            glyph = rawEmoji
+            return rawEmoji
         } else if status.stickerID != nil {
-            glyph = "✨"
+            return "✨"
         } else {
-            return trimmedName
+            return nil
         }
-
-        if trimmedName.hasSuffix(glyph) {
-            return trimmedName
-        }
-        return "\(trimmedName) \(glyph)"
     }
 }

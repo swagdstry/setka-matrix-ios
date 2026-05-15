@@ -19602,6 +19602,70 @@ class TimelineProxyMock: TimelineProxyProtocol, @unchecked Sendable {
             return sendVideoUrlThumbnailURLVideoInfoCaptionRequestHandleReturnValue
         }
     }
+    //MARK: - sendVideoNote
+
+    var sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleUnderlyingCallsCount = 0
+    var sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleCalled: Bool {
+        return sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleCallsCount > 0
+    }
+
+    var sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleUnderlyingReturnValue: Result<Void, TimelineProxyError>!
+    var sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleReturnValue: Result<Void, TimelineProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleUnderlyingReturnValue
+            } else {
+                var returnValue: Result<Void, TimelineProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleClosure: ((URL, URL, VideoInfo, @MainActor (SendAttachmentJoinHandleProtocol) -> Void) async -> Result<Void, TimelineProxyError>)?
+
+    func sendVideoNote(url: URL, thumbnailURL: URL, videoInfo: VideoInfo, requestHandle: @MainActor (SendAttachmentJoinHandleProtocol) -> Void) async -> Result<Void, TimelineProxyError> {
+        sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleCallsCount += 1
+        if let sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleClosure = sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleClosure {
+            return await sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleClosure(url, thumbnailURL, videoInfo, requestHandle)
+        } else {
+            return sendVideoNoteUrlThumbnailURLVideoInfoRequestHandleReturnValue
+        }
+    }
     //MARK: - sendVoiceMessage
 
     var sendVoiceMessageUrlAudioInfoWaveformRequestHandleUnderlyingCallsCount = 0

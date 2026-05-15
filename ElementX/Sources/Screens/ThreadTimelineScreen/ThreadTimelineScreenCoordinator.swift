@@ -133,6 +133,8 @@ final class ThreadTimelineScreenCoordinator: CoordinatorProtocol {
                                                                    sendHandle: sendHandle))
                 case .displayVideoNoteRecorder:
                     break
+                case .displaySetkaPlusComposerPicker:
+                    break
                 case .hasScrolled, .displayRoom, .displayMediaDetails:
                     break
                 case .composer(let action):
