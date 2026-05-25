@@ -110,8 +110,10 @@ class UserProfileScreenViewModel: UserProfileScreenViewModelType, UserProfileScr
 
         switch profileDetails {
         case .success(let details):
-            state.bio = details.bio?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
-            state.lastSeenText = details.lastSeenText?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            let normalizedBio = details.bio?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalizedLastSeenText = details.lastSeenText?.trimmingCharacters(in: .whitespacesAndNewlines)
+            state.bio = normalizedBio?.isEmpty == true ? nil : normalizedBio
+            state.lastSeenText = normalizedLastSeenText?.isEmpty == true ? nil : normalizedLastSeenText
             state.backgroundURL = details.backgroundURL.flatMap(URL.init(string:))
             if let shareURL = details.shareURL,
                let url = URL(string: shareURL) {

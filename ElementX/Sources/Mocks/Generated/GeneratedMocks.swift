@@ -5025,6 +5025,496 @@ class ClientProxyMock: ClientProxyProtocol, @unchecked Sendable {
             return fetchSetkaPlusStickerPacksReturnValue
         }
     }
+    //MARK: - createSetkaPlusStickerPack
+
+    var createSetkaPlusStickerPackNameKindUnderlyingCallsCount = 0
+    var createSetkaPlusStickerPackNameKindCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return createSetkaPlusStickerPackNameKindUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = createSetkaPlusStickerPackNameKindUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                createSetkaPlusStickerPackNameKindUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    createSetkaPlusStickerPackNameKindUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var createSetkaPlusStickerPackNameKindCalled: Bool {
+        return createSetkaPlusStickerPackNameKindCallsCount > 0
+    }
+    var createSetkaPlusStickerPackNameKindReceivedArguments: (name: String, kind: String)?
+    var createSetkaPlusStickerPackNameKindReceivedInvocations: [(name: String, kind: String)] = []
+
+    var createSetkaPlusStickerPackNameKindUnderlyingReturnValue: Result<SetkaPlusStickerPack, ClientProxyError>!
+    var createSetkaPlusStickerPackNameKindReturnValue: Result<SetkaPlusStickerPack, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return createSetkaPlusStickerPackNameKindUnderlyingReturnValue
+            } else {
+                var returnValue: Result<SetkaPlusStickerPack, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = createSetkaPlusStickerPackNameKindUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                createSetkaPlusStickerPackNameKindUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    createSetkaPlusStickerPackNameKindUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var createSetkaPlusStickerPackNameKindClosure: ((String, String) async -> Result<SetkaPlusStickerPack, ClientProxyError>)?
+
+    func createSetkaPlusStickerPack(name: String, kind: String) async -> Result<SetkaPlusStickerPack, ClientProxyError> {
+        createSetkaPlusStickerPackNameKindCallsCount += 1
+        createSetkaPlusStickerPackNameKindReceivedArguments = (name: name, kind: kind)
+        DispatchQueue.main.async {
+            self.createSetkaPlusStickerPackNameKindReceivedInvocations.append((name: name, kind: kind))
+        }
+        if let createSetkaPlusStickerPackNameKindClosure = createSetkaPlusStickerPackNameKindClosure {
+            return await createSetkaPlusStickerPackNameKindClosure(name, kind)
+        } else {
+            return createSetkaPlusStickerPackNameKindReturnValue
+        }
+    }
+    //MARK: - saveSetkaPlusStickerPack
+
+    var saveSetkaPlusStickerPackUnderlyingCallsCount = 0
+    var saveSetkaPlusStickerPackCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return saveSetkaPlusStickerPackUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = saveSetkaPlusStickerPackUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                saveSetkaPlusStickerPackUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    saveSetkaPlusStickerPackUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var saveSetkaPlusStickerPackCalled: Bool {
+        return saveSetkaPlusStickerPackCallsCount > 0
+    }
+    var saveSetkaPlusStickerPackReceivedPack: SetkaPlusStickerPack?
+    var saveSetkaPlusStickerPackReceivedInvocations: [SetkaPlusStickerPack] = []
+
+    var saveSetkaPlusStickerPackUnderlyingReturnValue: Result<SetkaPlusStickerPack, ClientProxyError>!
+    var saveSetkaPlusStickerPackReturnValue: Result<SetkaPlusStickerPack, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return saveSetkaPlusStickerPackUnderlyingReturnValue
+            } else {
+                var returnValue: Result<SetkaPlusStickerPack, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = saveSetkaPlusStickerPackUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                saveSetkaPlusStickerPackUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    saveSetkaPlusStickerPackUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var saveSetkaPlusStickerPackClosure: ((SetkaPlusStickerPack) async -> Result<SetkaPlusStickerPack, ClientProxyError>)?
+
+    func saveSetkaPlusStickerPack(_ pack: SetkaPlusStickerPack) async -> Result<SetkaPlusStickerPack, ClientProxyError> {
+        saveSetkaPlusStickerPackCallsCount += 1
+        saveSetkaPlusStickerPackReceivedPack = pack
+        DispatchQueue.main.async {
+            self.saveSetkaPlusStickerPackReceivedInvocations.append(pack)
+        }
+        if let saveSetkaPlusStickerPackClosure = saveSetkaPlusStickerPackClosure {
+            return await saveSetkaPlusStickerPackClosure(pack)
+        } else {
+            return saveSetkaPlusStickerPackReturnValue
+        }
+    }
+    //MARK: - deleteSetkaPlusStickerPack
+
+    var deleteSetkaPlusStickerPackPackIDUnderlyingCallsCount = 0
+    var deleteSetkaPlusStickerPackPackIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return deleteSetkaPlusStickerPackPackIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = deleteSetkaPlusStickerPackPackIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                deleteSetkaPlusStickerPackPackIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    deleteSetkaPlusStickerPackPackIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var deleteSetkaPlusStickerPackPackIDCalled: Bool {
+        return deleteSetkaPlusStickerPackPackIDCallsCount > 0
+    }
+    var deleteSetkaPlusStickerPackPackIDReceivedPackID: String?
+    var deleteSetkaPlusStickerPackPackIDReceivedInvocations: [String] = []
+
+    var deleteSetkaPlusStickerPackPackIDUnderlyingReturnValue: Result<Void, ClientProxyError>!
+    var deleteSetkaPlusStickerPackPackIDReturnValue: Result<Void, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return deleteSetkaPlusStickerPackPackIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<Void, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = deleteSetkaPlusStickerPackPackIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                deleteSetkaPlusStickerPackPackIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    deleteSetkaPlusStickerPackPackIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var deleteSetkaPlusStickerPackPackIDClosure: ((String) async -> Result<Void, ClientProxyError>)?
+
+    func deleteSetkaPlusStickerPack(packID: String) async -> Result<Void, ClientProxyError> {
+        deleteSetkaPlusStickerPackPackIDCallsCount += 1
+        deleteSetkaPlusStickerPackPackIDReceivedPackID = packID
+        DispatchQueue.main.async {
+            self.deleteSetkaPlusStickerPackPackIDReceivedInvocations.append(packID)
+        }
+        if let deleteSetkaPlusStickerPackPackIDClosure = deleteSetkaPlusStickerPackPackIDClosure {
+            return await deleteSetkaPlusStickerPackPackIDClosure(packID)
+        } else {
+            return deleteSetkaPlusStickerPackPackIDReturnValue
+        }
+    }
+    //MARK: - addSetkaPlusStickerPack
+
+    var addSetkaPlusStickerPackPackIDUnderlyingCallsCount = 0
+    var addSetkaPlusStickerPackPackIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return addSetkaPlusStickerPackPackIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = addSetkaPlusStickerPackPackIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                addSetkaPlusStickerPackPackIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    addSetkaPlusStickerPackPackIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var addSetkaPlusStickerPackPackIDCalled: Bool {
+        return addSetkaPlusStickerPackPackIDCallsCount > 0
+    }
+    var addSetkaPlusStickerPackPackIDReceivedPackID: String?
+    var addSetkaPlusStickerPackPackIDReceivedInvocations: [String] = []
+
+    var addSetkaPlusStickerPackPackIDUnderlyingReturnValue: Result<Void, ClientProxyError>!
+    var addSetkaPlusStickerPackPackIDReturnValue: Result<Void, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return addSetkaPlusStickerPackPackIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<Void, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = addSetkaPlusStickerPackPackIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                addSetkaPlusStickerPackPackIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    addSetkaPlusStickerPackPackIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var addSetkaPlusStickerPackPackIDClosure: ((String) async -> Result<Void, ClientProxyError>)?
+
+    func addSetkaPlusStickerPack(packID: String) async -> Result<Void, ClientProxyError> {
+        addSetkaPlusStickerPackPackIDCallsCount += 1
+        addSetkaPlusStickerPackPackIDReceivedPackID = packID
+        DispatchQueue.main.async {
+            self.addSetkaPlusStickerPackPackIDReceivedInvocations.append(packID)
+        }
+        if let addSetkaPlusStickerPackPackIDClosure = addSetkaPlusStickerPackPackIDClosure {
+            return await addSetkaPlusStickerPackPackIDClosure(packID)
+        } else {
+            return addSetkaPlusStickerPackPackIDReturnValue
+        }
+    }
+    //MARK: - createSetkaPlusStickerPackShareLink
+
+    var createSetkaPlusStickerPackShareLinkPackIDUnderlyingCallsCount = 0
+    var createSetkaPlusStickerPackShareLinkPackIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return createSetkaPlusStickerPackShareLinkPackIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = createSetkaPlusStickerPackShareLinkPackIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                createSetkaPlusStickerPackShareLinkPackIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    createSetkaPlusStickerPackShareLinkPackIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var createSetkaPlusStickerPackShareLinkPackIDCalled: Bool {
+        return createSetkaPlusStickerPackShareLinkPackIDCallsCount > 0
+    }
+    var createSetkaPlusStickerPackShareLinkPackIDReceivedPackID: String?
+    var createSetkaPlusStickerPackShareLinkPackIDReceivedInvocations: [String] = []
+
+    var createSetkaPlusStickerPackShareLinkPackIDUnderlyingReturnValue: Result<String, ClientProxyError>!
+    var createSetkaPlusStickerPackShareLinkPackIDReturnValue: Result<String, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return createSetkaPlusStickerPackShareLinkPackIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<String, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = createSetkaPlusStickerPackShareLinkPackIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                createSetkaPlusStickerPackShareLinkPackIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    createSetkaPlusStickerPackShareLinkPackIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var createSetkaPlusStickerPackShareLinkPackIDClosure: ((String) async -> Result<String, ClientProxyError>)?
+
+    func createSetkaPlusStickerPackShareLink(packID: String) async -> Result<String, ClientProxyError> {
+        createSetkaPlusStickerPackShareLinkPackIDCallsCount += 1
+        createSetkaPlusStickerPackShareLinkPackIDReceivedPackID = packID
+        DispatchQueue.main.async {
+            self.createSetkaPlusStickerPackShareLinkPackIDReceivedInvocations.append(packID)
+        }
+        if let createSetkaPlusStickerPackShareLinkPackIDClosure = createSetkaPlusStickerPackShareLinkPackIDClosure {
+            return await createSetkaPlusStickerPackShareLinkPackIDClosure(packID)
+        } else {
+            return createSetkaPlusStickerPackShareLinkPackIDReturnValue
+        }
+    }
+    //MARK: - resolveSetkaPlusSharedStickerPack
+
+    var resolveSetkaPlusSharedStickerPackTokenUnderlyingCallsCount = 0
+    var resolveSetkaPlusSharedStickerPackTokenCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return resolveSetkaPlusSharedStickerPackTokenUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = resolveSetkaPlusSharedStickerPackTokenUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                resolveSetkaPlusSharedStickerPackTokenUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    resolveSetkaPlusSharedStickerPackTokenUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var resolveSetkaPlusSharedStickerPackTokenCalled: Bool {
+        return resolveSetkaPlusSharedStickerPackTokenCallsCount > 0
+    }
+    var resolveSetkaPlusSharedStickerPackTokenReceivedToken: String?
+    var resolveSetkaPlusSharedStickerPackTokenReceivedInvocations: [String] = []
+
+    var resolveSetkaPlusSharedStickerPackTokenUnderlyingReturnValue: Result<SetkaPlusStickerPack, ClientProxyError>!
+    var resolveSetkaPlusSharedStickerPackTokenReturnValue: Result<SetkaPlusStickerPack, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return resolveSetkaPlusSharedStickerPackTokenUnderlyingReturnValue
+            } else {
+                var returnValue: Result<SetkaPlusStickerPack, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = resolveSetkaPlusSharedStickerPackTokenUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                resolveSetkaPlusSharedStickerPackTokenUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    resolveSetkaPlusSharedStickerPackTokenUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var resolveSetkaPlusSharedStickerPackTokenClosure: ((String) async -> Result<SetkaPlusStickerPack, ClientProxyError>)?
+
+    func resolveSetkaPlusSharedStickerPack(token: String) async -> Result<SetkaPlusStickerPack, ClientProxyError> {
+        resolveSetkaPlusSharedStickerPackTokenCallsCount += 1
+        resolveSetkaPlusSharedStickerPackTokenReceivedToken = token
+        DispatchQueue.main.async {
+            self.resolveSetkaPlusSharedStickerPackTokenReceivedInvocations.append(token)
+        }
+        if let resolveSetkaPlusSharedStickerPackTokenClosure = resolveSetkaPlusSharedStickerPackTokenClosure {
+            return await resolveSetkaPlusSharedStickerPackTokenClosure(token)
+        } else {
+            return resolveSetkaPlusSharedStickerPackTokenReturnValue
+        }
+    }
+    //MARK: - importSetkaPlusSharedStickerPack
+
+    var importSetkaPlusSharedStickerPackTokenUnderlyingCallsCount = 0
+    var importSetkaPlusSharedStickerPackTokenCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return importSetkaPlusSharedStickerPackTokenUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = importSetkaPlusSharedStickerPackTokenUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                importSetkaPlusSharedStickerPackTokenUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    importSetkaPlusSharedStickerPackTokenUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var importSetkaPlusSharedStickerPackTokenCalled: Bool {
+        return importSetkaPlusSharedStickerPackTokenCallsCount > 0
+    }
+    var importSetkaPlusSharedStickerPackTokenReceivedToken: String?
+    var importSetkaPlusSharedStickerPackTokenReceivedInvocations: [String] = []
+
+    var importSetkaPlusSharedStickerPackTokenUnderlyingReturnValue: Result<SetkaPlusStickerPack, ClientProxyError>!
+    var importSetkaPlusSharedStickerPackTokenReturnValue: Result<SetkaPlusStickerPack, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return importSetkaPlusSharedStickerPackTokenUnderlyingReturnValue
+            } else {
+                var returnValue: Result<SetkaPlusStickerPack, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = importSetkaPlusSharedStickerPackTokenUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                importSetkaPlusSharedStickerPackTokenUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    importSetkaPlusSharedStickerPackTokenUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var importSetkaPlusSharedStickerPackTokenClosure: ((String) async -> Result<SetkaPlusStickerPack, ClientProxyError>)?
+
+    func importSetkaPlusSharedStickerPack(token: String) async -> Result<SetkaPlusStickerPack, ClientProxyError> {
+        importSetkaPlusSharedStickerPackTokenCallsCount += 1
+        importSetkaPlusSharedStickerPackTokenReceivedToken = token
+        DispatchQueue.main.async {
+            self.importSetkaPlusSharedStickerPackTokenReceivedInvocations.append(token)
+        }
+        if let importSetkaPlusSharedStickerPackTokenClosure = importSetkaPlusSharedStickerPackTokenClosure {
+            return await importSetkaPlusSharedStickerPackTokenClosure(token)
+        } else {
+            return importSetkaPlusSharedStickerPackTokenReturnValue
+        }
+    }
     //MARK: - fetchSetkaPlusPayments
 
     var fetchSetkaPlusPaymentsUnderlyingCallsCount = 0
@@ -5157,6 +5647,146 @@ class ClientProxyMock: ClientProxyProtocol, @unchecked Sendable {
             return await fetchSetkaPlusStatusEmojiUserIDClosure(userID)
         } else {
             return fetchSetkaPlusStatusEmojiUserIDReturnValue
+        }
+    }
+    //MARK: - fetchSetkaPlusUserProfileDetails
+
+    var fetchSetkaPlusUserProfileDetailsUserIDUnderlyingCallsCount = 0
+    var fetchSetkaPlusUserProfileDetailsUserIDCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusUserProfileDetailsUserIDUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusUserProfileDetailsUserIDUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusUserProfileDetailsUserIDUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusUserProfileDetailsUserIDUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusUserProfileDetailsUserIDCalled: Bool {
+        return fetchSetkaPlusUserProfileDetailsUserIDCallsCount > 0
+    }
+    var fetchSetkaPlusUserProfileDetailsUserIDReceivedUserID: String?
+    var fetchSetkaPlusUserProfileDetailsUserIDReceivedInvocations: [String] = []
+
+    var fetchSetkaPlusUserProfileDetailsUserIDUnderlyingReturnValue: Result<SetkaPlusUserProfileDetails, ClientProxyError>!
+    var fetchSetkaPlusUserProfileDetailsUserIDReturnValue: Result<SetkaPlusUserProfileDetails, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return fetchSetkaPlusUserProfileDetailsUserIDUnderlyingReturnValue
+            } else {
+                var returnValue: Result<SetkaPlusUserProfileDetails, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchSetkaPlusUserProfileDetailsUserIDUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchSetkaPlusUserProfileDetailsUserIDUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchSetkaPlusUserProfileDetailsUserIDUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var fetchSetkaPlusUserProfileDetailsUserIDClosure: ((String) async -> Result<SetkaPlusUserProfileDetails, ClientProxyError>)?
+
+    func fetchSetkaPlusUserProfileDetails(userID: String) async -> Result<SetkaPlusUserProfileDetails, ClientProxyError> {
+        fetchSetkaPlusUserProfileDetailsUserIDCallsCount += 1
+        fetchSetkaPlusUserProfileDetailsUserIDReceivedUserID = userID
+        DispatchQueue.main.async {
+            self.fetchSetkaPlusUserProfileDetailsUserIDReceivedInvocations.append(userID)
+        }
+        if let fetchSetkaPlusUserProfileDetailsUserIDClosure = fetchSetkaPlusUserProfileDetailsUserIDClosure {
+            return await fetchSetkaPlusUserProfileDetailsUserIDClosure(userID)
+        } else {
+            return fetchSetkaPlusUserProfileDetailsUserIDReturnValue
+        }
+    }
+    //MARK: - updateSetkaPlusUserProfileDetails
+
+    var updateSetkaPlusUserProfileDetailsUnderlyingCallsCount = 0
+    var updateSetkaPlusUserProfileDetailsCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return updateSetkaPlusUserProfileDetailsUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = updateSetkaPlusUserProfileDetailsUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                updateSetkaPlusUserProfileDetailsUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    updateSetkaPlusUserProfileDetailsUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var updateSetkaPlusUserProfileDetailsCalled: Bool {
+        return updateSetkaPlusUserProfileDetailsCallsCount > 0
+    }
+    var updateSetkaPlusUserProfileDetailsReceivedDetails: SetkaPlusUserProfileUpdate?
+    var updateSetkaPlusUserProfileDetailsReceivedInvocations: [SetkaPlusUserProfileUpdate] = []
+
+    var updateSetkaPlusUserProfileDetailsUnderlyingReturnValue: Result<Void, ClientProxyError>!
+    var updateSetkaPlusUserProfileDetailsReturnValue: Result<Void, ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return updateSetkaPlusUserProfileDetailsUnderlyingReturnValue
+            } else {
+                var returnValue: Result<Void, ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = updateSetkaPlusUserProfileDetailsUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                updateSetkaPlusUserProfileDetailsUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    updateSetkaPlusUserProfileDetailsUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var updateSetkaPlusUserProfileDetailsClosure: ((SetkaPlusUserProfileUpdate) async -> Result<Void, ClientProxyError>)?
+
+    func updateSetkaPlusUserProfileDetails(_ details: SetkaPlusUserProfileUpdate) async -> Result<Void, ClientProxyError> {
+        updateSetkaPlusUserProfileDetailsCallsCount += 1
+        updateSetkaPlusUserProfileDetailsReceivedDetails = details
+        DispatchQueue.main.async {
+            self.updateSetkaPlusUserProfileDetailsReceivedInvocations.append(details)
+        }
+        if let updateSetkaPlusUserProfileDetailsClosure = updateSetkaPlusUserProfileDetailsClosure {
+            return await updateSetkaPlusUserProfileDetailsClosure(details)
+        } else {
+            return updateSetkaPlusUserProfileDetailsReturnValue
         }
     }
     //MARK: - updateSetkaPlusStatusEmoji
@@ -8939,6 +9569,76 @@ class JoinedRoomProxyMock: JoinedRoomProxyProtocol, @unchecked Sendable {
             return await markAsReadReceiptTypeClosure(receiptType)
         } else {
             return markAsReadReceiptTypeReturnValue
+        }
+    }
+    //MARK: - sendSetkaPlusSticker
+
+    var sendSetkaPlusStickerUnderlyingCallsCount = 0
+    var sendSetkaPlusStickerCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return sendSetkaPlusStickerUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = sendSetkaPlusStickerUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                sendSetkaPlusStickerUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    sendSetkaPlusStickerUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var sendSetkaPlusStickerCalled: Bool {
+        return sendSetkaPlusStickerCallsCount > 0
+    }
+    var sendSetkaPlusStickerReceivedSticker: SetkaPlusStickerItem?
+    var sendSetkaPlusStickerReceivedInvocations: [SetkaPlusStickerItem] = []
+
+    var sendSetkaPlusStickerUnderlyingReturnValue: Result<Void, RoomProxyError>!
+    var sendSetkaPlusStickerReturnValue: Result<Void, RoomProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return sendSetkaPlusStickerUnderlyingReturnValue
+            } else {
+                var returnValue: Result<Void, RoomProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = sendSetkaPlusStickerUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                sendSetkaPlusStickerUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    sendSetkaPlusStickerUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var sendSetkaPlusStickerClosure: ((SetkaPlusStickerItem) async -> Result<Void, RoomProxyError>)?
+
+    func sendSetkaPlusSticker(_ sticker: SetkaPlusStickerItem) async -> Result<Void, RoomProxyError> {
+        sendSetkaPlusStickerCallsCount += 1
+        sendSetkaPlusStickerReceivedSticker = sticker
+        DispatchQueue.main.async {
+            self.sendSetkaPlusStickerReceivedInvocations.append(sticker)
+        }
+        if let sendSetkaPlusStickerClosure = sendSetkaPlusStickerClosure {
+            return await sendSetkaPlusStickerClosure(sticker)
+        } else {
+            return sendSetkaPlusStickerReturnValue
         }
     }
     //MARK: - edit

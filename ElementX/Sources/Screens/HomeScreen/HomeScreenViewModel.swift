@@ -518,14 +518,14 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
                     guard let self else { return }
                     switch await userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: userID) {
                     case .success(let status):
-                        await MainActor.run {
+                        _ = await MainActor.run {
                             self.state.setkaPlusUserStatuses[userID] = status
                             MXLog.info("Successfully fetched Setka Plus status for user \(userID): \(status.emoji ?? "nil")")
                         }
                     case .failure(let error):
                         MXLog.warning("Failed fetching Setka Plus status emoji for user \(userID) with error: \(error)")
                     }
-                    await MainActor.run {
+                    _ = await MainActor.run {
                         self.setkaPlusStatusRequestsInFlight.remove(userID)
                     }
                 }
@@ -539,7 +539,7 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
         guard summary.isDirect else { return nil }
         
         if case let .heroes(users) = summary.avatar {
-            return users.first(where: { $0.userID != userSession.clientProxy.userID })?.userID ?? users.first?.userID
+            return users.first { $0.userID != userSession.clientProxy.userID }?.userID ?? users.first?.userID
         }
         
         return ContactsService.shared.contact(forRoomID: summary.id)?.userID

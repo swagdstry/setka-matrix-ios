@@ -39,7 +39,7 @@ class AppLockService: AppLockServiceProtocol {
     
     var biometryType: LABiometryType {
         updateBiometrics()
-        guard context.evaluatedPolicyDomainState != nil else { return .none }
+        guard currentBiometricDomainState() != nil else { return .none }
         return context.biometryType
     }
     
@@ -50,7 +50,7 @@ class AppLockService: AppLockServiceProtocol {
     var biometricUnlockTrusted: Bool {
         guard let state = keychainController.pinCodeBiometricState() else { return false }
         updateBiometrics()
-        return state == context.evaluatedPolicyDomainState
+        return state == currentBiometricDomainState()
     }
     
     var numberOfPINAttempts: AnyPublisher<Int, Never> {
@@ -88,7 +88,7 @@ class AppLockService: AppLockServiceProtocol {
     
     func enableBiometricUnlock() -> Result<Void, AppLockServiceError> {
         guard isEnabled else { return .failure(.pinNotSet) }
-        guard let state = context.evaluatedPolicyDomainState else { return .failure(.biometricUnlockNotSupported) }
+        guard let state = currentBiometricDomainState() else { return .failure(.biometricUnlockNotSupported) }
         
         do {
             try keychainController.setPINCodeBiometricState(state)
@@ -173,6 +173,14 @@ class AppLockService: AppLockServiceProtocol {
         if let error {
             MXLog.error("Biometrics error: \(error)")
         }
+    }
+    
+    private func currentBiometricDomainState() -> Data? {
+        if #available(iOS 18.0, *) {
+            return context.domainState.stateHash
+        }
+        
+        return context.evaluatedPolicyDomainState
     }
     
     /// Creates a context specifically for unlocking the app. The titles are customised,

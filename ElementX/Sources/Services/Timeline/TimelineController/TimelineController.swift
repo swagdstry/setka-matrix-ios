@@ -302,6 +302,10 @@ class TimelineController: TimelineControllerProtocol {
         }
     }
     
+    func sendSetkaPlusSticker(_ sticker: SetkaPlusStickerItem) async -> Result<Void, TimelineControllerError> {
+        await roomProxy.sendSetkaPlusSticker(sticker).mapError(TimelineControllerError.roomProxyError)
+    }
+    
     func sendAudio(url: URL,
                    audioInfo: MatrixRustSDK.AudioInfo,
                    caption: String?,

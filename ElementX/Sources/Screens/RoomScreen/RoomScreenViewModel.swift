@@ -384,7 +384,8 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
                 if case let .success(statusEmoji) = await clientProxy.fetchSetkaPlusStatusEmoji(userID: userID) {
                     directPeerStatusEmoji = statusEmoji
                     if case let .success(details) = await clientProxy.fetchSetkaPlusUserProfileDetails(userID: userID) {
-                        directPeerLastSeenText = details.lastSeenText?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+                        let normalizedLastSeenText = details.lastSeenText?.trimmingCharacters(in: .whitespacesAndNewlines)
+                        directPeerLastSeenText = normalizedLastSeenText?.isEmpty == true ? nil : normalizedLastSeenText
                     }
                     let fallbackName = roomInfo.displayName ?? roomProxy.id
                     let title = ContactsService.shared.preferredName(forRoomID: roomProxy.id,
@@ -398,7 +399,7 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
 
     private func directCounterpartUserID(from avatar: RoomAvatar) -> String? {
         if case let .heroes(users) = avatar {
-            return users.first(where: { $0.userID != roomProxy.ownUserID })?.userID ?? users.first?.userID
+            return users.first { $0.userID != roomProxy.ownUserID }?.userID ?? users.first?.userID
         }
         
         return ContactsService.shared.contact(forRoomID: roomProxy.id)?.userID

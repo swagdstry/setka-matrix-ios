@@ -36,4 +36,31 @@ struct TimelineItemFactoryTests {
         #expect(item.properties.reactions == [])
         #expect(item.properties.deliveryStatus == nil)
     }
+    
+    @Test
+    func textMessageWithCustomEmojiHTMLUsesAltFallbackWhenBodyIsBlank() throws {
+        let ownUserID = "@alice:matrix.org"
+        let html = "<img data-mx-emoticon src=\"mxc://example.org/abc\" alt=\":element_logo:\" title=\"element_logo\" width=\"50\" height=\"50\" />"
+        let messageType = MessageType.text(content: .init(body: "", formatted: .init(format: .html, body: html)))
+        let content = TimelineItemContent.msgLike(content: .init(kind: .message(content: .init(msgType: messageType,
+                                                                                               body: "",
+                                                                                               isEdited: false,
+                                                                                               mentions: nil)),
+                                                                 reactions: [],
+                                                                 inReplyTo: nil,
+                                                                 threadRoot: nil,
+                                                                 threadSummary: nil))
+        
+        let factory = RoomTimelineItemFactory(userID: ownUserID,
+                                              attributedStringBuilder: AttributedStringBuilder(mentionBuilder: MentionBuilder()),
+                                              stateEventStringBuilder: RoomStateEventStringBuilder(userID: ownUserID))
+        let eventTimelineItem = EventTimelineItem(configuration: .init(content: content))
+        let eventTimelineItemProxy = EventTimelineItemProxy(item: eventTimelineItem, uniqueID: .init("0"))
+        
+        let item = try #require(factory.buildTimelineItem(for: eventTimelineItemProxy, isDM: false) as? TextRoomTimelineItem,
+                                "Incorrect item type")
+        
+        #expect(item.content.body == ":element_logo:")
+        #expect(item.content.formattedBodyHTMLString == html)
+    }
 }

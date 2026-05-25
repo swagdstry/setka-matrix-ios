@@ -7,6 +7,7 @@
 //
 
 import Combine
+import Foundation
 import MatrixRustSDK
 import SwiftUI
 
@@ -49,10 +50,27 @@ struct ElementCallWidgetMessage: Codable {
 }
 
 final class ElementCallWidgetDriver: WidgetCapabilitiesProvider, ElementCallWidgetDriverProtocol, @unchecked Sendable {
+    private final class WidgetDriverStore: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value: WidgetDriverAndHandle?
+        
+        func set(_ newValue: WidgetDriverAndHandle) {
+            lock.lock()
+            value = newValue
+            lock.unlock()
+        }
+        
+        func get() -> WidgetDriverAndHandle? {
+            lock.lock()
+            defer { lock.unlock() }
+            return value
+        }
+    }
+
     private let room: RoomProtocol
     private let deviceID: String
     
-    private nonisolated(unsafe) var widgetDriver: WidgetDriverAndHandle?
+    private let widgetDriverStore = WidgetDriverStore()
     
     let widgetID = UUID().uuidString
     let messagePublisher = PassthroughSubject<String, Never>()
@@ -125,7 +143,7 @@ final class ElementCallWidgetDriver: WidgetCapabilitiesProvider, ElementCallWidg
             return .failure(.failedBuildingWidgetDriver)
         }
         
-        self.widgetDriver = widgetDriver
+        widgetDriverStore.set(widgetDriver)
         
         Task.detached { [weak self, widgetDriver, messagePublisher] in
             MXLog.debug("Started message receiving loop")
@@ -161,7 +179,7 @@ final class ElementCallWidgetDriver: WidgetCapabilitiesProvider, ElementCallWidg
     
     @discardableResult
     func handleMessage(_ message: String) async -> Result<Bool, ElementCallWidgetDriverError> {
-        guard let widgetDriver else {
+        guard let widgetDriver = widgetDriverStore.get() else {
             return .failure(.driverNotSetup)
         }
         

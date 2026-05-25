@@ -11,6 +11,7 @@ import Compound
 import CryptoKit
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 import WysiwygComposer
 
 struct RoomScreen: View {
@@ -22,6 +23,10 @@ struct RoomScreen: View {
     @ObservedObject private var appThemeService = AppThemeService.shared
     @StateObject private var recordingOverlayController = RoomRecordingOverlayController()
     @State private var setkaPlusComposerPickerData: SetkaPlusComposerPickerData?
+    @State private var setkaPickerDragOffset: CGFloat = 0
+    @State private var setkaUploadTarget: SetkaPackUploadTarget?
+    @State private var showSetkaUploadImporter = false
+    @State private var setkaSharePayload: SetkaSharePayload?
     let composerToolbar: ComposerToolbar
     let timelineActions: AnyPublisher<TimelineViewModelAction, Never>
     @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverEnabled
@@ -46,15 +51,92 @@ struct RoomScreen: View {
     private var contentView: some View {
         baseTimelineView
             .onReceive(timelineActions, perform: handleAction)
-            .sheet(item: $setkaPlusComposerPickerData) { data in
-                SetkaPlusComposerPickerSheet(packs: data.packs,
-                                             mediaProvider: context.mediaProvider,
-                                             onSendEmoji: { emoji in
-                                                 timelineContext.send(viewAction: .sendSetkaPlusEmojiMessage(emoji))
-                                             },
-                                             onSendSticker: { packID, stickerID in
-                                                 timelineContext.send(viewAction: .sendSetkaPlusSticker(packID: packID, stickerID: stickerID))
-                                             })
+            .overlay(alignment: .bottom) {
+                if let data = setkaPlusComposerPickerData {
+                    SetkaPlusComposerPickerSheet(packs: timelineContext.viewState.setkaPlusStickerPacks.isEmpty ? data.packs : timelineContext.viewState.setkaPlusStickerPacks,
+                                                 mediaProvider: context.mediaProvider,
+                                                 onSendSticker: { packID, stickerID in
+                                                     timelineContext.send(viewAction: .sendSetkaPlusSticker(packID: packID, stickerID: stickerID))
+                                                     setkaPlusComposerPickerData = nil
+                                                 },
+                                                 onInsertUnicodeEmoji: { text in
+                                                     composerContext.send(viewAction: .insertText(text))
+                                                 },
+                                                 onInsertCustomEmoji: { sticker in
+                                                     insertCustomEmojiIntoComposer(sticker)
+                                                 },
+                                                 onCreateStickerPack: { name, kind in
+                                                     timelineContext.send(viewAction: .createSetkaPlusStickerPack(name: name, kind: kind))
+                                                 },
+                                                 onDeleteStickerPack: { packID in
+                                                     timelineContext.send(viewAction: .deleteSetkaPlusStickerPack(packID: packID))
+                                                 },
+                                                 onDeleteSticker: { packID, stickerID in
+                                                     timelineContext.send(viewAction: .deleteSetkaPlusSticker(packID: packID, stickerID: stickerID))
+                                                 },
+                                                 onSharePack: { packID in
+                                                     timelineContext.send(viewAction: .shareSetkaPlusStickerPack(packID: packID))
+                                                 },
+                                                 onUploadToPack: { packID, kind in
+                                                     setkaUploadTarget = .init(packID: packID, kind: kind)
+                                                     showSetkaUploadImporter = true
+                                                 },
+                                                 onDismiss: {
+                                                     setkaPlusComposerPickerData = nil
+                                                 })
+                                                 .padding(.horizontal, 8)
+                                                 .padding(.bottom, 4)
+                                                 .offset(y: max(0, setkaPickerDragOffset))
+                                                 .gesture(
+                                                     DragGesture(minimumDistance: 8)
+                                                         .onChanged { value in
+                                                             if value.translation.height > 0 {
+                                                                 setkaPickerDragOffset = value.translation.height
+                                                             }
+                                                         }
+                                                         .onEnded { value in
+                                                             let shouldDismiss = value.translation.height > 90 || value.predictedEndTranslation.height > 140
+                                                             if shouldDismiss {
+                                                                 setkaPlusComposerPickerData = nil
+                                                             }
+                                                             setkaPickerDragOffset = 0
+                                                         }
+                                                 )
+                                                 .transition(.move(edge: .bottom).combined(with: .opacity))
+                                                 .onDisappear {
+                                                     setkaPickerDragOffset = 0
+                                                 }
+                }
+            }
+            .sheet(item: $setkaSharePayload) { payload in
+                AppActivityView(activityItems: [payload.url], onCancel: {
+                    setkaSharePayload = nil
+                }, onComplete: { _ in
+                    setkaSharePayload = nil
+                })
+            }
+            .fileImporter(isPresented: $showSetkaUploadImporter,
+                          allowedContentTypes: [.image],
+                          allowsMultipleSelection: false) { result in
+                guard let target = setkaUploadTarget else {
+                    return
+                }
+
+                switch result {
+                case .success(let urls):
+                    guard let originalURL = urls.first else {
+                        return
+                    }
+
+                    let uploadURL = persistImportedSetkaMediaURL(originalURL)
+                    timelineContext.send(viewAction: .uploadSetkaPlusMedia(packID: target.packID,
+                                                                           kind: target.kind,
+                                                                           mediaURL: uploadURL))
+                case .failure(let error):
+                    MXLog.error("Failed selecting Setka upload media with error: \(error)")
+                }
+
+                setkaUploadTarget = nil
             }
             .overlay { recordingOverlay }
             .onAppear {
@@ -77,9 +159,42 @@ struct RoomScreen: View {
     private func handleAction(_ action: TimelineViewModelAction) {
         if case let .displaySetkaPlusComposerPicker(packs) = action {
             setkaPlusComposerPickerData = .init(packs: packs)
+        } else if case let .displaySetkaPlusShareSheet(packName, url) = action {
+            setkaSharePayload = .init(packName: packName, url: url)
         } else if case .displayVideoNoteRecorder = action {
             recordingOverlayController.beginRecording(.video)
         }
+    }
+
+    private func persistImportedSetkaMediaURL(_ url: URL) -> URL {
+        let destinationURL = URL.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(url.pathExtension)
+
+        do {
+            if FileManager.default.fileExists(atPath: destinationURL.path(percentEncoded: false)) {
+                try FileManager.default.removeItem(at: destinationURL)
+            }
+            try FileManager.default.copyItem(at: url, to: destinationURL)
+            return destinationURL
+        } catch {
+            MXLog.error("Failed persisting imported Setka media with error: \(error)")
+            return url
+        }
+    }
+
+    private func insertCustomEmojiIntoComposer(_ sticker: SetkaPlusStickerItem) {
+        let token = ":\(normalizedSetkaEmojiTokenName(sticker.name)): "
+        composerContext.send(viewAction: .insertText(token))
+    }
+
+    private func normalizedSetkaEmojiTokenName(_ name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let spacesNormalized = trimmed.replacingOccurrences(of: " ", with: "_")
+        let replaced = spacesNormalized.replacingOccurrences(of: "[^A-Za-z0-9_]+", with: "_", options: .regularExpression)
+        let collapsed = replaced.replacingOccurrences(of: "_+", with: "_", options: .regularExpression)
+        let normalized = collapsed.trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+        return normalized.isEmpty ? "emoji" : normalized
     }
     
     private var baseTimelineView: some View {
@@ -375,6 +490,24 @@ struct RoomScreen: View {
             .accessibilityLabel(L10n.a11yStartCall)
             .accessibilityIdentifier(A11yIdentifiers.roomScreen.joinCall)
         }
+    }
+}
+
+private struct SetkaPackUploadTarget: Identifiable {
+    let packID: String
+    let kind: String
+
+    var id: String {
+        "\(packID)|\(kind)"
+    }
+}
+
+private struct SetkaSharePayload: Identifiable {
+    let packName: String
+    let url: URL
+
+    var id: String {
+        "\(packName)|\(url.absoluteString)"
     }
 }
 

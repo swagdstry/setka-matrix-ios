@@ -132,6 +132,8 @@ protocol JoinedRoomProxyProtocol: RoomProxyProtocol {
     
     func markAsRead(receiptType: ReceiptType) async -> Result<Void, RoomProxyError>
     
+    func sendSetkaPlusSticker(_ sticker: SetkaPlusStickerItem) async -> Result<Void, RoomProxyError>
+    
     func edit(eventID: String, newContent: RoomMessageEventContentWithoutRelation) async -> Result<Void, RoomProxyError>
     
     /// https://spec.matrix.org/v1.9/client-server-api/#typing-notifications
@@ -192,6 +194,12 @@ protocol JoinedRoomProxyProtocol: RoomProxyProtocol {
     func saveDraft(_ draft: ComposerDraft, threadRootEventID: String?) async -> Result<Void, RoomProxyError>
     func loadDraft(threadRootEventID: String?) async -> Result<ComposerDraft?, RoomProxyError>
     func clearDraft(threadRootEventID: String?) async -> Result<Void, RoomProxyError>
+}
+
+extension JoinedRoomProxyProtocol {
+    func sendSetkaPlusSticker(_ sticker: SetkaPlusStickerItem) async -> Result<Void, RoomProxyError> {
+        .failure(.sdkError(NSError(domain: "JoinedRoomProxyProtocol", code: -1)))
+    }
 }
 
 extension JoinedRoomProxyProtocol {

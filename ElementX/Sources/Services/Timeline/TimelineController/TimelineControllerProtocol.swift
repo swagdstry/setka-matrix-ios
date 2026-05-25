@@ -32,6 +32,7 @@ enum TimelineControllerAction {
 enum TimelineControllerError: Error {
     case generic
     case eventNotFound
+    case roomProxyError(RoomProxyError)
     case timelineProxyError(TimelineProxyError)
 }
 
@@ -99,6 +100,8 @@ protocol TimelineControllerProtocol {
                      html: String?,
                      inReplyToEventID: String?,
                      intentionalMentions: IntentionalMentions) async
+    
+    func sendSetkaPlusSticker(_ sticker: SetkaPlusStickerItem) async -> Result<Void, TimelineControllerError>
     
     func sendAudio(url: URL,
                    audioInfo: AudioInfo,

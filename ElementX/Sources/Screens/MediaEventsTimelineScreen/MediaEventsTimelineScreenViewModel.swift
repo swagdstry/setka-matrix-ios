@@ -75,7 +75,7 @@ class MediaEventsTimelineScreenViewModel: MediaEventsTimelineScreenViewModelType
                  .displayDocumentPicker, .displayLocationPicker, .displayPollForm, .displayMediaUploadPreviewScreen,
                  .displaySenderDetails, .displayMessageForwarding, .displayLocation, .displayResolveSendFailure,
                  .displayThread, .composer, .hasScrolled, .viewInRoomTimeline, .displayRoom, .displayVideoNoteRecorder,
-                 .displaySetkaPlusComposerPicker:
+                 .displaySetkaPlusComposerPicker, .displaySetkaPlusShareSheet:
                 break
             }
         }
@@ -101,7 +101,7 @@ class MediaEventsTimelineScreenViewModel: MediaEventsTimelineScreenViewModelType
                  .displayDocumentPicker, .displayLocationPicker, .displayPollForm, .displayMediaUploadPreviewScreen,
                  .displaySenderDetails, .displayMessageForwarding, .displayLocation, .displayResolveSendFailure,
                  .displayThread, .composer, .hasScrolled, .viewInRoomTimeline, .displayRoom, .displayVideoNoteRecorder,
-                 .displaySetkaPlusComposerPicker:
+                 .displaySetkaPlusComposerPicker, .displaySetkaPlusShareSheet:
                 break
             }
         }

@@ -206,10 +206,11 @@ class StartChatScreenViewModel: StartChatScreenViewModelType, StartChatScreenVie
 
         for contact in contacts {
             let fallbackID = contact.userID ?? contact.roomID
-            let fallbackName = contact.alias.nilIfEmpty
+            let fallbackName = contact.alias.trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalizedFallbackName = fallbackName.isEmpty ? nil : fallbackName
             let avatarURL = userSession.clientProxy.roomSummaryForIdentifier(contact.roomID)?.avatarURL
             result.append(.init(userID: fallbackID,
-                                displayName: fallbackName,
+                                displayName: normalizedFallbackName,
                                 avatarURL: avatarURL))
         }
 
@@ -228,7 +229,6 @@ class StartChatScreenViewModel: StartChatScreenViewModelType, StartChatScreenVie
 
             var resolved = user
             if let roomID = try? userSession.clientProxy.directRoomForUserID(user.userID).get(),
-               let roomID,
                let summary = userSession.clientProxy.roomSummaryForIdentifier(roomID) {
                 resolved = .init(userID: user.userID,
                                  displayName: user.displayName ?? summary.name,

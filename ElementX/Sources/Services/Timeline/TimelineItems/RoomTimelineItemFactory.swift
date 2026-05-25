@@ -44,7 +44,7 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
             case .other:
                 return nil // We shouldn't receive these without asking for custom event types.
             case .liveLocation:
-                // TODO: Implement
+                // Not supported in timeline item factory yet.
                 return nil
             }
         case .failedToParseMessageLike(let eventType, let error):
@@ -121,7 +121,7 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
                              canBeRepliedTo: eventItemProxy.canBeRepliedTo,
                              shouldBoost: eventItemProxy.shouldBoost,
                              sender: eventItemProxy.sender,
-                             content: buildTextTimelineItemContent(textMessageContent),
+                             content: buildTextTimelineItemContent(textMessageContent, eventItemProxy: eventItemProxy),
                              properties: .init(replyDetails: buildTimelineItemReplyDetails(messageLikeContent.inReplyTo),
                                                isThreaded: messageLikeContent.threadRoot != nil,
                                                threadSummary: buildTimelineItemThreadSummary(messageLikeContent.threadSummary),
@@ -263,7 +263,7 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
                                isEditable: eventItemProxy.isEditable,
                                canBeRepliedTo: eventItemProxy.canBeRepliedTo,
                                sender: eventItemProxy.sender,
-                               content: buildNoticeTimelineItemContent(noticeMessageContent),
+                               content: buildNoticeTimelineItemContent(noticeMessageContent, eventItemProxy: eventItemProxy),
                                properties: .init(replyDetails: buildTimelineItemReplyDetails(messageLikeContent.inReplyTo),
                                                  isThreaded: messageLikeContent.threadRoot != nil,
                                                  threadSummary: buildTimelineItemThreadSummary(messageLikeContent.threadSummary),
@@ -286,7 +286,10 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
                               isEditable: eventItemProxy.isEditable,
                               canBeRepliedTo: eventItemProxy.canBeRepliedTo,
                               sender: eventItemProxy.sender,
-                              content: buildEmoteTimelineItemContent(senderDisplayName: eventItemProxy.sender.displayName, senderID: eventItemProxy.sender.id, messageContent: emoteMessageContent),
+                              content: buildEmoteTimelineItemContent(senderDisplayName: eventItemProxy.sender.displayName,
+                                                                     senderID: eventItemProxy.sender.id,
+                                                                     messageContent: emoteMessageContent,
+                                                                     eventItemProxy: eventItemProxy),
                               properties: .init(replyDetails: buildTimelineItemReplyDetails(messageLikeContent.inReplyTo),
                                                 isThreaded: messageLikeContent.threadRoot != nil,
                                                 threadSummary: buildTimelineItemThreadSummary(messageLikeContent.threadSummary),
@@ -503,11 +506,12 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
     
     // MARK: - Message events content
     
-    private func buildTextTimelineItemContent(_ messageContent: TextMessageContent) -> TextRoomTimelineItemContent {
-        let htmlBody = messageContent.formatted?.format == .html ? messageContent.formatted?.body : nil
-        let formattedBody = (htmlBody != nil ? attributedStringBuilder.fromHTML(htmlBody) : attributedStringBuilder.fromPlain(messageContent.body))
+    private func buildTextTimelineItemContent(_ messageContent: TextMessageContent, eventItemProxy: EventTimelineItemProxy? = nil) -> TextRoomTimelineItemContent {
+        let htmlBody = htmlBody(from: messageContent.formatted, eventItemProxy: eventItemProxy)
+        let body = setkaCustomEmojiBodyFallback(for: messageContent.body, htmlBody: htmlBody)
+        let formattedBody = (htmlBody != nil ? attributedStringBuilder.fromHTML(htmlBody) : attributedStringBuilder.fromPlain(body))
         
-        return .init(body: messageContent.body, formattedBody: formattedBody, formattedBodyHTMLString: htmlBody)
+        return .init(body: body, formattedBody: formattedBody, formattedBodyHTMLString: htmlBody)
     }
     
     private func buildAudioTimelineItemContent(_ messageContent: AudioMessageContent) -> AudioRoomTimelineItemContent {
@@ -612,26 +616,31 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
                      contentType: UTType(mimeType: messageContent.info?.mimetype, fallbackFilename: messageContent.filename))
     }
     
-    private func buildNoticeTimelineItemContent(_ messageContent: NoticeMessageContent) -> NoticeRoomTimelineItemContent {
-        let htmlBody = messageContent.formatted?.format == .html ? messageContent.formatted?.body : nil
-        let formattedBody = (htmlBody != nil ? attributedStringBuilder.fromHTML(htmlBody) : attributedStringBuilder.fromPlain(messageContent.body))
+    private func buildNoticeTimelineItemContent(_ messageContent: NoticeMessageContent, eventItemProxy: EventTimelineItemProxy? = nil) -> NoticeRoomTimelineItemContent {
+        let htmlBody = htmlBody(from: messageContent.formatted, eventItemProxy: eventItemProxy)
+        let body = setkaCustomEmojiBodyFallback(for: messageContent.body, htmlBody: htmlBody)
+        let formattedBody = (htmlBody != nil ? attributedStringBuilder.fromHTML(htmlBody) : attributedStringBuilder.fromPlain(body))
         
-        return .init(body: messageContent.body, formattedBody: formattedBody)
+        return .init(body: body, formattedBody: formattedBody)
     }
     
-    private func buildEmoteTimelineItemContent(senderDisplayName: String?, senderID: String, messageContent: EmoteMessageContent) -> EmoteRoomTimelineItemContent {
+    private func buildEmoteTimelineItemContent(senderDisplayName: String?,
+                                               senderID: String,
+                                               messageContent: EmoteMessageContent,
+                                               eventItemProxy: EventTimelineItemProxy? = nil) -> EmoteRoomTimelineItemContent {
         let name = senderDisplayName ?? senderID
         
-        let htmlBody = messageContent.formatted?.format == .html ? messageContent.formatted?.body : nil
+        let htmlBody = htmlBody(from: messageContent.formatted, eventItemProxy: eventItemProxy)
+        let body = setkaCustomEmojiBodyFallback(for: messageContent.body, htmlBody: htmlBody)
 
         var formattedBody: AttributedString?
         if let htmlBody {
             formattedBody = buildEmoteFormattedBodyFromHTML(html: htmlBody, name: name)
         } else {
-            formattedBody = attributedStringBuilder.fromPlain(L10n.commonEmote(name, messageContent.body))
+            formattedBody = attributedStringBuilder.fromPlain(L10n.commonEmote(name, body))
         }
         
-        return .init(body: messageContent.body, formattedBody: formattedBody, formattedBodyHTMLString: htmlBody)
+        return .init(body: body, formattedBody: formattedBody, formattedBodyHTMLString: htmlBody)
     }
     
     /// This fixes the issue of the name not belonging to the first <p> defined paragraph
@@ -643,6 +652,99 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
         }
         finalString.replace(htmlBodyPlaceholder, with: htmlBodyString)
         return finalString
+    }
+
+    private func htmlBody(from formattedBody: FormattedBody?, eventItemProxy: EventTimelineItemProxy?) -> String? {
+        if let body = formattedBody?.body,
+           formattedBody?.format == .html || body.containsSetkaCustomEmojiHTML {
+            return body
+        }
+        
+        return eventItemProxy.flatMap { recoverSetkaCustomEmojiHTMLBody(from: $0.debugInfo) }
+    }
+    
+    private func recoverSetkaCustomEmojiHTMLBody(from debugInfo: TimelineItemDebugInfo) -> String? {
+        for json in [debugInfo.latestEditJSON, debugInfo.originalJSON].compactMap(\.self) {
+            guard let data = json.data(using: .utf8),
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let content = object["content"] as? [String: Any],
+                  let formattedBody = content["formatted_body"] as? String,
+                  formattedBody.containsSetkaCustomEmojiHTML else {
+                continue
+            }
+            
+            return formattedBody
+        }
+        
+        return nil
+    }
+    
+    private func setkaCustomEmojiBodyFallback(for body: String, htmlBody: String?) -> String {
+        guard body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let fallback = setkaCustomEmojiFallbackBody(from: htmlBody) else {
+            return body
+        }
+        
+        return fallback
+    }
+    
+    private func setkaCustomEmojiFallbackBody(from htmlBody: String?) -> String? {
+        guard let htmlBody, htmlBody.containsSetkaCustomEmojiHTML else {
+            return nil
+        }
+        
+        let tagPattern = #"<img[^>]*data-mx-emoticon[^>]*>"#
+        guard let tagRegex = try? NSRegularExpression(pattern: tagPattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) else {
+            return nil
+        }
+        
+        let normalizedHTML = htmlBody.replacingOccurrences(of: "\\/", with: "/")
+        let htmlRange = NSRange(normalizedHTML.startIndex..<normalizedHTML.endIndex, in: normalizedHTML)
+        let tokens = tagRegex.matches(in: normalizedHTML, range: htmlRange).compactMap { match -> String? in
+            guard let range = Range(match.range, in: normalizedHTML) else {
+                return nil
+            }
+            
+            let attributes = attributes(fromHTMLTag: String(normalizedHTML[range]))
+            let rawToken = [attributes["alt"], attributes["title"], attributes["data-mx-emoticon"]]
+                .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .first { !$0.isEmpty && $0 != "true" && $0 != "1" }
+            
+            guard let rawToken, !rawToken.isEmpty else {
+                return ":emoji:"
+            }
+            
+            return rawToken.hasPrefix(":") && rawToken.hasSuffix(":") ? rawToken : ":\(rawToken):"
+        }
+        
+        return tokens.isEmpty ? nil : tokens.joined(separator: " ")
+    }
+    
+    private func attributes(fromHTMLTag tag: String) -> [String: String] {
+        let attrPattern = #"([A-Za-z0-9:_-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))"#
+        guard let attrRegex = try? NSRegularExpression(pattern: attrPattern, options: [.caseInsensitive]) else {
+            return [:]
+        }
+        
+        let tagRange = NSRange(tag.startIndex..<tag.endIndex, in: tag)
+        var attributes: [String: String] = [:]
+        for attrMatch in attrRegex.matches(in: tag, range: tagRange) {
+            guard let keyRange = Range(attrMatch.range(at: 1), in: tag) else {
+                continue
+            }
+            
+            let valueRange = (2...4)
+                .map { attrMatch.range(at: $0) }
+                .first { $0.location != NSNotFound && $0.length > 0 }
+            
+            guard let valueRange, let valueSwiftRange = Range(valueRange, in: tag) else {
+                continue
+            }
+            
+            attributes[String(tag[keyRange]).lowercased()] = String(tag[valueSwiftRange])
+        }
+        
+        return attributes
     }
     
     // MARK: - EventBasedTimelineItem Properties
@@ -901,6 +1003,12 @@ struct RoomTimelineItemFactory: RoomTimelineItemFactoryProtocol {
         case .none:
             .text(.init(body: L10n.commonUnsupportedEvent))
         }
+    }
+}
+
+private extension String {
+    var containsSetkaCustomEmojiHTML: Bool {
+        range(of: "data-mx-emoticon", options: .caseInsensitive) != nil
     }
 }
 

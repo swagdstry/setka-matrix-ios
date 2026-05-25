@@ -71,7 +71,8 @@ struct HomeScreenContent: View {
                                                   withAnimation(.spring(response: 0.32, dampingFraction: 0.86).disabledDuringTests()) {
                                                       isMiniPlayerCollapsed = false
                                                   }
-                                              })
+                                              }
+                    )
                                               .padding(.horizontal, 12)
                                               .padding(.top, 4)
                                               .padding(.bottom, 4)

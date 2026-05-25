@@ -173,7 +173,7 @@ struct InlineMiniMediaPlayerView: View {
                                 controller.selectAudioItem(item.itemID)
                                 isQueuePresented = false
                             } label: {
-                                HStack {
+                                HStack(spacing: 8) {
                                     Text(item.title)
                                         .foregroundStyle(.compound.textPrimary)
                                     Spacer()
@@ -368,11 +368,11 @@ private struct InlineMiniAudioPlayerContent: View {
     }
     
     private var progressSlider: some View {
-        Slider(value: Binding(get: {
+        Slider(value: Binding {
             isScrubbingSlider ? sliderValue : playerState.progress
-        }, set: { newValue in
+        } set: { newValue in
             sliderValue = newValue
-        }), in: 0...1, onEditingChanged: { editing in
+        }, in: 0...1, onEditingChanged: { editing in
             isScrubbingSlider = editing
             
             if editing {

@@ -154,8 +154,8 @@ struct VideoRoomTimelineView: View {
             }
             
             if isExpanded {
-                VStack {
-                    HStack {
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
                         Spacer()
                         
                         Button {

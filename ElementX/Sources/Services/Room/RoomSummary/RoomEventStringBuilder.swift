@@ -63,7 +63,7 @@ struct RoomEventStringBuilder {
             case .other:
                 return nil // We shouldn't receive these without asking for custom event types.
             case .liveLocation:
-                // TODO: Implement
+                // Not supported in summaries yet.
                 return nil
             }
         case .failedToParseMessageLike, .failedToParseState:

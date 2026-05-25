@@ -463,10 +463,10 @@ class TimelineInteractionHandler {
                                                         queue: queue,
                                                         currentIndex: currentIndex,
                                                         playItem: { [weak self] itemID in
-                                                            Task {
-                                                                await self?.playAudio(for: itemID, toggleIfCurrent: false)
-                                                            }
-                                                        })
+            Task {
+                await self?.playAudio(for: itemID, toggleIfCurrent: false)
+            }
+        })
         
         // Ensure this one is attached
         if !audioPlayerState.isAttached {

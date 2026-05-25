@@ -12,6 +12,7 @@ import Foundation
 import MatrixRustSDK
 import OrderedCollections
 
+// swiftlint:disable file_length
 // swiftlint:disable:next type_body_length
 class ClientProxy: ClientProxyProtocol {
     private let client: ClientProtocol
@@ -986,31 +987,179 @@ class ClientProxy: ClientProxyProtocol {
         }
     }
 
+    func createSetkaPlusStickerPack(name: String, kind: String) async -> Result<SetkaPlusStickerPack, ClientProxyError> {
+        let normalizedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedKind = kind.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedName.isEmpty, !normalizedKind.isEmpty else {
+            return .failure(.invalidResponse)
+        }
+
+        do {
+            let payload = SetkaPlusStickerPackSavePayload(name: normalizedName,
+                                                          kind: normalizedKind,
+                                                          stickers: [])
+            let body = try JSONEncoder().encode(payload)
+            let data = try await performSetkaPlusRequest(method: "POST",
+                                                         path: "/user/\(encodedUserID())/setka_plus/sticker_packs",
+                                                         body: body)
+            let pack = try decodeSetkaPlusStickerPackResponse(data)
+            return .success(pack)
+        } catch {
+            MXLog.error("Failed creating Setka Plus sticker pack with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+
+    func saveSetkaPlusStickerPack(_ pack: SetkaPlusStickerPack) async -> Result<SetkaPlusStickerPack, ClientProxyError> {
+        let normalizedPackID = pack.id.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedName = pack.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedKind = pack.kind.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedPackID.isEmpty, !normalizedName.isEmpty, !normalizedKind.isEmpty else {
+            return .failure(.invalidResponse)
+        }
+
+        do {
+            let payload = SetkaPlusStickerPackSavePayload(name: normalizedName,
+                                                          kind: normalizedKind,
+                                                          stickers: pack.stickers)
+            let body = try JSONEncoder().encode(payload)
+            let data = try await performSetkaPlusRequest(method: "PUT",
+                                                         path: "/user/\(encodedUserID())/setka_plus/sticker_packs/\(encodedPathSegment(normalizedPackID))",
+                                                         body: body)
+            let updatedPack = try decodeSetkaPlusStickerPackResponse(data, fallback: pack)
+            return .success(updatedPack)
+        } catch {
+            MXLog.error("Failed saving Setka Plus sticker pack with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+
+    func deleteSetkaPlusStickerPack(packID: String) async -> Result<Void, ClientProxyError> {
+        let normalizedPackID = packID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedPackID.isEmpty else {
+            return .failure(.invalidResponse)
+        }
+
+        do {
+            let (_, response) = try await performUserMetadataRequest(method: "DELETE",
+                                                                     path: "/user/\(encodedUserID())/setka_plus/sticker_packs/\(encodedPathSegment(normalizedPackID))")
+            guard 200..<300 ~= response.statusCode || response.statusCode == 404 else {
+                return .failure(.invalidResponse)
+            }
+            return .success(())
+        } catch let error as ClientProxyError {
+            MXLog.error("Failed deleting Setka Plus sticker pack with ClientProxyError: \(error)")
+            return .failure(error)
+        } catch {
+            MXLog.error("Failed deleting Setka Plus sticker pack with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+
     func addSetkaPlusStickerPack(packID: String) async -> Result<Void, ClientProxyError> {
         let normalizedPackID = packID.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedPackID.isEmpty else {
             return .failure(.invalidResponse)
         }
 
+        if case let .success(existingPacks) = await fetchSetkaPlusStickerPacks(),
+           existingPacks.contains(where: { $0.id == normalizedPackID }) {
+            MXLog.info("Setka Plus sticker pack is already on account: \(normalizedPackID)")
+            return .success(())
+        }
+
         let body = try? JSONEncoder().encode(SetkaPlusAddStickerPackPayload(packID: normalizedPackID))
-        let candidateRequests: [(String, String, Data?)] = [
-            ("POST", "/user/\(encodedUserID())/setka_plus/sticker_packs", body),
-            ("PUT", "/user/\(encodedUserID())/setka_plus/sticker_packs/\(encodedPathSegment(normalizedPackID))", nil),
-            ("POST", "/setka_plus/sticker_packs/\(encodedPathSegment(normalizedPackID))/add", nil)
+        struct CandidateRequest {
+            let method: String
+            let path: String
+            let body: Data?
+        }
+        
+        let candidateRequests: [CandidateRequest] = [
+            .init(method: "POST", path: "/user/\(encodedUserID())/setka_plus/sticker_packs", body: body),
+            .init(method: "PUT", path: "/user/\(encodedUserID())/setka_plus/sticker_packs/\(encodedPathSegment(normalizedPackID))", body: nil),
+            .init(method: "POST", path: "/setka_plus/sticker_packs/\(encodedPathSegment(normalizedPackID))/add", body: nil),
+            .init(method: "POST", path: "/setka_plus/sticker_packs/add", body: body)
         ]
 
-        for (method, path, requestBody) in candidateRequests {
+        for request in candidateRequests {
             do {
-                let (_, response) = try await performUserMetadataRequest(method: method, path: path, body: requestBody)
-                if 200..<300 ~= response.statusCode {
+                let (data, response) = try await performUserMetadataRequest(method: request.method, path: request.path, body: request.body)
+                if 200..<300 ~= response.statusCode || response.statusCode == 409 || response.statusCode == 422 {
+                    // 409/422 commonly mean "already added" or "already associated" for idempotent add operations.
                     return .success(())
                 }
+                if isStickerPackAlreadyAddedResponse(statusCode: response.statusCode, body: data) {
+                    MXLog.info("Setka Plus sticker pack add treated as success (already added) for status \(response.statusCode)")
+                    return .success(())
+                }
+                MXLog.warning("Failed adding Setka Plus sticker pack using \(request.method) \(request.path): status \(response.statusCode)")
             } catch {
-                MXLog.warning("Failed adding Setka Plus sticker pack using \(method) \(path): \(error)")
+                MXLog.warning("Failed adding Setka Plus sticker pack using \(request.method) \(request.path): \(error)")
             }
         }
 
+        // Final consistency check: some backends can return non-2xx while still persisting the pack.
+        if case let .success(existingPacks) = await fetchSetkaPlusStickerPacks(),
+           existingPacks.contains(where: { $0.id == normalizedPackID }) {
+            MXLog.info("Setka Plus sticker pack detected on account after add attempts: \(normalizedPackID)")
+            return .success(())
+        }
+
         return .failure(.invalidResponse)
+    }
+
+    func createSetkaPlusStickerPackShareLink(packID: String) async -> Result<String, ClientProxyError> {
+        let normalizedPackID = packID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedPackID.isEmpty else {
+            return .failure(.invalidResponse)
+        }
+
+        do {
+            let data = try await performSetkaPlusRequest(method: "POST",
+                                                         path: "/user/\(encodedUserID())/setka_plus/sticker_packs/\(encodedPathSegment(normalizedPackID))/share",
+                                                         body: Data("{}".utf8))
+            let link = try decodeSetkaPlusShareLinkResponse(data)
+            return .success(link)
+        } catch {
+            MXLog.error("Failed creating Setka Plus sticker pack share link with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+
+    func resolveSetkaPlusSharedStickerPack(token: String) async -> Result<SetkaPlusStickerPack, ClientProxyError> {
+        let normalizedToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedToken.isEmpty else {
+            return .failure(.invalidResponse)
+        }
+
+        do {
+            let data = try await performSetkaPlusRequest(method: "GET",
+                                                         path: "/user/\(encodedUserID())/setka_plus/shared_packs/\(encodedPathSegment(normalizedToken))")
+            let pack = try decodeSetkaPlusSharedStickerPackResponse(data)
+            return .success(pack)
+        } catch {
+            MXLog.error("Failed resolving Setka Plus shared sticker pack with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+
+    func importSetkaPlusSharedStickerPack(token: String) async -> Result<SetkaPlusStickerPack, ClientProxyError> {
+        let normalizedToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedToken.isEmpty else {
+            return .failure(.invalidResponse)
+        }
+
+        do {
+            let data = try await performSetkaPlusRequest(method: "POST",
+                                                         path: "/user/\(encodedUserID())/setka_plus/shared_packs/\(encodedPathSegment(normalizedToken))/import",
+                                                         body: Data("{}".utf8))
+            let pack = try decodeSetkaPlusStickerPackResponse(data)
+            return .success(pack)
+        } catch {
+            MXLog.error("Failed importing Setka Plus shared sticker pack with error: \(error)")
+            return .failure(.sdkError(error))
+        }
     }
     
     func fetchSetkaPlusPayments() async -> Result<[SetkaPlusPayment], ClientProxyError> {
@@ -1028,6 +1177,7 @@ class ClientProxy: ClientProxyProtocol {
     func fetchSetkaPlusStatusEmoji(userID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError> {
         do {
             let targetUserID = userID?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let isFetchingOtherUser = targetUserID != nil && targetUserID != self.userID
             let path: String
             if let targetUserID, !targetUserID.isEmpty, targetUserID != self.userID {
                 path = "/setka_plus/users/\(encodedPathSegment(targetUserID))/status_emoji"
@@ -1041,6 +1191,10 @@ class ClientProxy: ClientProxyProtocol {
             MXLog.info("Setka Plus status fetch response: \(response.statusCode)")
             
             if response.statusCode == 404 {
+                if isFetchingOtherUser {
+                    MXLog.info("Setka Plus status not found (404) for other user - returning empty status")
+                    return .success(.init(emoji: nil, packID: nil, stickerID: nil, updatedAt: nil))
+                }
                 MXLog.info("Setka Plus status not found (404) - returning empty status")
                 return .success(.init(emoji: nil, packID: nil, stickerID: nil, updatedAt: nil))
             }
@@ -1050,7 +1204,16 @@ class ClientProxy: ClientProxyProtocol {
                 throw ClientProxyError.invalidResponse
             }
             
-            let statusEmoji = try decodeSetkaPlusStatusEmojiResponse(data)
+            var statusEmoji = try decodeSetkaPlusStatusEmojiResponse(data)
+            if isFetchingOtherUser,
+               statusEmoji.emoji?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false,
+               statusEmoji.stickerID?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
+                // User has Setka Plus metadata endpoint available but no custom status yet.
+                statusEmoji = .init(emoji: nil,
+                                    packID: statusEmoji.packID,
+                                    stickerID: "setka_plus_subscription",
+                                    updatedAt: statusEmoji.updatedAt)
+            }
             MXLog.info("Setka Plus status fetch successful: \(statusEmoji.emoji ?? "nil")")
             return .success(statusEmoji)
         } catch let error as ClientProxyError {
@@ -1063,28 +1226,59 @@ class ClientProxy: ClientProxyProtocol {
     }
 
     func fetchSetkaPlusUserProfileDetails(userID: String) async -> Result<SetkaPlusUserProfileDetails, ClientProxyError> {
-        do {
-            let path = "/setka_plus/users/\(encodedPathSegment(userID))/profile"
-            let (data, response) = try await performUserMetadataRequest(method: "GET", path: path)
+        let encodedTargetUserID = encodedPathSegment(userID)
+        let candidates = [
+            "/user/\(encodedTargetUserID)/setka_profile",
+            "/profile/\(encodedTargetUserID)/setka_profile",
+            "/setka_plus/users/\(encodedTargetUserID)/profile"
+        ]
 
-            if response.statusCode == 404 {
-                return .success(.init(bio: nil, backgroundURL: nil, lastSeenText: nil, shareURL: nil))
+        for path in candidates {
+            do {
+                let (data, response) = try await performUserMetadataRequest(method: "GET", path: path)
+
+                if response.statusCode == 404 {
+                    continue
+                }
+
+                guard 200..<300 ~= response.statusCode else {
+                    MXLog.warning("Setka Plus user profile fetch failed for \(path) with status code: \(response.statusCode)")
+                    continue
+                }
+
+                let details = try JSONDecoder().decode(SetkaPlusUserProfileDetails.self, from: data)
+                return .success(details)
+            } catch {
+                MXLog.warning("Failed fetching Setka Plus user profile details from \(path) with error: \(error)")
             }
-
-            guard 200..<300 ~= response.statusCode else {
-                MXLog.error("Setka Plus user profile fetch failed with status code: \(response.statusCode)")
-                return .failure(.invalidResponse)
-            }
-
-            let details = try JSONDecoder().decode(SetkaPlusUserProfileDetails.self, from: data)
-            return .success(details)
-        } catch let error as ClientProxyError {
-            MXLog.error("Failed fetching Setka Plus user profile details with ClientProxyError: \(error)")
-            return .failure(error)
-        } catch {
-            MXLog.error("Failed fetching Setka Plus user profile details with error: \(error)")
-            return .failure(.sdkError(error))
         }
+
+        return .success(.init(bio: nil, backgroundURL: nil, lastSeenText: nil, shareURL: nil))
+    }
+    
+    func updateSetkaPlusUserProfileDetails(_ details: SetkaPlusUserProfileUpdate) async -> Result<Void, ClientProxyError> {
+        let payload = try? JSONEncoder().encode(details)
+        let candidates: [(String, String)] = [
+            ("PUT", "/user/\(encodedUserID())/setka_profile"),
+            ("PATCH", "/user/\(encodedUserID())/setka_profile"),
+            ("POST", "/user/\(encodedUserID())/setka_profile"),
+            ("PATCH", "/user/\(encodedUserID())/setka_plus/profile"),
+            ("PUT", "/user/\(encodedUserID())/setka_plus/profile"),
+            ("POST", "/user/\(encodedUserID())/setka_plus/profile")
+        ]
+        
+        for (method, path) in candidates {
+            do {
+                _ = try await performSetkaPlusRequest(method: method, path: path, body: payload)
+                return .success(())
+            } catch let error as ClientProxyError {
+                MXLog.warning("Failed updating Setka Plus user profile using \(method) \(path): \(error)")
+            } catch {
+                MXLog.warning("Failed updating Setka Plus user profile using \(method) \(path): \(error)")
+            }
+        }
+        
+        return .failure(.invalidResponse)
     }
 
     func updateSetkaPlusStatusEmoji(emoji: String?, packID: String?, stickerID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError> {
@@ -1661,6 +1855,72 @@ class ClientProxy: ClientProxyProtocol {
         
         return hasPayload ? decoded : fallback
     }
+
+    private func decodeSetkaPlusStickerPackResponse(_ data: Data,
+                                                    fallback: SetkaPlusStickerPack? = nil) throws -> SetkaPlusStickerPack {
+        if let direct = try? JSONDecoder().decode(SetkaPlusStickerPack.self, from: data) {
+            return direct
+        }
+
+        if let wrapped = try? JSONDecoder().decode(SetkaPlusStickerPackWrappedResponse.self, from: data),
+           let pack = wrapped.pack ?? wrapped.data ?? wrapped.value {
+            return pack
+        }
+
+        if let fallback {
+            return fallback
+        }
+
+        throw ClientProxyError.invalidResponse
+    }
+
+    private func decodeSetkaPlusSharedStickerPackResponse(_ data: Data) throws -> SetkaPlusStickerPack {
+        if let wrapped = try? JSONDecoder().decode(SetkaPlusSharedStickerPackResponse.self, from: data),
+           let pack = wrapped.pack ?? wrapped.data ?? wrapped.value {
+            return pack
+        }
+
+        return try decodeSetkaPlusStickerPackResponse(data)
+    }
+
+    private func decodeSetkaPlusShareLinkResponse(_ data: Data) throws -> String {
+        if let direct = try? JSONDecoder().decode(SetkaPlusShareLinkResponse.self, from: data),
+           let url = [direct.url, direct.shareURL, direct.link]
+           .compactMap({ $0?.trimmingCharacters(in: .whitespacesAndNewlines) })
+           .first(where: { !$0.isEmpty }) {
+            return url
+        }
+
+        if let text = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !text.isEmpty,
+            text.hasPrefix("http") {
+            return text
+        }
+
+        throw ClientProxyError.invalidResponse
+    }
+
+    private func isStickerPackAlreadyAddedResponse(statusCode: Int, body: Data) -> Bool {
+        guard statusCode == 400 || statusCode == 403 || statusCode == 404 else {
+            return false
+        }
+
+        guard !body.isEmpty,
+              let text = String(data: body, encoding: .utf8)?.lowercased() else {
+            return false
+        }
+
+        let markers = [
+            "already",
+            "exists",
+            "duplicate",
+            "added",
+            "already_added",
+            "already exists"
+        ]
+        return markers.contains { text.contains($0) }
+    }
 }
 
 private struct ContactsResponse: Decodable {
@@ -1677,6 +1937,36 @@ private struct SetkaPlusPaymentsResponse: Decodable {
 
 private struct SetkaPlusStickerPacksResponse: Decodable {
     let packs: [SetkaPlusStickerPack]
+}
+
+private struct SetkaPlusStickerPackWrappedResponse: Decodable {
+    let pack: SetkaPlusStickerPack?
+    let data: SetkaPlusStickerPack?
+    let value: SetkaPlusStickerPack?
+}
+
+private struct SetkaPlusSharedStickerPackResponse: Decodable {
+    let pack: SetkaPlusStickerPack?
+    let data: SetkaPlusStickerPack?
+    let value: SetkaPlusStickerPack?
+}
+
+private struct SetkaPlusShareLinkResponse: Decodable {
+    let url: String?
+    let shareURL: String?
+    let link: String?
+
+    enum CodingKeys: String, CodingKey {
+        case url
+        case shareURL = "share_url"
+        case link
+    }
+}
+
+private struct SetkaPlusStickerPackSavePayload: Codable {
+    let name: String
+    let kind: String
+    let stickers: [SetkaPlusStickerItem]
 }
 
 private struct SetkaPlusCreateYooMoneyPaymentPayload: Codable {

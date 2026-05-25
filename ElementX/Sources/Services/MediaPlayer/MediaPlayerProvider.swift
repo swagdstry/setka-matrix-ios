@@ -402,18 +402,24 @@ final class GlobalMediaPlayerController: ObservableObject {
         
         let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
         videoNoteTimeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self,
-                  var activeVideoNote = self.activeVideoNote,
-                  activeVideoNote.player === player else {
+            guard let self else {
                 return
             }
-            
-            let duration = self.resolvedDuration(for: player, currentDuration: activeVideoNote.duration)
-            let currentSeconds = max(0, time.seconds.isFinite ? time.seconds : 0)
-            activeVideoNote.duration = duration
-            activeVideoNote.progress = duration > 0 ? min(max(currentSeconds / duration, 0), 1) : 0
-            activeVideoNote.isPlaying = player.rate > 0
-            self.activeVideoNote = activeVideoNote
+
+            Task { @MainActor [weak self] in
+                guard let self,
+                      var activeVideoNote = self.activeVideoNote,
+                      activeVideoNote.player === player else {
+                    return
+                }
+                
+                let duration = self.resolvedDuration(for: player, currentDuration: activeVideoNote.duration)
+                let currentSeconds = max(0, time.seconds.isFinite ? time.seconds : 0)
+                activeVideoNote.duration = duration
+                activeVideoNote.progress = duration > 0 ? min(max(currentSeconds / duration, 0), 1) : 0
+                activeVideoNote.isPlaying = player.rate > 0
+                self.activeVideoNote = activeVideoNote
+            }
         }
     }
     

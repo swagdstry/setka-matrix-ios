@@ -31,7 +31,7 @@ struct PollRoomTimelineView: View {
                     context.send(viewAction: .handlePollAction(.selectOption(pollStartID: eventID, optionID: option.id)))
                 case .edit:
                     guard let eventID else { return }
-                    context.send(viewAction: .handlePollAction(.edit(pollStartID: eventID, poll: poll)))
+                    context.send(viewAction: .handlePollAction(.edit(.init(pollStartID: eventID, poll: poll))))
                 case .end:
                     guard let eventID else { return }
                     context.send(viewAction: .handlePollAction(.end(pollStartID: eventID)))

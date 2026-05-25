@@ -13,10 +13,10 @@ import ImageIO
 import MatrixRustSDK
 import OrderedCollections
 import SwiftUI
-import UniformTypeIdentifiers
 
 typealias TimelineViewModelType = StateStoreViewModel<TimelineViewState, TimelineViewAction>
 
+// swiftlint:disable type_body_length
 class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
     private enum Constants {
         static let paginationEventLimit: UInt16 = 20
@@ -50,6 +50,7 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
     private var paginateBackwardsTask: Task<Void, Never>?
     private var paginateForwardsTask: Task<Void, Never>?
     private var cachedSetkaPlusStickerPacks: [SetkaPlusStickerPack] = []
+    private var setkaPlusStatusRequestsInFlight = Set<String>()
 
     init(roomProxy: JoinedRoomProxyProtocol,
          focussedEventID: String? = nil,
@@ -122,6 +123,7 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
         
         setupSubscriptions()
         setupDirectRoomSubscriptionsIfNeeded()
+        Task { await refreshSetkaPlusStickerPacks() }
         
         state.audioPlayerStateProvider = { [weak self] itemID -> AudioPlayerState? in
             guard let self else {
@@ -226,6 +228,18 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             Task { await sendSetkaPlusSticker(packID: packID, stickerID: stickerID) }
         case .addSetkaPlusStickerPack(let packID):
             Task { await addSetkaPlusStickerPack(packID: packID) }
+        case .importSetkaPlusSharedPack(let token, let packID):
+            Task { await importSetkaPlusSharedPack(token: token, fallbackPackID: packID) }
+        case .createSetkaPlusStickerPack(let name, let kind):
+            Task { await createSetkaPlusStickerPack(name: name, kind: kind) }
+        case .deleteSetkaPlusStickerPack(let packID):
+            Task { await deleteSetkaPlusStickerPack(packID: packID) }
+        case .deleteSetkaPlusSticker(let packID, let stickerID):
+            Task { await deleteSetkaPlusSticker(packID: packID, stickerID: stickerID) }
+        case .shareSetkaPlusStickerPack(let packID):
+            Task { await shareSetkaPlusStickerPack(packID: packID) }
+        case .uploadSetkaPlusMedia(let packID, let kind, let mediaURL):
+            Task { await uploadSetkaPlusMedia(packID: packID, kind: kind, mediaURL: mediaURL) }
         }
     }
 
@@ -375,6 +389,7 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
         switch await userSession.clientProxy.fetchSetkaPlusStickerPacks() {
         case .success(let packs):
             cachedSetkaPlusStickerPacks = packs
+            state.setkaPlusStickerPacks = packs
             actionsSubject.send(.displaySetkaPlusComposerPicker(packs: packs))
         case .failure(let error):
             MXLog.error("Failed fetching Setka Plus sticker packs for composer with error: \(error)")
@@ -400,38 +415,12 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
             return
         }
-
-        guard let mxcURL = URL(string: sticker.mxcURL),
-              let source = try? MediaSourceProxy(url: mxcURL, mimeType: sticker.mimeType) else {
-            MXLog.error("Failed sending Setka Plus sticker: invalid MXC URL \(sticker.mxcURL)")
-            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
-            return
-        }
-
-        let trimmedStickerName = sticker.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let filename = trimmedStickerName.isEmpty ? sticker.id : trimmedStickerName
-        switch await userSession.mediaProvider.loadFileFromSource(source, filename: filename) {
-        case .success(let fileHandle):
-            guard let localURL = fileHandle.url else {
-                userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
-                return
-            }
-
-            guard let imageInfo = imageInfoForSticker(at: localURL, mimeType: sticker.mimeType) else {
-                userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
-                return
-            }
-
-            let result = await timelineController.sendImage(url: localURL,
-                                                            thumbnailURL: localURL,
-                                                            imageInfo: imageInfo,
-                                                            caption: sticker.name) { _ in }
-            if case .failure(let error) = result {
-                MXLog.error("Failed sending Setka Plus sticker with error: \(error)")
-                userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
-            }
+        
+        switch await timelineController.sendSetkaPlusSticker(sticker) {
+        case .success:
+            break
         case .failure(let error):
-            MXLog.error("Failed loading Setka Plus sticker media with error: \(error)")
+            MXLog.error("Failed sending Setka Plus sticker with error: \(error)")
             userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
         }
     }
@@ -441,38 +430,17 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             return nil
         }
 
-        return pack.stickers.first(where: { $0.id == stickerID })
+        return pack.stickers.first { $0.id == stickerID }
     }
 
-    private func imageInfoForSticker(at url: URL, mimeType: String?) -> ImageInfo? {
-        guard let source = CGImageSourceCreateWithURL(url as NSURL, nil),
-              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-              let width = properties[kCGImagePropertyPixelWidth] as? CGFloat,
-              let height = properties[kCGImagePropertyPixelHeight] as? CGFloat else {
-            return nil
-        }
-
-        let fileSize = (try? FileManager.default.sizeForItem(at: url)).map(UInt64.init) ?? 0
-        let resolvedMimeType = mimeType ?? UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/webp"
-
-        return ImageInfo(height: UInt64(height),
-                         width: UInt64(width),
-                         mimetype: resolvedMimeType,
-                         size: fileSize,
-                         thumbnailInfo: nil,
-                         thumbnailSource: nil,
-                         blurhash: nil,
-                         isAnimated: nil)
-    }
-    
     private func handlePollAction(_ action: TimelineViewPollAction) {
         switch action {
         case let .selectOption(pollStartID, optionID):
             timelineInteractionHandler.sendPollResponse(pollStartID: pollStartID, optionID: optionID)
         case let .end(pollStartID):
             displayAlert(.pollEndConfirmation(pollStartID))
-        case .edit(let pollStartID, let poll):
-            actionsSubject.send(.displayPollForm(mode: .edit(eventID: pollStartID, poll: poll)))
+        case .edit(let payload):
+            actionsSubject.send(.displayPollForm(mode: .edit(eventID: payload.pollStartID, poll: payload.poll)))
         }
     }
     
@@ -676,91 +644,13 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             .store(in: &cancellables)
     }
     
-    func sendVideoNote(_ url: URL) async {
-        let preparedVideoURL = await prepareSquareVideoNote(from: url) ?? url
-
-        // Generate thumbnail from video
-        guard let thumbnailURL = await generateVideoThumbnail(from: preparedVideoURL) else {
-            MXLog.error("Failed to generate thumbnail for video note")
-            return
-        }
-
-        // Get video info using modern API
-        let asset = AVURLAsset(url: preparedVideoURL)
-
-        do {
-            let duration = try await asset.load(.duration)
-            let tracks = try await asset.loadTracks(withMediaType: .video)
-            let track = tracks.first
-
-            var size = CGSize(width: 1, height: 1)
-            if let track = track {
-                let naturalSize = try await track.load(.naturalSize)
-                let preferredTransform = try await track.load(.preferredTransform)
-                size = naturalSize.applying(preferredTransform)
-            }
-
-            let side = UInt64(max(1, min(abs(size.width), abs(size.height))))
-            let videoInfo = VideoInfo(duration: .some(duration),
-                                      height: side,
-                                      width: side,
-                                      mimetype: "video/mp4",
-                                      size: nil,
-                                      thumbnailInfo: nil,
-                                      thumbnailSource: nil,
-                                      blurhash: nil)
-
-            let result = await timelineController.sendVideoNote(url: preparedVideoURL,
-                                                                thumbnailURL: thumbnailURL,
-                                                                videoInfo: videoInfo) { _ in
-                // Handle the attachment if needed
-            }
-
-            switch result {
-            case .success:
-                MXLog.info("Video note sent successfully")
-            case .failure(let error):
-                MXLog.error("Failed to send video note: \(error)")
-                displayAlert(.videoNoteUploadFailed)
-            }
-        } catch {
-            MXLog.error("Failed to load video info: \(error)")
-            displayAlert(.videoNoteUploadFailed)
-        }
-    }
-
-    private func generateVideoThumbnail(from url: URL) async -> URL? {
-        let asset = AVURLAsset(url: url)
-        let generator = AVAssetImageGenerator(asset: asset)
-        generator.appliesPreferredTrackTransform = true
-        generator.maximumSize = CGSize(width: 200, height: 200)
-
-        let time = CMTime(seconds: 0, preferredTimescale: 1)
-
-        do {
-            let cgImage = try await generator.image(for: time).image
-            let thumbnail = UIImage(cgImage: cgImage)
-
-            let thumbnailURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("\(UUID().uuidString).jpg")
-
-            if let jpegData = thumbnail.jpegData(compressionQuality: 0.8) {
-                try jpegData.write(to: thumbnailURL)
-                return thumbnailURL
-            }
-        } catch {
-            MXLog.error("Failed to generate thumbnail: \(error)")
-        }
-
-        return nil
-    }
-
     private func addSetkaPlusStickerPack(packID: String) async {
         switch await userSession.clientProxy.addSetkaPlusStickerPack(packID: packID) {
         case .success:
             userIndicatorController.submitIndicator(.init(title: "Пак добавлен"))
             if case let .success(packs) = await userSession.clientProxy.fetchSetkaPlusStickerPacks() {
                 cachedSetkaPlusStickerPacks = packs
+                state.setkaPlusStickerPacks = packs
             }
         case .failure(let error):
             MXLog.error("Failed adding Setka Plus sticker pack with error: \(error)")
@@ -768,74 +658,177 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
         }
     }
 
-    private func prepareSquareVideoNote(from url: URL) async -> URL? {
-        let asset = AVURLAsset(url: url)
-        guard let track = try? await asset.loadTracks(withMediaType: .video).first else {
-            return nil
+    private func importSetkaPlusSharedPack(token: String, fallbackPackID: String?) async {
+        switch await userSession.clientProxy.importSetkaPlusSharedStickerPack(token: token) {
+        case .success:
+            userIndicatorController.submitIndicator(.init(title: "Пак добавлен"))
+            if case let .success(packs) = await userSession.clientProxy.fetchSetkaPlusStickerPacks() {
+                cachedSetkaPlusStickerPacks = packs
+                state.setkaPlusStickerPacks = packs
+            }
+        case .failure(let importError):
+            MXLog.warning("Failed importing Setka shared pack with error: \(importError)")
+
+            if let fallbackPackID {
+                switch await userSession.clientProxy.addSetkaPlusStickerPack(packID: fallbackPackID) {
+                case .success:
+                    userIndicatorController.submitIndicator(.init(title: "Пак добавлен"))
+                    if case let .success(packs) = await userSession.clientProxy.fetchSetkaPlusStickerPacks() {
+                        cachedSetkaPlusStickerPacks = packs
+                        state.setkaPlusStickerPacks = packs
+                    }
+                case .failure(let addError):
+                    MXLog.error("Failed adding Setka Plus sticker pack after import fallback with error: \(addError)")
+                    userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+                }
+            } else {
+                userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            }
+        }
+    }
+
+    private func createSetkaPlusStickerPack(name: String, kind: String) async {
+        switch await userSession.clientProxy.createSetkaPlusStickerPack(name: name, kind: kind) {
+        case .success(let createdPack):
+            cachedSetkaPlusStickerPacks.append(createdPack)
+            cachedSetkaPlusStickerPacks.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            state.setkaPlusStickerPacks = cachedSetkaPlusStickerPacks
+            userIndicatorController.submitIndicator(.init(title: "Пак создан"))
+        case .failure(let error):
+            MXLog.error("Failed creating Setka Plus sticker pack with error: \(error)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+        }
+    }
+
+    private func deleteSetkaPlusStickerPack(packID: String) async {
+        switch await userSession.clientProxy.deleteSetkaPlusStickerPack(packID: packID) {
+        case .success:
+            cachedSetkaPlusStickerPacks.removeAll { $0.id == packID }
+            state.setkaPlusStickerPacks = cachedSetkaPlusStickerPacks
+            userIndicatorController.submitIndicator(.init(title: "Пак удален"))
+        case .failure(let error):
+            MXLog.error("Failed deleting Setka Plus sticker pack with error: \(error)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+        }
+    }
+
+    private func deleteSetkaPlusSticker(packID: String, stickerID: String) async {
+        guard let packIndex = cachedSetkaPlusStickerPacks.firstIndex(where: { $0.id == packID }) else {
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            return
         }
 
-        let composition = AVMutableComposition()
-        guard let compositionTrack = composition.addMutableTrack(withMediaType: .video,
-                                                                 preferredTrackID: kCMPersistentTrackID_Invalid) else {
-            return nil
+        let pack = cachedSetkaPlusStickerPacks[packIndex]
+        let updatedPack = SetkaPlusStickerPack(id: pack.id,
+                                               name: pack.name,
+                                               kind: pack.kind,
+                                               stickers: pack.stickers.filter { $0.id != stickerID },
+                                               createdAt: pack.createdAt,
+                                               updatedAt: pack.updatedAt)
+
+        switch await userSession.clientProxy.saveSetkaPlusStickerPack(updatedPack) {
+        case .success(let savedPack):
+            cachedSetkaPlusStickerPacks[packIndex] = savedPack
+            state.setkaPlusStickerPacks = cachedSetkaPlusStickerPacks
+            userIndicatorController.submitIndicator(.init(title: "Стикер удален"))
+        case .failure(let error):
+            MXLog.error("Failed deleting Setka Plus sticker with error: \(error)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+        }
+    }
+
+    private func refreshSetkaPlusStickerPacks() async {
+        guard case let .success(packs) = await userSession.clientProxy.fetchSetkaPlusStickerPacks() else {
+            return
+        }
+        cachedSetkaPlusStickerPacks = packs
+        state.setkaPlusStickerPacks = packs
+    }
+
+    private func shareSetkaPlusStickerPack(packID: String) async {
+        guard let pack = cachedSetkaPlusStickerPacks.first(where: { $0.id == packID }) else {
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            return
         }
 
-        do {
-            let duration = try await asset.load(.duration)
-            try compositionTrack.insertTimeRange(CMTimeRange(start: .zero, duration: duration),
-                                                 of: track,
-                                                 at: .zero)
-            compositionTrack.preferredTransform = try await track.load(.preferredTransform)
-        } catch {
-            MXLog.error("Failed preparing square video note composition: \(error)")
-            return nil
+        switch await userSession.clientProxy.createSetkaPlusStickerPackShareLink(packID: packID) {
+        case .success(let link):
+            guard let url = URL(string: link) else {
+                userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+                return
+            }
+            actionsSubject.send(.displaySetkaPlusShareSheet(packName: pack.name, url: url))
+        case .failure(let error):
+            MXLog.error("Failed creating Setka Plus sticker pack share link with error: \(error)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+        }
+    }
+
+    private func uploadSetkaPlusMedia(packID: String, kind: String, mediaURL: URL) async {
+        guard let packIndex = cachedSetkaPlusStickerPacks.firstIndex(where: { $0.id == packID }) else {
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            return
         }
 
-        let videoComposition = AVMutableVideoComposition()
-        let instruction = AVMutableVideoCompositionInstruction()
-        instruction.timeRange = CMTimeRange(start: .zero, duration: composition.duration)
-
-        let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compositionTrack)
-        instruction.layerInstructions = [layerInstruction]
-        videoComposition.instructions = [instruction]
-
-        guard let naturalSize = try? await track.load(.naturalSize),
-              let preferredTransform = try? await track.load(.preferredTransform) else {
-            return nil
+        guard case let .success(maxUploadSize) = await userSession.clientProxy.maxMediaUploadSize else {
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            return
         }
 
-        let transformed = naturalSize.applying(preferredTransform)
-        let absSize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
-        let side = min(absSize.width, absSize.height)
-        let x = (absSize.width - side) / 2.0
-        let y = (absSize.height - side) / 2.0
-        videoComposition.renderSize = CGSize(width: side, height: side)
-        videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
-
-        let cropRect = CGRect(x: x, y: y, width: side, height: side)
-        layerInstruction.setCropRectangle(cropRect, at: .zero)
-
-        let outputURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(UUID().uuidString)-video-note-square.mp4")
-
-        guard let exportSession = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else {
-            return nil
+        let preprocessor = MediaUploadingPreprocessor(appSettings: appSettings)
+        let processingResult = await preprocessor.processMedia(at: [mediaURL], maxUploadSize: maxUploadSize)
+        guard case let .success(processedMedia) = processingResult,
+              let firstMedia = processedMedia.first else {
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            return
         }
 
-        exportSession.videoComposition = videoComposition
-        exportSession.outputURL = outputURL
-        exportSession.outputFileType = .mp4
-        exportSession.shouldOptimizeForNetworkUse = true
-
-        await exportSession.export()
-        if exportSession.status == .completed {
-            return outputURL
+        guard case let .image(imageURL, _, imageInfo) = firstMedia else {
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            return
         }
 
-        if let error = exportSession.error {
-            MXLog.error("Failed exporting square video note: \(error)")
+        let uploadResult = await userSession.clientProxy.uploadMedia(firstMedia)
+        guard case let .success(mxcURL) = uploadResult else {
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+            return
         }
-        return nil
+
+        let fileName = imageURL.deletingPathExtension().lastPathComponent
+        let resolvedWidth: Int? = if kind.lowercased() == "emoji" {
+            50
+        } else {
+            imageInfo.width.map(Int.init)
+        }
+        let resolvedHeight: Int? = if kind.lowercased() == "emoji" {
+            50
+        } else {
+            imageInfo.height.map(Int.init)
+        }
+        let sticker = SetkaPlusStickerItem(id: "sticker-\(Int(Date().timeIntervalSince1970 * 1000))-\(UUID().uuidString.prefix(6))",
+                                           name: fileName.isEmpty ? "Sticker" : fileName,
+                                           mxcURL: mxcURL,
+                                           mimeType: imageInfo.mimetype,
+                                           width: resolvedWidth,
+                                           height: resolvedHeight,
+                                           size: imageInfo.size.map(Int.init))
+
+        let pack = cachedSetkaPlusStickerPacks[packIndex]
+        let updatedPack = SetkaPlusStickerPack(id: pack.id,
+                                               name: pack.name,
+                                               kind: pack.kind,
+                                               stickers: pack.stickers + [sticker],
+                                               createdAt: pack.createdAt,
+                                               updatedAt: pack.updatedAt)
+
+        switch await userSession.clientProxy.saveSetkaPlusStickerPack(updatedPack) {
+        case .success(let savedPack):
+            cachedSetkaPlusStickerPacks[packIndex] = savedPack
+            state.setkaPlusStickerPacks = cachedSetkaPlusStickerPacks
+        case .failure(let error):
+            MXLog.error("Failed uploading Setka Plus media with error: \(error)")
+            userIndicatorController.submitIndicator(.init(title: L10n.errorUnknown))
+        }
     }
 
     private func setupDirectRoomSubscriptionsIfNeeded() {
@@ -988,32 +981,33 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
             fatalError("This message should never be empty")
         }
 
+        let (normalizedMessage, normalizedHTML) = applySetkaInlineEmojiFormatting(message: message, html: html)
         actionsSubject.send(.composer(action: .clear))
         
         switch mode {
         case .reply(let eventID, _, _):
-            await timelineController.sendMessage(message,
-                                                 html: html,
+            await timelineController.sendMessage(normalizedMessage,
+                                                 html: normalizedHTML,
                                                  inReplyToEventID: eventID,
                                                  intentionalMentions: intentionalMentions)
         case .edit(let originalEventOrTransactionID, .default):
             await timelineController.edit(originalEventOrTransactionID,
-                                          message: message,
-                                          html: html,
+                                          message: normalizedMessage,
+                                          html: normalizedHTML,
                                           intentionalMentions: intentionalMentions)
         case .edit(let originalEventOrTransactionID, .addCaption),
              .edit(let originalEventOrTransactionID, .editCaption):
             await timelineController.editCaption(originalEventOrTransactionID,
-                                                 message: message,
-                                                 html: html,
+                                                 message: normalizedMessage,
+                                                 html: normalizedHTML,
                                                  intentionalMentions: intentionalMentions)
         case .default:
-            switch slashCommand(message: message) {
+            switch slashCommand(message: normalizedMessage) {
             case .join:
-                await handleJoinCommand(message: message)
+                await handleJoinCommand(message: normalizedMessage)
             case .none:
-                await timelineController.sendMessage(message,
-                                                     html: html,
+                await timelineController.sendMessage(normalizedMessage,
+                                                     html: normalizedHTML,
                                                      inReplyToEventID: nil,
                                                      intentionalMentions: intentionalMentions)
             }
@@ -1022,6 +1016,71 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
         }
         
         scrollToBottom()
+    }
+
+    private func applySetkaInlineEmojiFormatting(message: String, html: String?) -> (String, String?) {
+        if html?.contains("data-mx-emoticon") == true {
+            return (message, html)
+        }
+
+        let entries = cachedSetkaPlusStickerPacks
+            .filter { $0.kind.lowercased() == "emoji" }
+            .flatMap(\.stickers)
+            .map { sticker -> (token: String, sticker: SetkaPlusStickerItem) in
+                let normalizedName = normalizedSetkaEmojiTokenName(sticker.name)
+                return (":\(normalizedName):", sticker)
+            }
+            .sorted { $0.token.count > $1.token.count }
+
+        guard !entries.isEmpty else {
+            return (message, html)
+        }
+
+        let hasMatch = entries.contains { message.contains($0.token) || (html?.contains($0.token) ?? false) }
+        guard hasMatch else {
+            return (message, html)
+        }
+
+        var formattedHTML = html ?? message
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\n", with: "<br>")
+
+        for entry in entries where formattedHTML.contains(entry.token) {
+            formattedHTML = formattedHTML.replacingOccurrences(of: entry.token,
+                                                               with: setkaInlineEmojiHTML(sticker: entry.sticker, token: entry.token))
+        }
+
+        return (message, formattedHTML)
+    }
+
+    private func normalizedSetkaEmojiTokenName(_ name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let spacesNormalized = trimmed.replacingOccurrences(of: " ", with: "_")
+        let replaced = spacesNormalized.replacingOccurrences(of: "[^A-Za-z0-9_]+", with: "_", options: .regularExpression)
+        let collapsed = replaced.replacingOccurrences(of: "_+", with: "_", options: .regularExpression)
+        let normalized = collapsed.trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+        return normalized.isEmpty ? "emoji" : normalized
+    }
+
+    private func setkaInlineEmojiHTML(sticker: SetkaPlusStickerItem, token: String) -> String {
+        let width = 20
+        let height = 20
+        let escapedMXC = sticker.mxcURL
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+        let escapedToken = token
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+        let escapedName = sticker.name
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+
+        return "<img data-mx-emoticon src=\"\(escapedMXC)\" alt=\"\(escapedToken)\" title=\"\(escapedName)\" width=\"\(width)\" height=\"\(height)\" />"
     }
         
     private func trackComposerMode(_ mode: ComposerMode) {
@@ -1107,6 +1166,10 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
         }
         
         state.timelineState.itemsDictionary = timelineItemsDictionary
+        
+        Task { [weak self] in
+            await self?.preloadStatusesForVisibleSenders(timelineItems)
+        }
     }
 
     private func updateViewState(item: RoomTimelineItemProtocol, groupStyle: TimelineGroupStyle) -> RoomTimelineItemViewState {
@@ -1137,6 +1200,38 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
         return eventTimelineItem.sender == otherEventTimelineItem.sender
             && eventTimelineItem.properties.reactions.isEmpty // Reactions break the grouping.
             && otherEventTimelineItem.timestamp.timeIntervalSince(eventTimelineItem.timestamp) < 5 * 60 // As does the passage of time.
+    }
+
+    @MainActor
+    private func preloadStatusesForVisibleSenders(_ timelineItems: [RoomTimelineItemProtocol]) async {
+        let senderIDs = Set(timelineItems.compactMap { item -> String? in
+            guard let item = item as? EventBasedTimelineItemProtocol,
+                  !item.sender.id.isEmpty,
+                  item.sender.id != state.ownUserID else {
+                return nil
+            }
+            return item.sender.id
+        })
+        
+        await withTaskGroup(of: Void.self) { group in
+            for userID in senderIDs {
+                if state.setkaPlusUserStatuses[userID] != nil || setkaPlusStatusRequestsInFlight.contains(userID) {
+                    continue
+                }
+                setkaPlusStatusRequestsInFlight.insert(userID)
+                
+                group.addTask { [weak self] in
+                    guard let self else { return }
+                    switch await userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: userID) {
+                    case .success(let status):
+                        await MainActor.run { self.state.setkaPlusUserStatuses[userID] = status }
+                    case .failure:
+                        break
+                    }
+                    _ = await MainActor.run { self.setkaPlusStatusRequestsInFlight.remove(userID) }
+                }
+            }
+        }
     }
 
     // MARK: - Direct chats logics
@@ -1313,6 +1408,191 @@ class TimelineViewModel: TimelineViewModelType, TimelineViewModelProtocol {
                                                               iconName: "xmark"))
     }
 }
+
+private extension TimelineViewModel {
+    func sendVideoNote(_ url: URL) async {
+        let preparedVideoURL = await prepareSquareVideoNote(from: url) ?? url
+        
+        guard let thumbnailURL = await generateVideoThumbnail(from: preparedVideoURL) else {
+            MXLog.error("Failed to generate thumbnail for video note")
+            return
+        }
+        
+        let asset = AVURLAsset(url: preparedVideoURL)
+        
+        do {
+            let duration = try await asset.load(.duration)
+            let tracks = try await asset.loadTracks(withMediaType: .video)
+            let track = tracks.first
+            
+            var size = CGSize(width: 1, height: 1)
+            if let track {
+                let naturalSize = try await track.load(.naturalSize)
+                let preferredTransform = try await track.load(.preferredTransform)
+                size = naturalSize.applying(preferredTransform)
+            }
+            
+            let side = UInt64(max(1, min(abs(size.width), abs(size.height))))
+            let videoInfo = VideoInfo(duration: .some(duration.seconds),
+                                      height: side,
+                                      width: side,
+                                      mimetype: "video/mp4",
+                                      size: nil,
+                                      thumbnailInfo: nil,
+                                      thumbnailSource: nil,
+                                      blurhash: nil)
+            
+            let result = await timelineController.sendVideoNote(url: preparedVideoURL,
+                                                                thumbnailURL: thumbnailURL,
+                                                                videoInfo: videoInfo) { _ in
+                // Handle the attachment if needed
+            }
+            
+            switch result {
+            case .success:
+                MXLog.info("Video note sent successfully")
+            case .failure(let error):
+                MXLog.error("Failed to send video note: \(error)")
+                displayAlert(.videoNoteUploadFailed)
+            }
+        } catch {
+            MXLog.error("Failed to load video info: \(error)")
+            displayAlert(.videoNoteUploadFailed)
+        }
+    }
+    
+    private func generateVideoThumbnail(from url: URL) async -> URL? {
+        let asset = AVURLAsset(url: url)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 200, height: 200)
+        
+        let time = CMTime(seconds: 0, preferredTimescale: 1)
+        
+        do {
+            let cgImage: CGImage
+            if #available(iOS 18.0, *) {
+                cgImage = try await withCheckedThrowingContinuation { continuation in
+                    generator.generateCGImageAsynchronously(for: time) { image, actualTime, error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                            return
+                        }
+                        
+                        guard let image else {
+                            continuation.resume(throwing: NSError(domain: "io.element.timeline.thumbnail",
+                                                                  code: -1,
+                                                                  userInfo: [NSLocalizedDescriptionKey: "Failed to generate thumbnail at time \(actualTime.seconds)"]))
+                            return
+                        }
+                        
+                        continuation.resume(returning: image)
+                    }
+                }
+            } else {
+                cgImage = try generator.copyCGImage(at: time, actualTime: nil)
+            }
+            let thumbnail = UIImage(cgImage: cgImage)
+            
+            let thumbnailURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(UUID().uuidString).jpg")
+            
+            if let jpegData = thumbnail.jpegData(compressionQuality: 0.8) {
+                try jpegData.write(to: thumbnailURL)
+                return thumbnailURL
+            }
+        } catch {
+            MXLog.error("Failed to generate thumbnail: \(error)")
+        }
+        
+        return nil
+    }
+    
+    private func prepareSquareVideoNote(from url: URL) async -> URL? {
+        let asset = AVURLAsset(url: url)
+        guard let track = try? await asset.loadTracks(withMediaType: .video).first else {
+            return nil
+        }
+        
+        let composition = AVMutableComposition()
+        guard let compositionTrack = composition.addMutableTrack(withMediaType: .video,
+                                                                 preferredTrackID: kCMPersistentTrackID_Invalid) else {
+            return nil
+        }
+        
+        do {
+            let duration = try await asset.load(.duration)
+            try compositionTrack.insertTimeRange(CMTimeRange(start: .zero, duration: duration),
+                                                 of: track,
+                                                 at: .zero)
+            compositionTrack.preferredTransform = try await track.load(.preferredTransform)
+        } catch {
+            MXLog.error("Failed preparing square video note composition: \(error)")
+            return nil
+        }
+        
+        let videoComposition = AVMutableVideoComposition()
+        let instruction = AVMutableVideoCompositionInstruction()
+        instruction.timeRange = CMTimeRange(start: .zero, duration: composition.duration)
+        
+        let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compositionTrack)
+        instruction.layerInstructions = [layerInstruction]
+        videoComposition.instructions = [instruction]
+        
+        guard let naturalSize = try? await track.load(.naturalSize),
+              let preferredTransform = try? await track.load(.preferredTransform) else {
+            return nil
+        }
+        
+        let transformed = naturalSize.applying(preferredTransform)
+        let absSize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
+        let side = min(absSize.width, absSize.height)
+        let x = (absSize.width - side) / 2.0
+        let y = (absSize.height - side) / 2.0
+        videoComposition.renderSize = CGSize(width: side, height: side)
+        videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
+        
+        let cropRect = CGRect(x: x, y: y, width: side, height: side)
+        layerInstruction.setCropRectangle(cropRect, at: .zero)
+        
+        let outputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(UUID().uuidString)-video-note-square.mp4")
+        
+        guard let exportSession = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else {
+            return nil
+        }
+        
+        exportSession.videoComposition = videoComposition
+        exportSession.shouldOptimizeForNetworkUse = true
+        
+        if #available(iOS 18.0, *) {
+            do {
+                try await exportSession.export(to: outputURL, as: .mp4)
+                return outputURL
+            } catch {
+                MXLog.error("Failed exporting square video note: \(error)")
+            }
+            return nil
+        }
+        
+        if #unavailable(iOS 18.0) {
+            exportSession.outputURL = outputURL
+            exportSession.outputFileType = .mp4
+            
+            await exportSession.export()
+            if exportSession.status == .completed {
+                return outputURL
+            }
+            
+            if let error = exportSession.error {
+                MXLog.error("Failed exporting square video note: \(error)")
+            }
+        }
+        return nil
+    }
+}
+
+// swiftlint:enable type_body_length
 
 // MARK: - Mocks
 

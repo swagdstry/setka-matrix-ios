@@ -288,6 +288,7 @@ struct HomeScreenRoom: Identifiable, Equatable {
 }
 
 extension HomeScreenRoom {
+    @MainActor
     init(summary: RoomSummary,
          hideUnreadMessagesBadge: Bool,
          seenInvites: Set<String> = [],
@@ -321,11 +322,28 @@ extension HomeScreenRoom {
                   isHighlighted: isHighlighted,
                   isFavourite: summary.isFavourite,
                   timestamp: summary.lastMessageDate?.formattedMinimal(),
-                  lastMessage: summary.lastMessage,
+                  lastMessage: Self.renderedHomeLastMessage(summary.lastMessage),
                   lastMessageState: summary.homeScreenLastMessageState,
                   avatar: summary.avatar,
                   canonicalAlias: summary.canonicalAlias,
                   isTombstoned: summary.isTombstoned)
+    }
+
+    private static func renderedHomeLastMessage(_ original: AttributedString?) -> AttributedString? {
+        guard var original else {
+            return nil
+        }
+
+        var plain = String(original.characters)
+        plain = plain.replacingOccurrences(of: #"\[img:\s*:[A-Za-z0-9_-]+:\]"#,
+                                           with: "🖼 Стикер",
+                                           options: .regularExpression)
+        plain = plain.replacingOccurrences(of: #":[A-Za-z0-9_-]+:"#,
+                                           with: "🖼 Стикер",
+                                           options: .regularExpression)
+
+        original = AttributedString(plain)
+        return original
     }
 }
 

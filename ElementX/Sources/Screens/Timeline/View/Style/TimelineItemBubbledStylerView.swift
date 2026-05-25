@@ -88,7 +88,7 @@ struct TimelineItemBubbledStylerView<Content: View>: View {
             HStack(alignment: .top, spacing: 4) {
                 TimelineSenderAvatarView(timelineItem: timelineItem)
                 HStack(alignment: .center, spacing: 4) {
-                    Text(timelineItem.sender.displayName ?? timelineItem.sender.id)
+                    Text(decoratedSenderName)
                         .font(.compound.bodySMSemibold)
                         .foregroundColor(.compound.decorativeColor(for: timelineItem.sender.id).text)
                     
@@ -108,6 +108,12 @@ struct TimelineItemBubbledStylerView<Content: View>: View {
             }
             .padding(.top, 8)
         }
+    }
+
+    private var decoratedSenderName: String {
+        let baseName = timelineItem.sender.displayName ?? timelineItem.sender.id
+        let status = context.viewState.setkaPlusUserStatuses[timelineItem.sender.id]
+        return SetkaPlusStatusDisplay.decoratedName(baseName, status: status)
     }
     
     private var messageBubbleWithReactions: some View {

@@ -283,7 +283,7 @@ struct AppThemeScreen: View {
     private func sliderRow(title: String, value: Binding<Double>, range: ClosedRange<Double>, step: Double) -> some View {
         ListRow(kind: .custom {
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
+                HStack(spacing: 8) {
                     Text(title)
                         .font(.compound.bodySM)
                         .foregroundStyle(.compound.textPrimary)
@@ -303,7 +303,7 @@ struct AppThemeScreen: View {
     
     private func colorPickerRow(title: String, keyPath: WritableKeyPath<SetkaThemeConfiguration, String>) -> some View {
         ListRow(kind: .custom {
-            HStack {
+            HStack(spacing: 8) {
                 ColorPicker(title, selection: Binding(get: {
                     Color(hex: draftTheme[keyPath: keyPath]) ?? .compound.textPrimary
                 }, set: { newColor in

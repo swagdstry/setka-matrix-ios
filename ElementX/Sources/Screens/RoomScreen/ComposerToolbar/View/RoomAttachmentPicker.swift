@@ -14,25 +14,27 @@ struct RoomAttachmentPicker: View {
     @ObservedObject var context: ComposerToolbarViewModel.Context
     
     @Environment(\.isEnabled) private var isEnabled
+    @State private var isAttachmentPickerPresented = false
     
     var body: some View {
-        // Use a menu instead of the popover/sheet shown in Figma because overriding the colour scheme
-        // results in a rendering bug on 17.1: https://github.com/element-hq/element-x-ios/issues/2157
-        Menu {
-            menuContent
+        Button {
+            isAttachmentPickerPresented = true
         } label: {
             CompoundIcon(asset: Asset.Images.composerAttachment, size: .custom(30), relativeTo: .compound.headingLG)
                 .scaledPadding(7, relativeTo: .compound.headingLG)
                 .foregroundColor(isEnabled ? .compound.iconPrimary : .compound.iconDisabled)
         }
         .buttonStyle(RoomAttachmentPickerButtonStyle())
+        .confirmationDialog("", isPresented: $isAttachmentPickerPresented, titleVisibility: .hidden) {
+            menuContent
+        }
         .accessibilityLabel(L10n.actionAddToTimeline)
         .accessibilityIdentifier(A11yIdentifiers.roomScreen.composerToolbar.openComposeOptions)
-        .frame(width: 44, height: 44) // Fixed frame to prevent shifting
+        .frame(width: 44, height: 44)
     }
     
     var menuContent: some View {
-        VStack(alignment: .leading, spacing: 0.0) {
+        Group {
             Button {
                 context.send(viewAction: .enableTextFormatting)
             } label: {
@@ -46,7 +48,7 @@ struct RoomAttachmentPicker: View {
                 Label(L10n.screenRoomAttachmentSourcePoll, icon: \.polls)
             }
             .accessibilityIdentifier(A11yIdentifiers.roomScreen.attachmentPickerPoll)
-
+            
             if context.viewState.isLocationSharingEnabled {
                 Button {
                     context.send(viewAction: .attach(.location))

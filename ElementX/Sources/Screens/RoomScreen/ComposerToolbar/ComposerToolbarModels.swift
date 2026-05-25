@@ -63,6 +63,7 @@ enum ComposerToolbarViewAction {
     
     case videoNote
     case sendVideoNote(URL)
+    case insertText(String)
 }
 
 enum ComposerAttachmentType {

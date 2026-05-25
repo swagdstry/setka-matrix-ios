@@ -435,6 +435,31 @@ class JoinedRoomProxy: JoinedRoomProxyProtocol {
         }
     }
     
+    func sendSetkaPlusSticker(_ sticker: SetkaPlusStickerItem) async -> Result<Void, RoomProxyError> {
+        MXLog.info("Sending Setka Plus sticker")
+        
+        let content = SetkaPlusStickerRawContent(body: sticker.name,
+                                                 url: sticker.mxcURL,
+                                                 info: .init(mimetype: sticker.mimeType,
+                                                             width: sticker.width ?? 200,
+                                                             height: sticker.height ?? 200,
+                                                             size: sticker.size))
+        
+        do {
+            let data = try JSONEncoder().encode(content)
+            guard let contentString = String(data: data, encoding: .utf8) else {
+                return .failure(.invalidMedia)
+            }
+            
+            try await room.sendRaw(eventType: "m.sticker", content: contentString)
+            MXLog.info("Finished sending Setka Plus sticker")
+            return .success(())
+        } catch {
+            MXLog.error("Failed sending Setka Plus sticker with error: \(error)")
+            return .failure(.sdkError(error))
+        }
+    }
+    
     func edit(eventID: String, newContent: RoomMessageEventContentWithoutRelation) async -> Result<Void, RoomProxyError> {
         do {
             try await room.edit(eventId: eventID, newContent: newContent)
@@ -810,4 +835,24 @@ class JoinedRoomProxy: JoinedRoomProxyProtocol {
         
         return .excludeEventTypes(eventTypes: stateEventFilters.map { FilterTimelineEventType.state(eventType: $0) })
     }()
+}
+
+private struct SetkaPlusStickerRawContent: Encodable {
+    let body: String
+    let url: String
+    let info: Info
+    
+    struct Info: Encodable {
+        let mimetype: String?
+        let width: Int
+        let height: Int
+        let size: Int?
+        
+        enum CodingKeys: String, CodingKey {
+            case mimetype
+            case width = "w"
+            case height = "h"
+            case size
+        }
+    }
 }

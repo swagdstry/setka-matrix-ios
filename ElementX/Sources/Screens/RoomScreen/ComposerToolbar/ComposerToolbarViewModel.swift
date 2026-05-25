@@ -150,7 +150,7 @@ final class ComposerToolbarViewModel: ComposerToolbarViewModelType, ComposerTool
         
         let identityStatusChangesPublisher = roomProxy.identityStatusChangesPublisher.receive(on: DispatchQueue.main)
 
-        Task { [weak self] in
+        Task(priority: .utility) { [weak self] in
             for await changes in identityStatusChangesPublisher.values {
                 guard !Task.isCancelled else {
                     return
@@ -170,7 +170,7 @@ final class ComposerToolbarViewModel: ComposerToolbarViewModelType, ComposerTool
     // MARK: - Public
     
     func start() {
-        Task { await loadDraft() }
+        Task(priority: .utility) { await loadDraft() }
     }
     
     func stop() {
@@ -255,6 +255,8 @@ final class ComposerToolbarViewModel: ComposerToolbarViewModelType, ComposerTool
             actionsSubject.send(.videoNote)
         case .sendVideoNote(let url):
             actionsSubject.send(.sendVideoNote(url))
+        case .insertText(let text):
+            insertTextIntoComposer(text)
         }
     }
 
@@ -616,6 +618,30 @@ final class ComposerToolbarViewModel: ComposerToolbarViewModelType, ComposerTool
             
             state.bindings.plainComposerText = attributedString
         }
+    }
+
+    private func insertTextIntoComposer(_ text: String) {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else {
+            return
+        }
+
+        if context.composerFormattingEnabled {
+            wysiwygViewModel.textView.insertText(trimmedText)
+            state.bindings.composerFocused = true
+            return
+        }
+
+        let currentText = state.bindings.plainComposerText.string
+        let separator = currentText.isEmpty || currentText.hasSuffix(" ") || currentText.hasSuffix("\n") ? "" : " "
+        let insertion = separator + trimmedText
+
+        let attributedString = NSMutableAttributedString(attributedString: state.bindings.plainComposerText)
+        let selectedRange = state.bindings.selectedRange
+        attributedString.replaceCharacters(in: selectedRange, with: insertion)
+        state.bindings.plainComposerText = attributedString
+        state.bindings.selectedRange = NSRange(location: selectedRange.location + insertion.count, length: 0)
+        state.bindings.composerFocused = true
     }
     
     private func parseUserMentionsMarkdown(_ text: String, callback: (NSRange, URL) -> Void) {

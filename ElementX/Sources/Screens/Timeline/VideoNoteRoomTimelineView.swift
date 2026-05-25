@@ -46,9 +46,9 @@ struct VideoNoteRoomTimelineView: View {
                     }
                     .overlay {
                         // Флаг в правом нижнем углу как в Telegram
-                        VStack {
+                        VStack(spacing: 0) {
                             Spacer()
-                            HStack {
+                            HStack(spacing: 0) {
                                 Spacer()
                                 Image(systemName: "flag.fill")
                                     .font(.system(size: 16))
@@ -78,6 +78,10 @@ struct VideoNoteRoomTimelineView: View {
     
     private func toggle() {
         isPlaying.toggle()
-        isPlaying ? player.play() : player.pause()
+        if isPlaying {
+            player.play()
+        } else {
+            player.pause()
+        }
     }
 }

@@ -154,6 +154,8 @@ final class RoomScreenCoordinator: CoordinatorProtocol {
                     actionsSubject.send(.presentRoom(roomID: roomID, via: via))
                 case .displaySetkaPlusComposerPicker:
                     break
+                case .displaySetkaPlusShareSheet:
+                    break
                 case .displayVideoNoteRecorder:
                     break
                 case .viewInRoomTimeline, .displayMediaDetails:

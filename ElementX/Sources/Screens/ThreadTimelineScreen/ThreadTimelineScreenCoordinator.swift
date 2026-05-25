@@ -135,6 +135,8 @@ final class ThreadTimelineScreenCoordinator: CoordinatorProtocol {
                     break
                 case .displaySetkaPlusComposerPicker:
                     break
+                case .displaySetkaPlusShareSheet:
+                    break
                 case .hasScrolled, .displayRoom, .displayMediaDetails:
                     break
                 case .composer(let action):

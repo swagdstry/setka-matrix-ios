@@ -12,10 +12,16 @@ import SwiftUI
 typealias UserDetailsEditScreenViewModelType = StateStoreViewModelV2<UserDetailsEditScreenViewState, UserDetailsEditScreenViewAction>
 
 class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDetailsEditScreenViewModelProtocol {
+    private enum MediaSelectionTarget {
+        case avatar
+        case background
+    }
+
     private let actionsSubject: PassthroughSubject<UserDetailsEditScreenViewModelAction, Never> = .init()
     private let clientProxy: ClientProxyProtocol
     private let userIndicatorController: UserIndicatorControllerProtocol
     private let mediaUploadingPreprocessor: MediaUploadingPreprocessor
+    private var mediaSelectionTarget: MediaSelectionTarget = .avatar
     
     var actions: AnyPublisher<UserDetailsEditScreenViewModelAction, Never> {
         actionsSubject.eraseToAnyPublisher()
@@ -58,6 +64,7 @@ class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDe
         Task {
             await self.clientProxy.loadUserAvatarURL()
             await self.clientProxy.loadUserDisplayName()
+            await self.loadSetkaPlusProfile()
         }
     }
     
@@ -74,10 +81,26 @@ class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDe
         case .displayCameraPicker:
             actionsSubject.send(.displayCameraPicker)
         case .displayMediaPicker:
+            mediaSelectionTarget = .avatar
+            actionsSubject.send(.displayMediaPicker)
+        case .displayBackgroundMediaPicker:
+            mediaSelectionTarget = .background
             actionsSubject.send(.displayMediaPicker)
         case .removeImage:
             state.localMedia = nil
             state.selectedAvatarURL = nil
+        case .applyBackgroundGradient(let gradient):
+            state.localBackgroundMedia = nil
+            state.bindings.backgroundURLString = gradient
+        case .setSetkaPlusStatusEmoji(let emoji):
+            state.bindings.selectedSetkaPlusStatus = .init(emoji: emoji, packID: nil, stickerID: nil, updatedAt: nil)
+            state.bindings.setkaPlusStatusPickerPresented = false
+        case .setSetkaPlusStatusSticker(let packID, let stickerID):
+            state.bindings.selectedSetkaPlusStatus = .init(emoji: nil, packID: packID, stickerID: stickerID, updatedAt: nil)
+            state.bindings.setkaPlusStatusPickerPresented = false
+        case .clearSetkaPlusStatusEmoji:
+            state.bindings.selectedSetkaPlusStatus = .init(emoji: nil, packID: nil, stickerID: nil, updatedAt: nil)
+            state.bindings.setkaPlusStatusPickerPresented = false
         }
     }
     
@@ -99,7 +122,16 @@ class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDe
             
             switch mediaResult {
             case .success(.image):
-                state.localMedia = try? mediaResult.get()
+                let media = try? mediaResult.get()
+                switch mediaSelectionTarget {
+                case .avatar:
+                    state.localMedia = media
+                case .background:
+                    state.localBackgroundMedia = media
+                    if let previewURL = media?.thumbnailURL?.absoluteString {
+                        state.bindings.backgroundURLString = previewURL
+                    }
+                }
             case .failure, .success:
                 state.bindings.alertInfo = .init(id: .failedProcessingMedia)
             }
@@ -126,21 +158,56 @@ class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDe
                                                               title: L10n.screenEditProfileUpdatingDetails,
                                                               persistent: true))
         
+        let avatarDidChange = state.avatarDidChange
+        let localMedia = state.localMedia
+        let selectedAvatarURL = state.selectedAvatarURL
+        let nameDidChange = state.nameDidChange
+        let displayName = state.bindings.name
+        let bioDidChange = state.bioDidChange
+        let backgroundDidChange = state.backgroundDidChange
+        let backgroundMediaDidChange = state.backgroundMediaDidChange
+        let localBackgroundMedia = state.localBackgroundMedia
+        let bio = state.bindings.bio.trimmingCharacters(in: .whitespacesAndNewlines)
+        let background = state.bindings.backgroundURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+        let statusDidChange = state.statusDidChange
+        let selectedStatus = state.bindings.selectedSetkaPlusStatus
+        
         do {
             try await withThrowingTaskGroup(of: Void.self) { group in
-                if state.avatarDidChange {
+                if avatarDidChange {
                     group.addTask {
-                        if let localMedia = await self.state.localMedia {
+                        if let localMedia {
                             try await self.clientProxy.setUserAvatar(media: localMedia).get()
-                        } else if await self.state.selectedAvatarURL == nil {
+                        } else if selectedAvatarURL == nil {
                             try await self.clientProxy.removeUserAvatar().get()
                         }
                     }
                 }
                 
-                if state.nameDidChange {
+                if nameDidChange {
                     group.addTask {
-                        try await self.clientProxy.setUserDisplayName(self.state.bindings.name).get()
+                        try await self.clientProxy.setUserDisplayName(displayName).get()
+                    }
+                }
+                
+                if bioDidChange || backgroundDidChange || backgroundMediaDidChange {
+                    group.addTask {
+                        var resolvedBackground = background
+                        if let localBackgroundMedia {
+                            resolvedBackground = try await self.clientProxy.uploadMedia(localBackgroundMedia).get()
+                        }
+
+                        let update = SetkaPlusUserProfileUpdate(bio: bio.isEmpty ? nil : bio,
+                                                                backgroundURL: resolvedBackground.isEmpty ? nil : resolvedBackground)
+                        try await self.clientProxy.updateSetkaPlusUserProfileDetails(update).get()
+                    }
+                }
+                
+                if statusDidChange {
+                    group.addTask {
+                        _ = try await self.clientProxy.updateSetkaPlusStatusEmoji(emoji: selectedStatus?.emoji,
+                                                                                  packID: selectedStatus?.packID,
+                                                                                  stickerID: selectedStatus?.stickerID).get()
                     }
                 }
                 
@@ -152,6 +219,29 @@ class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDe
             state.bindings.alertInfo = .init(id: .saveError,
                                              title: L10n.screenEditProfileErrorTitle,
                                              message: L10n.screenEditProfileError)
+        }
+    }
+    
+    private func loadSetkaPlusProfile() async {
+        async let detailsResult = clientProxy.fetchSetkaPlusUserProfileDetails(userID: clientProxy.userID)
+        async let statusResult = clientProxy.fetchSetkaPlusStatusEmoji(userID: nil)
+        async let packsResult = clientProxy.fetchSetkaPlusStickerPacks()
+        
+        if case let .success(details) = await detailsResult {
+            state.currentBio = details.bio
+            state.currentBackgroundURLString = details.backgroundURL
+            state.shareURL = details.shareURL.flatMap(URL.init(string:))
+            state.bindings.bio = details.bio ?? ""
+            state.bindings.backgroundURLString = details.backgroundURL ?? ""
+        }
+        
+        if case let .success(status) = await statusResult {
+            state.currentSetkaPlusStatus = status
+            state.bindings.selectedSetkaPlusStatus = status
+        }
+        
+        if case let .success(packs) = await packsResult {
+            state.setkaPlusEmojiPacks = packs
         }
     }
 }

@@ -40,25 +40,22 @@ struct HomeScreen: View {
                     .navigationTransition(.zoom(sourceID: NavigationTransitionSourceID.spaceFilters,
                                                 in: navigationTransitionNamespace))
             }
-            // Setka Plus sheet скрыт для всех платформ
-            // #if !os(macOS)
-            // .sheet(isPresented: $context.setkaPlusStatusPickerPresented) {
-            //     SetkaPlusStatusPickerSheet(isSetkaPlusActive: context.viewState.isSetkaPlusActive,
-            //                                selectedEmoji: context.viewState.currentStatusEmojiGlyph,
-            //                                selectedStickerID: context.viewState.currentStatusStickerID,
-            //                                emojiPacks: context.viewState.setkaPlusEmojiPacks,
-            //                                mediaProvider: context.mediaProvider,
-            //                                onSelectEmoji: { emoji in
-            //                                    context.send(viewAction: .setSetkaPlusStatusEmoji(emoji))
-            //                                },
-            //                                onSelectSticker: { packID, stickerID in
-            //                                    context.send(viewAction: .setSetkaPlusStatusSticker(packID: packID, stickerID: stickerID))
-            //                                },
-            //                                onClear: {
-            //                                    context.send(viewAction: .clearSetkaPlusStatusEmoji)
-            //                                })
-            // }
-            // #endif
+            .sheet(isPresented: $context.setkaPlusStatusPickerPresented) {
+                SetkaPlusStatusPickerSheet(isSetkaPlusActive: context.viewState.isSetkaPlusActive,
+                                           selectedEmoji: context.viewState.currentStatusEmojiGlyph,
+                                           selectedStickerID: context.viewState.currentStatusStickerID,
+                                           emojiPacks: context.viewState.setkaPlusEmojiPacks,
+                                           mediaProvider: context.mediaProvider,
+                                           onSelectEmoji: { emoji in
+                                               context.send(viewAction: .setSetkaPlusStatusEmoji(emoji))
+                                           },
+                                           onSelectSticker: { packID, stickerID in
+                                               context.send(viewAction: .setSetkaPlusStatusSticker(packID: packID, stickerID: stickerID))
+                                           },
+                                           onClear: {
+                                               context.send(viewAction: .clearSetkaPlusStatusEmoji)
+                                           })
+            }
     }
     
     // MARK: - Private

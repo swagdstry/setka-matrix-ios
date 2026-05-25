@@ -33,12 +33,18 @@ enum TimelineViewModelAction {
     case displayRoom(roomID: String, via: [String])
     case displayMediaDetails(item: EventBasedMessageTimelineItemProtocol)
     case displayVideoNoteRecorder
+    case displaySetkaPlusShareSheet(packName: String, url: URL)
 }
 
 enum TimelineViewPollAction {
+    struct EditPayload {
+        let pollStartID: String
+        let poll: Poll
+    }
+    
     case selectOption(pollStartID: String, optionID: String)
     case end(pollStartID: String)
-    case edit(pollStartID: String, poll: Poll)
+    case edit(EditPayload)
 }
 
 enum TimelineAudioPlayerAction {
@@ -88,6 +94,12 @@ enum TimelineViewAction {
     case sendSetkaPlusEmojiMessage(String)
     case sendSetkaPlusSticker(packID: String, stickerID: String)
     case addSetkaPlusStickerPack(packID: String)
+    case importSetkaPlusSharedPack(token: String, packID: String?)
+    case createSetkaPlusStickerPack(name: String, kind: String)
+    case deleteSetkaPlusStickerPack(packID: String)
+    case deleteSetkaPlusSticker(packID: String, stickerID: String)
+    case shareSetkaPlusStickerPack(packID: String)
+    case uploadSetkaPlusMedia(packID: String, kind: String, mediaURL: URL)
 }
 
 enum TimelineComposerAction {
@@ -117,6 +129,8 @@ struct TimelineViewState: BindableState {
     var canCurrentUserBan = false
     
     var hideTimelineMedia: Bool
+    var setkaPlusUserStatuses: [String: SetkaPlusStatusEmoji] = [:]
+    var setkaPlusStickerPacks: [SetkaPlusStickerPack] = []
     
     var isViewSourceEnabled: Bool
     var areThreadsEnabled: Bool

@@ -166,6 +166,14 @@ class MockTimelineController: TimelineControllerProtocol {
                      inReplyToEventID: String?,
                      intentionalMentions: IntentionalMentions) async { }
     
+    func sendSetkaPlusSticker(_ sticker: SetkaPlusStickerItem) async -> Result<Void, TimelineControllerError> {
+        if let roomProxy {
+            return await roomProxy.sendSetkaPlusSticker(sticker).mapError(TimelineControllerError.roomProxyError)
+        }
+        
+        return .success(())
+    }
+    
     func sendAudio(url: URL,
                    audioInfo: MatrixRustSDK.AudioInfo,
                    caption: String?,

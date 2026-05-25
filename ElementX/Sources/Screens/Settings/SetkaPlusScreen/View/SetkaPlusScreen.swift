@@ -72,7 +72,7 @@ struct SetkaPlusScreen: View {
             } else {
                 ForEach(context.viewState.plans, id: \.id) { plan in
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack {
+                        HStack(spacing: 8) {
                             Text(normalizedSetkaNaming(plan.name))
                                 .lineLimit(1)
                                 .font(.compound.bodyLG)
@@ -154,7 +154,7 @@ struct SetkaPlusScreen: View {
     }
 
     private func keyValueRow(label: String, value: String) -> some View {
-        HStack {
+        HStack(spacing: 8) {
             Text(label)
                 .font(.compound.bodyMD)
                 .foregroundColor(.compound.textSecondary)
