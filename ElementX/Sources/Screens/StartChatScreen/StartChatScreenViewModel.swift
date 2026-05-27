@@ -252,7 +252,9 @@ class StartChatScreenViewModel: StartChatScreenViewModelType, StartChatScreenVie
     @MainActor
     private func updateSuggestionsSection() {
         guard !state.isSearching else { return }
-        state.usersSection = .init(type: .suggestions, users: uniqueUsers(contactsUsers + suggestedUsers))
+        let knownContactIDs = Set(contactsUsers.map(\.userID))
+        let filteredSuggestions = suggestedUsers.filter { !knownContactIDs.contains($0.userID) }
+        state.usersSection = .init(type: .suggestions, users: uniqueUsers(contactsUsers + filteredSuggestions))
     }
 
     private func uniqueUsers(_ users: [UserProfileProxy]) -> [UserProfileProxy] {

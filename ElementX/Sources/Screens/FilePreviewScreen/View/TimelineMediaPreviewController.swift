@@ -227,7 +227,12 @@ class TimelineMediaPreviewController: QLPreviewController {
     private func presentMediaDetails(for mediaItem: TimelineMediaPreviewItem.Media) {
         let safeArea = view.safeAreaInsets.bottom
         let sheetHeightBinding = Binding { safeArea } set: { [weak self] newValue, _ in
-            self?.detailsHostingController?.sheetPresentationController?.detents = [.height(newValue + safeArea)]
+            let resolvedHeight = newValue + safeArea
+            guard resolvedHeight.isFinite, resolvedHeight > 0 else {
+                MXLog.warning("Ignoring invalid media details sheet height: \(resolvedHeight)")
+                return
+            }
+            self?.detailsHostingController?.sheetPresentationController?.detents = [.height(resolvedHeight)]
         }
         
         let hostingController = UIHostingController(rootView: TimelineMediaPreviewDetailsView(item: mediaItem,
@@ -235,7 +240,9 @@ class TimelineMediaPreviewController: QLPreviewController {
                                                                                               sheetHeight: sheetHeightBinding))
         hostingController.view.backgroundColor = .compound.bgCanvasDefault
         hostingController.overrideUserInterfaceStyle = .dark
-        hostingController.sheetPresentationController?.detents = [.height(safeArea)]
+        if let initialHeight = safeArea.sanitizedLayoutDimension {
+            hostingController.sheetPresentationController?.detents = [.height(initialHeight)]
+        }
         hostingController.sheetPresentationController?.prefersGrabberVisible = true
         
         present(hostingController, animated: true)

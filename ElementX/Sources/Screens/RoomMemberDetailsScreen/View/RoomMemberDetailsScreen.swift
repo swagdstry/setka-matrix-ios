@@ -11,17 +11,25 @@ import SwiftUI
 
 struct RoomMemberDetailsScreen: View {
     @ObservedObject var context: RoomMemberDetailsScreenViewModel.Context
-    
+
     var body: some View {
         Form {
-            headerSection
-            
+            profileSection
+
             if context.viewState.showVerifyIdentitySection {
                 verificationSection
             }
-            
+
+            shareSection
+
+            contactActionsSection
+
             if context.viewState.memberDetails != nil, !context.viewState.isOwnMemberDetails {
                 blockUserSection
+            }
+
+            if context.viewState.showWithdrawVerificationSection {
+                withdrawVerificationSection
             }
         }
         .compoundList()
@@ -37,88 +45,108 @@ struct RoomMemberDetailsScreen: View {
         .track(screen: .User)
         .interactiveQuickLook(item: $context.mediaPreviewItem, allowEditing: false)
     }
-    
+
     // MARK: - Private
-    
+
     @ViewBuilder
-    private var headerSection: some View {
-        if let memberDetails = context.viewState.memberDetails {
-            AvatarHeaderView(member: memberDetails,
-                             isVerified: context.viewState.showVerifiedBadge,
-                             avatarSize: .user(on: .memberDetails),
-                             mediaProvider: context.mediaProvider) { url in
+    private var profileSection: some View {
+        Section {
+            UserSetkaProfileHeaderView(data: context.viewState.profileDisplayData,
+                                       mediaProvider: context.mediaProvider) { url in
                 context.send(viewAction: .displayAvatar(url))
-            } footer: {
-                VStack(spacing: 24) {
-                    if context.viewState.showWithdrawVerificationSection {
-                        withdrawVerificationSection
+            }
+        }
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
+    }
+
+    @ViewBuilder
+    private var shareSection: some View {
+        if let permalink = context.viewState.memberDetails?.permalink {
+            Section {
+                HStack {
+                    Spacer()
+                    ShareLink(item: permalink) {
+                        CompoundIcon(\.shareIos, size: .medium, relativeTo: .compound.bodyLG)
+                            .foregroundStyle(.compound.iconPrimary)
+                            .padding(14)
+                            .background(Color.compound.bgCanvasDefaultLevel1, in: Circle())
                     }
-                    
-                    otherUserFooter
+                    .accessibilityLabel(L10n.actionShare)
+                    Spacer()
                 }
-                .padding(.top, 24)
+                .listRowBackground(Color.clear)
             }
-        } else {
-            AvatarHeaderView(user: UserProfileProxy(userID: context.viewState.userID),
-                             isVerified: context.viewState.showVerifiedBadge,
-                             avatarSize: .user(on: .memberDetails),
-                             mediaProvider: context.mediaProvider) { }
         }
     }
-    
+
+    @ViewBuilder
+    private var contactActionsSection: some View {
+        if hasContactActions {
+            Section {
+                let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: contactActionCount)
+
+                LazyVGrid(columns: columns, spacing: 8) {
+                    if context.viewState.memberDetails != nil, !context.viewState.isOwnMemberDetails {
+                        Button {
+                            context.send(viewAction: .openDirectChat)
+                        } label: {
+                            CompoundIcon(\.chat)
+                        }
+                        .buttonStyle(FormActionButtonStyle(title: L10n.commonMessage))
+                        .accessibilityIdentifier(A11yIdentifiers.roomMemberDetailsScreen.directChat)
+                    }
+
+                    if let roomID = context.viewState.dmRoomID {
+                        Button {
+                            context.send(viewAction: .startCall(roomID: roomID))
+                        } label: {
+                            CompoundIcon(\.videoCall)
+                        }
+                        .buttonStyle(FormActionButtonStyle(title: L10n.actionCall))
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+    }
+
+    private var hasContactActions: Bool {
+        (context.viewState.memberDetails != nil && !context.viewState.isOwnMemberDetails) || context.viewState.dmRoomID != nil
+    }
+
+    private var contactActionCount: Int {
+        var count = 0
+        if context.viewState.memberDetails != nil, !context.viewState.isOwnMemberDetails { count += 1 }
+        if context.viewState.dmRoomID != nil { count += 1 }
+        return max(count, 1)
+    }
+
     private var withdrawVerificationSection: some View {
-        VStack(spacing: 16) {
-            if let memberDetails = context.viewState.memberDetails {
-                Text(L10n.cryptoIdentityChangeProfilePinViolation(memberDetails.name ?? memberDetails.id))
-                    .foregroundStyle(.compound.textCriticalPrimary)
-                    .font(.compound.bodyMDSemibold)
-            } else {
-                Text(L10n.cryptoIdentityChangeProfilePinViolation(context.viewState.userID))
-                    .foregroundStyle(.compound.textCriticalPrimary)
-                    .font(.compound.bodyMDSemibold)
-            }
-            
-            Button {
-                context.send(viewAction: .withdrawVerification)
-            } label: {
-                Text(L10n.cryptoIdentityChangeWithdrawVerificationAction)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.compound(.secondary, size: .medium))
-        }
-        .padding(.horizontal, 16)
-    }
-    
-    private var otherUserFooter: some View {
-        HStack(spacing: 8) {
-            if context.viewState.memberDetails != nil, !context.viewState.isOwnMemberDetails {
+        Section {
+            VStack(spacing: 16) {
+                if let memberDetails = context.viewState.memberDetails {
+                    Text(L10n.cryptoIdentityChangeProfilePinViolation(memberDetails.name ?? memberDetails.id))
+                        .foregroundStyle(.compound.textCriticalPrimary)
+                        .font(.compound.bodyMDSemibold)
+                } else {
+                    Text(L10n.cryptoIdentityChangeProfilePinViolation(context.viewState.userID))
+                        .foregroundStyle(.compound.textCriticalPrimary)
+                        .font(.compound.bodyMDSemibold)
+                }
+
                 Button {
-                    context.send(viewAction: .openDirectChat)
+                    context.send(viewAction: .withdrawVerification)
                 } label: {
-                    CompoundIcon(\.chat)
+                    Text(L10n.cryptoIdentityChangeWithdrawVerificationAction)
+                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(FormActionButtonStyle(title: L10n.commonMessage))
-                .accessibilityIdentifier(A11yIdentifiers.roomMemberDetailsScreen.directChat)
+                .buttonStyle(.compound(.secondary, size: .medium))
             }
-            
-            if let roomID = context.viewState.dmRoomID {
-                Button {
-                    context.send(viewAction: .startCall(roomID: roomID))
-                } label: {
-                    CompoundIcon(\.videoCall)
-                }
-                .buttonStyle(FormActionButtonStyle(title: L10n.actionCall))
-            }
-            
-            if let permalink = context.viewState.memberDetails?.permalink {
-                ShareLink(item: permalink) {
-                    CompoundIcon(\.shareIos)
-                }
-                .buttonStyle(FormActionButtonStyle(title: L10n.actionShare))
-            }
+            .padding(.vertical, 8)
         }
     }
-    
+
     var verificationSection: some View {
         Section {
             ListRow(label: .default(title: L10n.commonVerifyUser, icon: \.lock), kind: .button {
@@ -126,14 +154,14 @@ struct RoomMemberDetailsScreen: View {
             })
         }
     }
-    
+
     @ViewBuilder
     private var blockUserSection: some View {
         if let memberDetails = context.viewState.memberDetails {
             let title = memberDetails.isIgnored ? L10n.screenRoomMemberDetailsUnblockUser : L10n.screenRoomMemberDetailsBlockUser
             let action: RoomMemberDetailsScreenViewAction = memberDetails.isIgnored ? .showUnignoreAlert : .showIgnoreAlert
             let accessibilityIdentifier = memberDetails.isIgnored ? A11yIdentifiers.roomMemberDetailsScreen.unignore : A11yIdentifiers.roomMemberDetailsScreen.ignore
-            
+
             Section {
                 ListRow(label: .default(title: title,
                                         icon: \.block,
@@ -170,45 +198,45 @@ struct RoomMemberDetailsScreen_Previews: PreviewProvider, TestablePreview {
     static let otherUserViewModel = makeViewModel(member: .mockAlice)
     static let accountOwnerViewModel = makeViewModel(member: .mockMe)
     static let ignoredUserViewModel = makeViewModel(member: .mockIgnored)
-    
+
     static var previews: some View {
         RoomMemberDetailsScreen(context: verifiedUserViewModel.context)
             .snapshotPreferences(expect: verifiedUserViewModel.context.$viewState.map { state in
                 state.verificationState == .verified
             })
             .previewDisplayName("Verified User")
-        
+
         RoomMemberDetailsScreen(context: verificationViolationUserViewModel.context)
             .snapshotPreferences(expect: verificationViolationUserViewModel.context.$viewState.map { state in
                 state.verificationState == .verificationViolation
             })
             .previewDisplayName("Verification Violation User")
-            
+
         RoomMemberDetailsScreen(context: otherUserViewModel.context)
             .snapshotPreferences(expect: otherUserViewModel.context.$viewState.map { state in
                 state.memberDetails?.role == .user && state.dmRoomID != nil
             })
             .previewDisplayName("Other User")
-            
+
         RoomMemberDetailsScreen(context: accountOwnerViewModel.context)
             .snapshotPreferences(expect: accountOwnerViewModel.context.$viewState.map { state in
                 state.isOwnMemberDetails == true
             })
             .previewDisplayName("Account Owner")
-            
+
         RoomMemberDetailsScreen(context: ignoredUserViewModel.context)
             .snapshotPreferences(expect: ignoredUserViewModel.context.$viewState.map { state in
                 state.memberDetails?.isIgnored ?? false && state.dmRoomID != nil
             })
             .previewDisplayName("Ignored User")
     }
-    
+
     static func makeViewModel(member: RoomMemberProxyMock) -> RoomMemberDetailsScreenViewModel {
         let roomProxyMock = JoinedRoomProxyMock(.init(name: ""))
         roomProxyMock.getMemberUserIDReturnValue = .success(member)
-        
+
         let clientProxyMock = ClientProxyMock(.init())
-        
+
         clientProxyMock.userIdentityForFallBackToServerClosure = { userID, _ in
             let identity = switch userID {
             case RoomMemberProxyMock.mockDan.userID:
@@ -218,15 +246,14 @@ struct RoomMemberDetailsScreen_Previews: PreviewProvider, TestablePreview {
             default:
                 UserIdentityProxyMock(configuration: .init())
             }
-            
+
             return .success(identity)
         }
-        
-        // to avoid mock the call state for the account owner test case
+
         if member.userID != RoomMemberProxyMock.mockMe.userID {
             clientProxyMock.directRoomForUserIDReturnValue = .success("roomID")
         }
-        
+
         return RoomMemberDetailsScreenViewModel(userID: member.userID,
                                                 roomProxy: roomProxyMock,
                                                 userSession: UserSessionMock(.init(clientProxy: clientProxyMock)),

@@ -9,7 +9,23 @@
 import Foundation
 import SwiftUI
 
+extension CGFloat {
+    /// A layout dimension safe to use in frames and presentation detents.
+    var sanitizedLayoutDimension: CGFloat? {
+        isFinite && self > 0 ? self : nil
+    }
+}
+
 extension View {
+    /// Applies a fixed-height sheet detent when the total height is finite and positive; otherwise uses `fallback`.
+    func presentationDetentHeight(contentHeight: CGFloat, additionalHeight: CGFloat = 0, fallback: PresentationDetent = .medium) -> some View {
+        let total = contentHeight + additionalHeight
+        if let total = total.sanitizedLayoutDimension {
+            return presentationDetents([.height(total)])
+        }
+        return presentationDetents([fallback])
+    }
+    
     /// Reads the frame of the view and stores it in the `frame` binding.
     /// - Parameters:
     ///   - frame: a `CGRect` binding
@@ -18,6 +34,10 @@ extension View {
         onGeometryChange(for: CGRect.self) { geometry in
             geometry.frame(in: coordinateSpace)
         } action: { newValue in
+            guard newValue.origin.x.isFinite, newValue.origin.y.isFinite,
+                  newValue.size.width.isFinite, newValue.size.height.isFinite else {
+                return
+            }
             frame.wrappedValue = newValue
         }
     }
@@ -29,6 +49,7 @@ extension View {
         onGeometryChange(for: CGFloat.self) { geometry in
             geometry.size.height
         } action: { newValue in
+            guard let newValue = newValue.sanitizedLayoutDimension else { return }
             height.wrappedValue = newValue
         }
     }
@@ -40,6 +61,7 @@ extension View {
         onGeometryChange(for: CGFloat.self) { geometry in
             geometry.size.width
         } action: { newValue in
+            guard let newValue = newValue.sanitizedLayoutDimension else { return }
             width.wrappedValue = newValue
         }
     }

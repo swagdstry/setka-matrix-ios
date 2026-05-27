@@ -90,7 +90,7 @@ final class RoomMembersFlowCoordinator: FlowCoordinatorProtocol {
     func start(animated: Bool) {
         switch entryPoint {
         case .roomMember(let userID):
-            stateMachine.tryEvent(.presentRoomMemberDetails(userID: userID), userInfo: animated)
+            stateMachine.tryEvent(.presentUserProfile(userID: userID), userInfo: animated)
         case .roomMembersList:
             stateMachine.tryEvent(.presentRoomMembersList, userInfo: animated)
         }
@@ -153,6 +153,8 @@ final class RoomMembersFlowCoordinator: FlowCoordinatorProtocol {
                 
             case (.roomMemberDetails(_, let previousState), .presentUserProfile(let userID)):
                 return .userProfile(userID: userID, previousState: previousState)
+            case (_, .presentUserProfile(let userID)):
+                return .userProfile(userID: userID, previousState: fromState)
             case (.userProfile(_, let previousState), .dismissedUserProfile):
                 return previousState
                 
@@ -185,6 +187,8 @@ final class RoomMembersFlowCoordinator: FlowCoordinatorProtocol {
                 
             case (.roomMemberDetails, .presentUserProfile, .userProfile(let userID, _)):
                 replaceRoomMemberDetailsWithUserProfile(userID: userID)
+            case (_, .presentUserProfile, .userProfile(let userID, _)):
+                presentUserProfile(userID: userID, animated: animated)
             case (.userProfile, .dismissedUserProfile, _):
                 break
                 
@@ -286,7 +290,8 @@ final class RoomMembersFlowCoordinator: FlowCoordinatorProtocol {
                                                                 isPresentedModally: false,
                                                                 userSession: flowParameters.userSession,
                                                                 userIndicatorController: flowParameters.userIndicatorController,
-                                                                analytics: flowParameters.analytics)
+                                                                analytics: flowParameters.analytics,
+                                                                showEditProfileButton: false)
         let coordinator = UserProfileScreenCoordinator(parameters: parameters)
         coordinator.actionsPublisher.sink { [weak self] action in
             guard let self else { return }
@@ -298,6 +303,8 @@ final class RoomMembersFlowCoordinator: FlowCoordinatorProtocol {
                 actionsSubject.send(.presentCallScreen(roomProxy: roomProxy))
             case .dismiss:
                 break // Not supported when pushed.
+            case .editProfile:
+                break
             }
         }
         .store(in: &cancellables)
@@ -308,6 +315,41 @@ final class RoomMembersFlowCoordinator: FlowCoordinatorProtocol {
             self.navigationStackCoordinator.pop(animated: false)
             self.navigationStackCoordinator.push(coordinator, animated: false) { [weak self] in
                 self?.stateMachine.tryEvent(.dismissedUserProfile)
+            }
+        }
+    }
+    
+    private func presentUserProfile(userID: String, animated: Bool) {
+        let parameters = UserProfileScreenCoordinatorParameters(userID: userID,
+                                                                isPresentedModally: false,
+                                                                userSession: flowParameters.userSession,
+                                                                userIndicatorController: flowParameters.userIndicatorController,
+                                                                analytics: flowParameters.analytics,
+                                                                showEditProfileButton: false)
+        let coordinator = UserProfileScreenCoordinator(parameters: parameters)
+        coordinator.actionsPublisher.sink { [weak self] action in
+            guard let self else { return }
+            
+            switch action {
+            case .openDirectChat(let roomID):
+                stateMachine.tryEvent(.startRoomFlow(roomID: roomID, via: [], eventID: nil))
+            case .startCall(let roomProxy):
+                actionsSubject.send(.presentCallScreen(roomProxy: roomProxy))
+            case .dismiss:
+                break
+            case .editProfile:
+                break
+            }
+        }
+        .store(in: &cancellables)
+        
+        navigationStackCoordinator.push(coordinator, animated: animated) { [weak self] in
+            guard let self else { return }
+            if case let .userProfile(_, previousState) = stateMachine.state,
+               previousState == .initial {
+                actionsSubject.send(.finished)
+            } else {
+                stateMachine.tryEvent(.dismissedUserProfile)
             }
         }
     }

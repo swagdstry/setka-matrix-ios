@@ -96,14 +96,14 @@ struct SetkaPlusScreen: View {
                         }
 
                         Button {
-                            // Заглушка - в бета-тесте
+                            context.send(viewAction: .buyPlan(id: plan.id))
                         } label: {
-                            Text("В бета-тесте")
+                            Text(SetkaPlusL10n.buy)
                                 .font(.compound.bodyMDSemibold)
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.compound(.secondary))
-                        .disabled(true)
+                        .disabled(context.viewState.purchasingPlanID != nil)
                     }
                     .padding(.vertical, 6)
                 }

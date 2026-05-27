@@ -89,11 +89,28 @@ struct HomeScreenRoomCell: View {
     
     private var header: some View {
         HStack(alignment: .top, spacing: 16) {
-            Text(room.name)
-                .font(.compound.bodyLGSemibold)
-                .foregroundColor(.compound.textPrimary)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 4) {
+                Text(room.name)
+                    .font(.compound.bodyLGSemibold)
+                    .foregroundColor(.compound.textPrimary)
+                    .lineLimit(1)
+
+                if let statusMXC = room.statusEmojiMXC,
+                   let url = URL(string: statusMXC) {
+                    LoadableImage(url: url,
+                                  mediaProvider: mediaProvider,
+                                  transformer: { view in
+                                      AnyView(view.scaledToFit().frame(width: 16, height: 16))
+                                  },
+                                  placeholder: {
+                                      AnyView(ProgressView().frame(width: 16, height: 16))
+                                  })
+                } else if let glyph = room.statusEmojiGlyph, !glyph.isEmpty {
+                    Text(glyph)
+                        .font(.system(size: 14))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             
             if let timestamp = room.timestamp {
                 Text(timestamp)

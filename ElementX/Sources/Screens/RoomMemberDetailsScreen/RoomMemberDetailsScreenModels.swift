@@ -22,8 +22,29 @@ struct RoomMemberDetailsScreenViewState: BindableState {
     var isOwnMemberDetails = false
     var isProcessingIgnoreRequest = false
     var dmRoomID: String?
+    var bio: String?
+    var backgroundValue: String?
+    var profileColorHex: String?
+    var badgeEmojiMXC: String?
+    var statusEmojiMXC: String?
+    var setkaPlusStatusEmoji: String?
+    var lastSeenText: String?
 
     var bindings: RoomMemberDetailsScreenViewStateBindings
+
+    var profileDisplayData: UserSetkaProfileDisplayData {
+        .init(userID: userID,
+              displayName: memberDetails?.name,
+              avatarURL: memberDetails?.avatarURL,
+              bio: bio,
+              backgroundValue: backgroundValue,
+              profileColorHex: profileColorHex,
+              badgeEmojiMXC: badgeEmojiMXC,
+              statusEmojiMXC: statusEmojiMXC,
+              statusEmojiGlyph: setkaPlusStatusEmoji,
+              lastSeenText: lastSeenText,
+              showVerifiedBadge: showVerifiedBadge)
+    }
     
     var showVerifiedBadge: Bool {
         verificationState == .verified // We purposely show the badge on your own account for consistency with Web.

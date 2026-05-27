@@ -115,6 +115,7 @@ struct HomeScreenViewState: BindableState {
     var setkaPlusStatusEmoji: SetkaPlusStatusEmoji?
     var setkaPlusEmojiPacks: [SetkaPlusStickerPack] = []
     var setkaPlusUserStatuses: [String: SetkaPlusStatusEmoji] = [:]
+    var setkaPlusUserStatusMXC: [String: String] = [:]
     
     var reportRoomEnabled = false
         
@@ -239,7 +240,9 @@ struct HomeScreenRoom: Identifiable, Equatable {
     }
     
     let name: String
-    
+    let statusEmojiGlyph: String?
+    let statusEmojiMXC: String?
+
     let isDirect: Bool
     
     let isHighlighted: Bool
@@ -275,6 +278,8 @@ struct HomeScreenRoom: Identifiable, Equatable {
                        type: .placeholder,
                        badges: .init(isDotShown: false, isMentionShown: false, isMuteShown: false, isCallShown: false),
                        name: "Placeholder room name",
+                       statusEmojiGlyph: nil,
+                       statusEmojiMXC: nil,
                        isDirect: false,
                        isHighlighted: false,
                        isFavourite: false,
@@ -292,7 +297,9 @@ extension HomeScreenRoom {
     init(summary: RoomSummary,
          hideUnreadMessagesBadge: Bool,
          seenInvites: Set<String> = [],
-         nameOverride: String? = nil) {
+         nameOverride: String? = nil,
+         statusEmojiGlyph: String? = nil,
+         statusEmojiMXC: String? = nil) {
         let roomID = summary.id
         
         let hasUnreadMessages = hideUnreadMessagesBadge ? false : summary.hasUnreadMessages
@@ -318,6 +325,8 @@ extension HomeScreenRoom {
                                 isMuteShown: isMuteShown,
                                 isCallShown: isCallShown),
                   name: nameOverride ?? summary.name,
+                  statusEmojiGlyph: statusEmojiGlyph,
+                  statusEmojiMXC: statusEmojiMXC,
                   isDirect: summary.isDirect,
                   isHighlighted: isHighlighted,
                   isFavourite: summary.isFavourite,

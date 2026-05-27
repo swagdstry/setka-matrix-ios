@@ -30,7 +30,7 @@ struct TimelineMediaPreviewRedactConfirmationView: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .padding(.top, topPadding) // For the drag indicator
-        .presentationDetents([.height(sheetHeight + topPadding)])
+        .presentationDetentHeight(contentHeight: sheetHeight, additionalHeight: topPadding)
         .presentationDragIndicator(.visible)
         .presentationBackground(.compound.bgCanvasDefault)
         .preferredColorScheme(preferredColorScheme)

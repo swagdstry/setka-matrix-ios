@@ -32,7 +32,7 @@ struct MediaEventsTimelineScreen: View {
                                                     context: sheet.context,
                                                     preferredColorScheme: nil,
                                                     sheetHeight: $sheetHeight)
-                        .presentationDetents([.height(sheetHeight)])
+                        .presentationDetentHeight(contentHeight: sheetHeight)
                 }
             }
     }

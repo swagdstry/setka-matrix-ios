@@ -422,29 +422,32 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
             }
 
             let baseName = nameOverride ?? summary.name
-            var decoratedName = baseName
+            var statusGlyph: String?
+            var statusMXC: String?
             if summary.isDirect,
-               let counterpartID = directCounterpartUserID(from: summary),
-               let status = state.setkaPlusUserStatuses[counterpartID] {
-                let originalName = decoratedName
-                decoratedName = SetkaPlusStatusDisplay.decoratedName(baseName, status: status)
-                if originalName != decoratedName {
-                    MXLog.info("Applied status emoji for user \(counterpartID): '\(originalName)' -> '\(decoratedName)'")
+               let counterpartID = directCounterpartUserID(from: summary) {
+                if let status = state.setkaPlusUserStatuses[counterpartID] {
+                    statusGlyph = SetkaPlusStatusDisplay.glyph(for: status)
                 }
+                statusMXC = state.setkaPlusUserStatusMXC[counterpartID]
             }
-            
+
             let room = HomeScreenRoom(summary: summary,
                                       hideUnreadMessagesBadge: appSettings.hideUnreadMessagesBadge,
                                       seenInvites: seenInvites,
-                                      nameOverride: decoratedName)
+                                      nameOverride: baseName,
+                                      statusEmojiGlyph: statusGlyph,
+                                      statusEmojiMXC: statusMXC)
             rooms.append(room)
         }
         
         state.rooms = rooms
 
-        // Optimize: reduce task overhead by combining status loading
         Task {
             await preloadStatusesForDirectRooms()
+            await MainActor.run {
+                updateRooms()
+            }
         }
     }
 
@@ -516,15 +519,26 @@ class HomeScreenViewModel: HomeScreenViewModelType, HomeScreenViewModelProtocol 
                 
                 group.addTask { [weak self] in
                     guard let self else { return }
-                    switch await userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: userID) {
+                    async let statusResult = userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: userID)
+                    async let profileResult = userSession.clientProxy.fetchSetkaPlusUserProfileDetails(userID: userID)
+
+                    switch await statusResult {
                     case .success(let status):
                         _ = await MainActor.run {
                             self.state.setkaPlusUserStatuses[userID] = status
-                            MXLog.info("Successfully fetched Setka Plus status for user \(userID): \(status.emoji ?? "nil")")
                         }
                     case .failure(let error):
                         MXLog.warning("Failed fetching Setka Plus status emoji for user \(userID) with error: \(error)")
                     }
+
+                    if case let .success(profile) = await profileResult,
+                       let mxc = profile.statusEmojiMXC?.trimmingCharacters(in: .whitespacesAndNewlines),
+                       !mxc.isEmpty {
+                        _ = await MainActor.run {
+                            self.state.setkaPlusUserStatusMXC[userID] = mxc
+                        }
+                    }
+
                     _ = await MainActor.run {
                         self.setkaPlusStatusRequestsInFlight.remove(userID)
                     }

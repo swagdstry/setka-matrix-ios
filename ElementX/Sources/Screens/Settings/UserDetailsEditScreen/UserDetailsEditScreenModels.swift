@@ -26,7 +26,9 @@ struct UserDetailsEditScreenViewState: BindableState {
     var currentBackgroundURLString: String?
     var currentSetkaPlusStatus: SetkaPlusStatusEmoji?
     var setkaPlusEmojiPacks: [SetkaPlusStickerPack] = []
+    var isSetkaPlusActive = false
     var shareURL: URL?
+    var suggestedProfileBanners = ProfileSuggestedBanner.defaultPresets
     
     var localMedia: MediaInfo?
     var localBackgroundMedia: MediaInfo?
@@ -84,6 +86,7 @@ struct UserDetailsEditScreenViewStateBindings {
     var backgroundURLString = ""
     var showMediaSheet = false
     var showBackgroundMediaSheet = false
+    var bannerPickerPresented = false
     var setkaPlusStatusPickerPresented = false
     var selectedSetkaPlusStatus: SetkaPlusStatusEmoji?
     
@@ -104,6 +107,7 @@ enum UserDetailsEditScreenViewAction {
     case displayCameraPicker
     case displayMediaPicker
     case displayBackgroundMediaPicker
+    case dismissBannerPicker
     case removeImage
     case applyBackgroundGradient(String)
     case setSetkaPlusStatusEmoji(String)

@@ -778,7 +778,8 @@ class ChatsTabFlowCoordinator: FlowCoordinatorProtocol {
                                                                 isPresentedModally: true,
                                                                 userSession: userSession,
                                                                 userIndicatorController: flowParameters.userIndicatorController,
-                                                                analytics: flowParameters.analytics)
+                                                                analytics: flowParameters.analytics,
+                                                                showEditProfileButton: false)
         let coordinator = UserProfileScreenCoordinator(parameters: parameters)
         coordinator.actionsPublisher.sink { [weak self] action in
             guard let self else { return }
@@ -791,6 +792,8 @@ class ChatsTabFlowCoordinator: FlowCoordinatorProtocol {
                 actionsSubject.send(.showCallScreen(roomProxy: roomProxy))
             case .dismiss:
                 navigationSplitCoordinator.setSheetCoordinator(nil)
+            case .editProfile:
+                break
             }
         }
         .store(in: &cancellables)

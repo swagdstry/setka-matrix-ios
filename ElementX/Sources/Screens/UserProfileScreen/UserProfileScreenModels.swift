@@ -12,12 +12,14 @@ enum UserProfileScreenViewModelAction {
     case openDirectChat(roomID: String)
     case startCall(roomProxy: JoinedRoomProxyProtocol)
     case dismiss
+    case editProfile
 }
 
 struct UserProfileScreenViewState: BindableState {
     let userID: String
     let isOwnUser: Bool
     let isPresentedModally: Bool
+    let showEditProfileButton: Bool
     
     var userProfile: UserProfileProxy?
     var isVerified: Bool?
@@ -26,12 +28,34 @@ struct UserProfileScreenViewState: BindableState {
     var setkaPlusStatusEmoji: String?
     var bio: String?
     var backgroundURL: URL?
+    /// Raw background value from server (`mxc://…`, `linear:…`, or local path).
+    var backgroundValue: String?
     var lastSeenText: String?
+    var profileColorHex: String?
+    var badgeEmojiMXC: String?
+    var statusEmojiMXC: String?
+    var email: String?
+    var phone: String?
 
     var bindings: UserProfileScreenViewStateBindings
     
     var showVerifiedBadge: Bool {
         isVerified == true // We purposely show the badge on your own account for consistency with Web.
+    }
+
+    var profileDisplayData: UserSetkaProfileDisplayData {
+        let profile = userProfile ?? UserProfileProxy(userID: userID)
+        return .init(userID: userID,
+                     displayName: profile.displayName,
+                     avatarURL: profile.avatarURL,
+                     bio: bio,
+                     backgroundValue: backgroundValue ?? backgroundURL?.absoluteString,
+                     profileColorHex: profileColorHex,
+                     badgeEmojiMXC: badgeEmojiMXC,
+                     statusEmojiMXC: statusEmojiMXC,
+                     statusEmojiGlyph: setkaPlusStatusEmoji,
+                     lastSeenText: lastSeenText,
+                     showVerifiedBadge: showVerifiedBadge)
     }
 }
 
@@ -49,6 +73,7 @@ enum UserProfileScreenViewAction {
     case createDirectChat
     case startCall(roomID: String)
     case dismiss
+    case editProfile
 }
 
 enum UserProfileScreenAlertType: Hashable {

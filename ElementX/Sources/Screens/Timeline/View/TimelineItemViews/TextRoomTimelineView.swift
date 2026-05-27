@@ -228,6 +228,7 @@ struct TextRoomTimelineView: View, TextBasedRoomTimelineViewProtocol {
             case .emoji(let emoji):
                 if let image = inlineEmojiImages[emoji.id] {
                     return Text(Image(uiImage: image).renderingMode(.original))
+                        .baselineOffset(inlineEmojiBaselineOffset)
                 } else {
                     // Keep a tiny placeholder to preserve text flow while the image is loading.
                     return Text(" ")
@@ -259,6 +260,12 @@ struct TextRoomTimelineView: View, TextBasedRoomTimelineViewProtocol {
     
     private var inlineEmojiImageSize: CGSize {
         .init(width: inlineEmojiSize, height: inlineEmojiSize)
+    }
+    
+    private var inlineEmojiBaselineOffset: CGFloat {
+        let font = UIFont.preferredFont(forTextStyle: .body)
+        let offset = (font.capHeight - inlineEmojiImageSize.height) / 2
+        return offset.isFinite ? offset : 0
     }
     
     private func inlineSetkaRenderingText(htmlEmojiByToken: [String: InlineSetkaEmoji]? = nil) -> String {

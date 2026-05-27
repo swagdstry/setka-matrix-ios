@@ -36,8 +36,10 @@ struct RoomHeaderView: View {
             // On iOS 18 and lower, the editor role causes an animation glitch with the back button whenever
             // you push a screen whilst the large title is visible on the room screen.
             content
-                // So take up as much space as possible, with a leading alignment for use in the default principal toolbar position
-                .frame(idealWidth: .greatestFiniteMagnitude, maxWidth: .infinity, alignment: .leading)
+                // So take up as much space as possible, with a leading alignment for use in the default principal toolbar position.
+            // Avoid `idealWidth: .greatestFiniteMagnitude` — it can surface as an infinite width constraint during pop transitions.
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: true, vertical: false)
                 .roomHeaderAction(action)
         }
     }

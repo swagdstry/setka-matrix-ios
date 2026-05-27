@@ -5,29 +5,33 @@
 // SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 // Please see LICENSE files in the repository root for full details.
 //
-
+    
 import Compound
 import SwiftUI
 
 struct UserDetailsEditScreen: View {
     @Bindable var context: UserDetailsEditScreenViewModel.Context
     @FocusState private var focus: Bool
-        
+
+    private let profileBannerHeight: CGFloat = 156
+    private let avatarRingWidth: CGFloat = 4
+
     var body: some View {
         Form {
             Section {
-                avatar
+                profileHeader
             } footer: {
                 Text(context.viewState.userID)
-                    .frame(maxWidth: .infinity)
-                    .font(.compound.bodyLG)
-                    .foregroundColor(.compound.textPrimary)
-                    .padding(.bottom, 16)
+                    .font(.compound.bodySM)
+                    .foregroundStyle(.compound.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 4)
             }
-            
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+
             nameSection
             bioSection
-            backgroundSection
             statusSection
         }
         .compoundList()
@@ -40,8 +44,21 @@ struct UserDetailsEditScreen: View {
             shareToolbarItem
         }
         .alert(item: $context.alertInfo)
+        .sheet(isPresented: $context.bannerPickerPresented) {
+            ProfileBannerPickerSheet(isSetkaPlusActive: context.viewState.isSetkaPlusActive,
+                                     suggestedBanners: context.viewState.suggestedProfileBanners,
+                                     onSelectCustomBanner: {
+                                         context.send(viewAction: .displayBackgroundMediaPicker)
+                                     },
+                                     onSelectSuggestedBanner: { banner in
+                                         context.send(viewAction: .applyBackgroundGradient(banner.value))
+                                     },
+                                     onDismiss: {
+                                         context.send(viewAction: .dismissBannerPicker)
+                                     })
+        }
         .sheet(isPresented: $context.setkaPlusStatusPickerPresented) {
-            SetkaPlusStatusPickerSheet(isSetkaPlusActive: true,
+            SetkaPlusStatusPickerSheet(isSetkaPlusActive: context.viewState.isSetkaPlusActive,
                                        selectedEmoji: context.viewState.selectedStatusGlyph,
                                        selectedStickerID: context.viewState.bindings.selectedSetkaPlusStatus?.stickerID,
                                        emojiPacks: context.viewState.setkaPlusEmojiPacks,
@@ -57,9 +74,9 @@ struct UserDetailsEditScreen: View {
                                        })
         }
     }
-    
+
     // MARK: - Private
-    
+
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
@@ -78,7 +95,49 @@ struct UserDetailsEditScreen: View {
         }
     }
 
-    private var avatar: some View {
+    private var profileHeader: some View {
+        let avatarSize = Avatars.Size.user(on: .editUserDetails).value
+        let avatarOverlap = avatarSize / 2
+
+        return ZStack(alignment: .bottom) {
+            bannerBackground
+                .frame(height: profileBannerHeight)
+                .clipped()
+                .overlay {
+                    LinearGradient(colors: [.clear, .black.opacity(0.35)],
+                                   startPoint: .center,
+                                   endPoint: .bottom)
+                }
+                .overlay(alignment: .topTrailing) {
+                    bannerEditControl
+                        .padding(12)
+                }
+                .accessibilityElement(children: .contain)
+
+            avatarControl
+                .padding(.bottom, 4)
+        }
+        .frame(height: profileBannerHeight + avatarOverlap)
+    }
+
+    @ViewBuilder
+    private var bannerBackground: some View {
+        ProfileBannerBackground(previewValue: context.viewState.resolvedBackgroundPreview,
+                                profileColorHex: nil,
+                                mediaProvider: context.mediaProvider)
+    }
+
+    private var bannerEditControl: some View {
+        Button {
+            context.bannerPickerPresented = true
+        } label: {
+            editOverlayBadge
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Изменить фон профиля")
+    }
+
+    private var avatarControl: some View {
         Button {
             context.send(viewAction: .presentMediaSource)
         } label: {
@@ -89,16 +148,20 @@ struct UserDetailsEditScreen: View {
                                    shape: .circle,
                                    avatarSize: .user(on: .editUserDetails),
                                    mediaProvider: context.mediaProvider)
+                .overlay {
+                    Circle()
+                        .strokeBorder(Color.compound.bgCanvasDefault, lineWidth: avatarRingWidth)
+                }
                 .overlay(alignment: .bottomTrailing) {
-                    avatarOverlayIcon
+                    editOverlayBadge
+                        .offset(x: 2, y: 2)
                 }
                 .confirmationDialog("", isPresented: $context.showMediaSheet) {
                     mediaActionSheet
                 }
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: .infinity, alignment: .center)
-        .listRowBackground(Color.clear)
+        .accessibilityLabel(L10n.a11yEditAvatar)
     }
 
     private var nameSection: some View {
@@ -111,103 +174,45 @@ struct UserDetailsEditScreen: View {
                 .compoundListSectionHeader()
         }
     }
-    
+
     private var bioSection: some View {
         Section {
             ListRow(label: .plain(title: "Биография"),
                     kind: .textField(text: $context.bio, axis: .vertical))
+                .lineLimit(3...)
+        } header: {
+            Text("О себе")
+                .compoundListSectionHeader()
         }
     }
-    
-    private var backgroundSection: some View {
-        Section {
-            backgroundPreview
-            ListRow(label: .plain(title: "Фон профиля (URL)"),
-                    kind: .textField(text: $context.backgroundURLString, axis: .horizontal))
-            Button("Выбрать фон из медиа") {
-                context.send(viewAction: .displayBackgroundMediaPicker)
-            }
-            .buttonStyle(.compound(.secondary))
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    backgroundGradientButton(title: "Синий", value: "linear:#4A90E2,#7B61FF")
-                    backgroundGradientButton(title: "Закат", value: "linear:#FF7A59,#FFA94D")
-                    backgroundGradientButton(title: "Изумруд", value: "linear:#00B894,#55EFC4")
-                    backgroundGradientButton(title: "Графит", value: "linear:#2D3436,#636E72")
-                }
-            }
-        }
-    }
-    
     private var statusSection: some View {
         Section {
             Button {
                 context.setkaPlusStatusPickerPresented = true
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: 12) {
                     Text("Статус Setka Plus")
+                        .font(.compound.bodyLG)
+                        .foregroundStyle(.compound.textPrimary)
                     Spacer()
                     Text(context.viewState.selectedStatusGlyph ?? "Не выбран")
+                        .font(.compound.bodyMD)
                         .foregroundStyle(.compound.textSecondary)
+                    CompoundIcon(\.chevronRight, size: .small, relativeTo: .compound.bodyLG)
+                        .foregroundStyle(.compound.iconTertiary)
                 }
             }
         }
     }
 
-    @ViewBuilder
-    private var backgroundPreview: some View {
-        if let preview = context.viewState.resolvedBackgroundPreview,
-           let url = URL(string: preview) {
-            LoadableImage(url: url,
-                          mediaProvider: context.mediaProvider,
-                          transformer: { view in
-                              AnyView(view
-                                  .scaledToFill()
-                                  .frame(height: 120)
-                                  .frame(maxWidth: .infinity)
-                                  .clipped()
-                                  .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)))
-                          },
-                          placeholder: {
-                              AnyView(
-                                  RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                      .fill(Color.compound.bgSubtleSecondary)
-                                      .frame(height: 120)
-                              )
-                          })
-                .listRowInsets(.init(top: 4, leading: 0, bottom: 8, trailing: 0))
-        } else if context.backgroundURLString.hasPrefix("linear:") {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(LinearGradient(colors: gradientColors(from: context.backgroundURLString),
-                                     startPoint: .topLeading,
-                                     endPoint: .bottomTrailing))
-                .frame(height: 120)
-                .overlay(alignment: .bottomLeading) {
-                    Text("Градиентный фон")
-                        .font(.compound.bodySMSemibold)
-                        .foregroundStyle(.white.opacity(0.9))
-                        .padding(10)
-                }
-        }
+    private var editOverlayBadge: some View {
+        CompoundIcon(\.editSolid, size: .xSmall, relativeTo: .compound.bodyLG)
+            .foregroundStyle(.white)
+            .padding(6)
+            .background(.black.opacity(0.55), in: Circle())
     }
 
-    private func backgroundGradientButton(title: String, value: String) -> some View {
-        Button(title) {
-            context.send(viewAction: .applyBackgroundGradient(value))
-        }
-        .buttonStyle(.compound(.secondary))
-    }
-
-    private func gradientColors(from value: String) -> [Color] {
-        let payload = value.replacingOccurrences(of: "linear:", with: "")
-        let values = payload.split(separator: ",").map(String.init)
-        guard values.count == 2 else {
-            return [.blue, .purple]
-        }
-        return values.compactMap(Color.init(hex:))
-    }
-    
     @ToolbarContentBuilder
     private var shareToolbarItem: some ToolbarContent {
         if let shareURL = context.viewState.shareURL {
@@ -216,17 +221,7 @@ struct UserDetailsEditScreen: View {
             }
         }
     }
-    
-    private var avatarOverlayIcon: some View {
-        CompoundIcon(\.editSolid, size: .xSmall, relativeTo: .compound.bodyLG)
-            .foregroundColor(.white)
-            .padding(4)
-            .background {
-                Circle()
-                    .foregroundColor(.black)
-            }
-    }
-    
+
     @ViewBuilder
     private var mediaActionSheet: some View {
         Button {
@@ -239,7 +234,7 @@ struct UserDetailsEditScreen: View {
         } label: {
             Text(L10n.actionChoosePhoto)
         }
-        
+
         if context.viewState.showDeleteImageAction {
             Button(role: .destructive) {
                 context.send(viewAction: .removeImage)
@@ -256,7 +251,7 @@ struct UserDetailsEditScreen_Previews: PreviewProvider, TestablePreview {
     static let viewModel = UserDetailsEditScreenViewModel(userSession: UserSessionMock(.init(clientProxy: ClientProxyMock(.init(userID: "@stefan:matrix.org")))),
                                                           mediaUploadingPreprocessor: .init(appSettings: ServiceLocator.shared.settings),
                                                           userIndicatorController: UserIndicatorControllerMock.default)
-    
+
     static var previews: some View {
         ElementNavigationStack {
             UserDetailsEditScreen(context: viewModel.context)

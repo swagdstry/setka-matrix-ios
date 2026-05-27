@@ -117,6 +117,40 @@ class RoomMemberDetailsScreenViewModel: RoomMemberDetailsScreenViewModelType, Ro
         } else {
             MXLog.error("Failed to find the member's identity.")
         }
+
+        await loadSetkaProfileDetails()
+    }
+
+    private func loadSetkaProfileDetails() async {
+        async let profileDetailsResult = userSession.clientProxy.fetchSetkaPlusUserProfileDetails(userID: state.userID)
+        async let statusEmojiResult = userSession.clientProxy.fetchSetkaPlusStatusEmoji(userID: state.userID)
+
+        if case let .success(details) = await profileDetailsResult {
+            let normalizedBio = details.bio?.trimmingCharacters(in: .whitespacesAndNewlines)
+            state.bio = normalizedBio?.isEmpty == true ? nil : normalizedBio
+            state.backgroundValue = details.backgroundURL
+            state.profileColorHex = details.color
+            state.badgeEmojiMXC = details.badgeEmojiMXC
+            state.statusEmojiMXC = details.statusEmojiMXC
+            let normalizedLastSeen = details.lastSeenText?.trimmingCharacters(in: .whitespacesAndNewlines)
+            state.lastSeenText = normalizedLastSeen?.isEmpty == true ? nil : normalizedLastSeen
+        }
+
+        if case let .success(status) = await statusEmojiResult {
+            state.setkaPlusStatusEmoji = statusGlyph(status)
+        }
+    }
+
+    private func statusGlyph(_ status: SetkaPlusStatusEmoji?) -> String? {
+        guard let status else { return nil }
+        let rawEmoji = (status.emoji ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if !rawEmoji.isEmpty {
+            return rawEmoji
+        } else if status.stickerID != nil {
+            return "✨"
+        } else {
+            return nil
+        }
     }
     
     private func ignoreUser() async {

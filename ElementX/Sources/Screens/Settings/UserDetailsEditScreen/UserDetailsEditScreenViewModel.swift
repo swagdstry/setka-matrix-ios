@@ -84,14 +84,18 @@ class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDe
             mediaSelectionTarget = .avatar
             actionsSubject.send(.displayMediaPicker)
         case .displayBackgroundMediaPicker:
+            state.bindings.bannerPickerPresented = false
             mediaSelectionTarget = .background
             actionsSubject.send(.displayMediaPicker)
+        case .dismissBannerPicker:
+            state.bindings.bannerPickerPresented = false
         case .removeImage:
             state.localMedia = nil
             state.selectedAvatarURL = nil
         case .applyBackgroundGradient(let gradient):
             state.localBackgroundMedia = nil
             state.bindings.backgroundURLString = gradient
+            state.bindings.bannerPickerPresented = false
         case .setSetkaPlusStatusEmoji(let emoji):
             state.bindings.selectedSetkaPlusStatus = .init(emoji: emoji, packID: nil, stickerID: nil, updatedAt: nil)
             state.bindings.setkaPlusStatusPickerPresented = false
@@ -127,6 +131,14 @@ class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDe
                 case .avatar:
                     state.localMedia = media
                 case .background:
+                    if let media,
+                       (media.mimeType == "image/gif" || media.url.pathExtension.lowercased() == "gif"),
+                       !state.isSetkaPlusActive {
+                        state.bindings.alertInfo = .init(id: .saveError,
+                                                         title: SetkaPlusL10n.title,
+                                                         message: "GIF background is available with Сетка Plus subscription.")
+                        return
+                    }
                     state.localBackgroundMedia = media
                     if let previewURL = media?.thumbnailURL?.absoluteString {
                         state.bindings.backgroundURLString = previewURL
@@ -173,6 +185,14 @@ class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDe
         let selectedStatus = state.bindings.selectedSetkaPlusStatus
         
         do {
+            if !state.isSetkaPlusActive,
+               background.lowercased().contains(".gif") {
+                state.bindings.alertInfo = .init(id: .saveError,
+                                                 title: SetkaPlusL10n.title,
+                                                 message: "GIF background is available with Сетка Plus subscription.")
+                return
+            }
+            
             try await withThrowingTaskGroup(of: Void.self) { group in
                 if avatarDidChange {
                     group.addTask {
@@ -226,6 +246,8 @@ class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDe
         async let detailsResult = clientProxy.fetchSetkaPlusUserProfileDetails(userID: clientProxy.userID)
         async let statusResult = clientProxy.fetchSetkaPlusStatusEmoji(userID: nil)
         async let packsResult = clientProxy.fetchSetkaPlusStickerPacks()
+        async let subscriptionResult = clientProxy.fetchSetkaPlusSubscription()
+        async let presetsResult = clientProxy.fetchProfileBackgroundPresets()
         
         if case let .success(details) = await detailsResult {
             state.currentBio = details.bio
@@ -242,6 +264,14 @@ class UserDetailsEditScreenViewModel: UserDetailsEditScreenViewModelType, UserDe
         
         if case let .success(packs) = await packsResult {
             state.setkaPlusEmojiPacks = packs
+        }
+        
+        if case let .success(subscription) = await subscriptionResult {
+            state.isSetkaPlusActive = subscription.isActive == true || (subscription.status?.lowercased() == "active")
+        }
+
+        if case let .success(presets) = await presetsResult, !presets.isEmpty {
+            state.suggestedProfileBanners = presets
         }
     }
 }

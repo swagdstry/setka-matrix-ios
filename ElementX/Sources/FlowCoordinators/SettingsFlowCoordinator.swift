@@ -85,7 +85,7 @@ class SettingsFlowCoordinator: FlowCoordinatorProtocol {
                 case .secureBackup:
                     startEncryptionSettingsFlow(animated: true)
                 case .userDetails:
-                    presentUserDetailsEditScreen()
+                    presentOwnUserProfileScreen()
                 case .linkNewDevice:
                     startLinkNewDeviceFlow()
                 case let .manageAccount(url):
@@ -169,6 +169,30 @@ class SettingsFlowCoordinator: FlowCoordinatorProtocol {
                 switch action {
                 case .dismiss:
                     self?.navigationStackCoordinator.pop()
+                }
+            }
+            .store(in: &cancellables)
+        
+        navigationStackCoordinator.push(coordinator)
+    }
+    
+    private func presentOwnUserProfileScreen() {
+        let userID = flowParameters.userSession.clientProxy.userID
+        let parameters = UserProfileScreenCoordinatorParameters(userID: userID,
+                                                                isPresentedModally: false,
+                                                                userSession: flowParameters.userSession,
+                                                                userIndicatorController: flowParameters.userIndicatorController,
+                                                                analytics: flowParameters.analytics,
+                                                                showEditProfileButton: true)
+        let coordinator = UserProfileScreenCoordinator(parameters: parameters)
+        coordinator.actionsPublisher
+            .sink { [weak self] action in
+                guard let self else { return }
+                switch action {
+                case .editProfile:
+                    presentUserDetailsEditScreen()
+                case .openDirectChat, .startCall, .dismiss:
+                    break
                 }
             }
             .store(in: &cancellables)

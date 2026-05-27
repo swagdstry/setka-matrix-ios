@@ -295,6 +295,10 @@
 		30B9EF7AD313711457DBEAB0 /* ExtensionLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A8A33921FDD2F50E893AE7 /* ExtensionLogger.swift */; };
 		30D2A6BB14616E2337832863 /* CompletionSuggestionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEDD02794AD79889A44DF684 /* CompletionSuggestionServiceTests.swift */; };
 		3140270193CFA60FC85478FD /* AvatarHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0BBF40321505C1E905BD07E /* AvatarHeaderView.swift */; };
+		B3C4D5E6F7A8091B2C3D4E5F6 /* ProfileBannerBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* ProfileBannerBackground.swift */; };
+		C4D5E6F7A8091B2C3D4E5F6071 /* ProfileBannerPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5C6D /* ProfileBannerPickerSheet.swift */; };
+		D5E6F7A8091B2C3D4E5F60718 /* ProfileSuggestedBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F60718293A4B5C6D7E /* ProfileSuggestedBanner.swift */; };
+		F7A8091B2C3D4E5F6071829 /* UserSetkaProfileHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6F7A8091B2C3D4E5F60719 /* UserSetkaProfileHeaderView.swift */; };
 		3190987D70F6AB459C5F3887 /* VoiceMessageMediaManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EF7956B2120D0A152955A6 /* VoiceMessageMediaManagerTests.swift */; };
 		32141ECD0532E0021264D2E1 /* RoomScreenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F93681F5A98A832ECFC54E /* RoomScreenTests.swift */; };
 		321C2452AAB19D3F9EB99342 /* RoomPreviewProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 487F769DD7895CAC8E3E4CF0 /* RoomPreviewProxy.swift */; };
@@ -2448,6 +2452,10 @@
 		A0A8C7521D17F696D705A40B /* SendInviteConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendInviteConfirmationView.swift; sourceTree = "<group>"; };
 		A0B09B2728456B77AC4EAC75 /* DeactivateAccountScreenCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeactivateAccountScreenCoordinator.swift; sourceTree = "<group>"; };
 		A0BBF40321505C1E905BD07E /* AvatarHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarHeaderView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5C /* ProfileBannerBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileBannerBackground.swift; sourceTree = "<group>"; };
+		B2C3D4E5F60718293A4B5C6D /* ProfileBannerPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileBannerPickerSheet.swift; sourceTree = "<group>"; };
+		C3D4E5F60718293A4B5C6D7E /* ProfileSuggestedBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSuggestedBanner.swift; sourceTree = "<group>"; };
+		E6F7A8091B2C3D4E5F60719 /* UserSetkaProfileHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSetkaProfileHeaderView.swift; sourceTree = "<group>"; };
 		A0C874C89D8D45E01ACD0FB5 /* UNNotificationContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UNNotificationContent.swift; sourceTree = "<group>"; };
 		A0D33E5EA81C3656ADC4315E /* MapTilerConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTilerConfiguration.swift; sourceTree = "<group>"; };
 		A0DC00C03FF9959AFF44ED30 /* Application.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Application.swift; sourceTree = "<group>"; };
@@ -5575,6 +5583,7 @@
 		9EC262CC658C1191B4B60358 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				B2C3D4E5F60718293A4B5C6D /* ProfileBannerPickerSheet.swift */,
 				B14D879A028AD74C3B83B188 /* UserDetailsEditScreen.swift */,
 			);
 			path = View;
@@ -5730,6 +5739,9 @@
 				2539F3D3E547E3AD7AA1DEB9 /* MatrixUserShareLink.swift */,
 				9C72CD0D0E538AF8EB1E7DD2 /* OverridableAvatarImage.swift */,
 				1C95EF0360623005F3956428 /* PlaceholderAvatarImage.swift */,
+				A1B2C3D4E5F60718293A4B5C /* ProfileBannerBackground.swift */,
+				C3D4E5F60718293A4B5C6D7E /* ProfileSuggestedBanner.swift */,
+				E6F7A8091B2C3D4E5F60719 /* UserSetkaProfileHeaderView.swift */,
 				3F6D9EF7EFC87686E3F881A5 /* RemoveItemButton.swift */,
 				803F165454063618984A5EAA /* RoomAvatarImage.swift */,
 				DA18FE7E79126E7012AD1064 /* RoomHeaderView.swift */,
@@ -8947,6 +8959,10 @@
 				125A90DBDBD71999A1B56E7F /* UnsupportedRoomTimelineItem.swift in Sources */,
 				416568C0C7C46EEADAFD7841 /* UnsupportedRoomTimelineView.swift in Sources */,
 				E1F5646431225CE850CBB2E7 /* UserAgentBuilder.swift in Sources */,
+				B3C4D5E6F7A8091B2C3D4E5F6 /* ProfileBannerBackground.swift in Sources */,
+				C4D5E6F7A8091B2C3D4E5F6071 /* ProfileBannerPickerSheet.swift in Sources */,
+				D5E6F7A8091B2C3D4E5F60718 /* ProfileSuggestedBanner.swift in Sources */,
+				F7A8091B2C3D4E5F6071829 /* UserSetkaProfileHeaderView.swift in Sources */,
 				DB517282ED57666EF62C0751 /* UserDetailsEditScreen.swift in Sources */,
 				619EC2C3383472497DF29EFE /* UserDetailsEditScreenCoordinator.swift in Sources */,
 				A2978C9C62FED5E0774A7C79 /* UserDetailsEditScreenModels.swift in Sources */,

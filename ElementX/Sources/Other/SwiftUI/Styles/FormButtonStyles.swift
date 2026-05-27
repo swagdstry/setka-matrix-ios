@@ -27,7 +27,6 @@ struct FormActionButtonStyle: ButtonStyle {
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 8)
-        .frame(maxWidth: .infinity)
         .background {
             RoundedRectangle(cornerRadius: 14)
                 .fill(configuration.isPressed ? Color.compound.bgSubtlePrimary : .compound.bgCanvasDefaultLevel1)

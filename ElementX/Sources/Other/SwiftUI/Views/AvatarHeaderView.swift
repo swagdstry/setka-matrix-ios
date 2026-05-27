@@ -26,6 +26,7 @@ struct AvatarHeaderView<Footer: View>: View {
     private let avatarInfo: AvatarInfo
     private let title: String
     private let titleTrailingText: String?
+    private let titleTrailingImageURL: URL?
     private let subtitle: String?
     private let badges: [Badge]
     
@@ -42,6 +43,7 @@ struct AvatarHeaderView<Footer: View>: View {
         avatarInfo = .room(room.avatar)
         title = room.name ?? room.id
         titleTrailingText = nil
+        titleTrailingImageURL = nil
         
         if let roomAlias = room.canonicalAlias {
             subtitle = roomAlias
@@ -76,6 +78,7 @@ struct AvatarHeaderView<Footer: View>: View {
         avatarInfo = .room(.heroes([dmRecipientProfile, UserProfileProxy(member: accountOwner)]))
         title = dmRecipientProfile.displayName ?? dmRecipientProfile.userID
         titleTrailingText = nil
+        titleTrailingImageURL = nil
         subtitle = dmRecipientProfile.displayName == nil ? nil : dmRecipientProfile.userID
         
         avatarSize = .user(on: .dmDetails)
@@ -105,6 +108,7 @@ struct AvatarHeaderView<Footer: View>: View {
     init(user: UserProfileProxy,
          isVerified: Bool,
          titleTrailingText: String? = nil,
+         titleTrailingImageURL: URL? = nil,
          avatarSize: Avatars.Size,
          mediaProvider: MediaProviderProtocol? = nil,
          onAvatarTap: ((URL) -> Void)? = nil,
@@ -112,6 +116,7 @@ struct AvatarHeaderView<Footer: View>: View {
         avatarInfo = .user(user)
         title = user.displayName ?? user.userID
         self.titleTrailingText = titleTrailingText
+        self.titleTrailingImageURL = titleTrailingImageURL
         subtitle = user.displayName == nil ? nil : user.userID
         
         self.avatarSize = avatarSize
@@ -212,41 +217,57 @@ struct AvatarHeaderView<Footer: View>: View {
     }
     
     var body: some View {
-        VStack(spacing: 8.0) {
-            avatar
-            
-            Spacer()
-                .frame(height: 9)
-            
-            HStack(spacing: 6) {
-                Text(title)
-                    .foregroundColor(.compound.textPrimary)
-                    .font(.compound.headingMDBold)
-                    .multilineTextAlignment(.center)
-                    .textSelection(.enabled)
+        HStack {
+            Spacer(minLength: 0)
+            VStack(spacing: 8.0) {
+                avatar
+                
+                Spacer()
+                    .frame(height: 9)
+                
+                HStack(spacing: 6) {
+                    Text(title)
+                        .foregroundColor(.compound.textPrimary)
+                        .font(.compound.headingMDBold)
+                        .multilineTextAlignment(.center)
+                        .textSelection(.enabled)
 
-                if let titleTrailingText {
-                    Text(titleTrailingText)
-                        .font(.compound.bodyMDSemibold)
-                        .foregroundStyle(.compound.textSecondary)
+                    if let titleTrailingText {
+                        Text(titleTrailingText)
+                            .font(.compound.bodyMDSemibold)
+                            .foregroundStyle(.compound.textSecondary)
+                    }
+                    
+                    if let titleTrailingImageURL {
+                        LoadableImage(url: titleTrailingImageURL,
+                                      mediaProvider: mediaProvider,
+                                      transformer: { view in
+                                          AnyView(view
+                                              .scaledToFit()
+                                              .frame(width: 18, height: 18))
+                                      },
+                                      placeholder: {
+                                          AnyView(ProgressView().frame(width: 18, height: 18))
+                                      })
+                    }
                 }
+                
+                if let subtitle {
+                    Text(subtitle)
+                        .foregroundColor(.compound.textSecondary)
+                        .font(.compound.bodyLG)
+                        .multilineTextAlignment(.center)
+                        .textSelection(.enabled)
+                }
+                
+                if !badges.isEmpty {
+                    badgesStack
+                }
+                
+                footer()
             }
-            
-            if let subtitle {
-                Text(subtitle)
-                    .foregroundColor(.compound.textSecondary)
-                    .font(.compound.bodyLG)
-                    .multilineTextAlignment(.center)
-                    .textSelection(.enabled)
-            }
-            
-            if !badges.isEmpty {
-                badgesStack
-            }
-            
-            footer()
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .center)
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 11,
                                   leading: 0,

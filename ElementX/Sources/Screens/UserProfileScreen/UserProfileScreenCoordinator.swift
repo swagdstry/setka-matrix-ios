@@ -15,12 +15,14 @@ struct UserProfileScreenCoordinatorParameters {
     let userSession: UserSessionProtocol
     let userIndicatorController: UserIndicatorControllerProtocol
     let analytics: AnalyticsService
+    let showEditProfileButton: Bool
 }
 
 enum UserProfileScreenCoordinatorAction {
     case openDirectChat(roomID: String)
     case startCall(roomProxy: JoinedRoomProxyProtocol)
     case dismiss
+    case editProfile
 }
 
 final class UserProfileScreenCoordinator: CoordinatorProtocol {
@@ -36,6 +38,7 @@ final class UserProfileScreenCoordinator: CoordinatorProtocol {
     init(parameters: UserProfileScreenCoordinatorParameters) {
         viewModel = UserProfileScreenViewModel(userID: parameters.userID,
                                                isPresentedModally: parameters.isPresentedModally,
+                                               showEditProfileButton: parameters.showEditProfileButton,
                                                userSession: parameters.userSession,
                                                userIndicatorController: parameters.userIndicatorController,
                                                analytics: parameters.analytics)
@@ -52,6 +55,8 @@ final class UserProfileScreenCoordinator: CoordinatorProtocol {
                 actionsSubject.send(.startCall(roomProxy: roomProxy))
             case .dismiss:
                 actionsSubject.send(.dismiss)
+            case .editProfile:
+                actionsSubject.send(.editProfile)
             }
         }
         .store(in: &cancellables)

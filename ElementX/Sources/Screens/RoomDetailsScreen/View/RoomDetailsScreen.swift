@@ -143,8 +143,11 @@ struct RoomDetailsScreen: View {
     }
     
     private var headerSectionShortcuts: some View {
-        HStack(spacing: 8) {
-            ForEach(context.viewState.shortcuts, id: \.self) { shortcut in
+        let shortcuts = context.viewState.shortcuts
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: max(shortcuts.count, 1))
+
+        return LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(shortcuts, id: \.self) { shortcut in
                 switch shortcut {
                 case .mute:
                     toggleMuteButton

@@ -24,6 +24,7 @@ class UserProfileScreenViewModel: UserProfileScreenViewModelType, UserProfileScr
     
     init(userID: String,
          isPresentedModally: Bool,
+         showEditProfileButton: Bool,
          userSession: UserSessionProtocol,
          userIndicatorController: UserIndicatorControllerProtocol,
          analytics: AnalyticsService) {
@@ -34,6 +35,7 @@ class UserProfileScreenViewModel: UserProfileScreenViewModelType, UserProfileScr
         let initialViewState = UserProfileScreenViewState(userID: userID,
                                                           isOwnUser: userID == userSession.clientProxy.userID,
                                                           isPresentedModally: isPresentedModally,
+                                                          showEditProfileButton: showEditProfileButton,
                                                           bindings: .init())
         
         super.init(initialViewState: initialViewState, mediaProvider: userSession.mediaProvider)
@@ -66,6 +68,8 @@ class UserProfileScreenViewModel: UserProfileScreenViewModelType, UserProfileScr
             Task { await startCall(roomID: roomID) }
         case .dismiss:
             actionsSubject.send(.dismiss)
+        case .editProfile:
+            actionsSubject.send(.editProfile)
         }
     }
 
@@ -114,7 +118,18 @@ class UserProfileScreenViewModel: UserProfileScreenViewModelType, UserProfileScr
             let normalizedLastSeenText = details.lastSeenText?.trimmingCharacters(in: .whitespacesAndNewlines)
             state.bio = normalizedBio?.isEmpty == true ? nil : normalizedBio
             state.lastSeenText = normalizedLastSeenText?.isEmpty == true ? nil : normalizedLastSeenText
-            state.backgroundURL = details.backgroundURL.flatMap(URL.init(string:))
+            state.backgroundValue = details.backgroundURL
+            if let background = details.backgroundURL,
+               !background.hasPrefix("linear:") {
+                state.backgroundURL = URL(string: background)
+            } else {
+                state.backgroundURL = nil
+            }
+            state.profileColorHex = details.color
+            state.badgeEmojiMXC = details.badgeEmojiMXC
+            state.statusEmojiMXC = details.statusEmojiMXC
+            state.email = details.email
+            state.phone = details.phone
             if let shareURL = details.shareURL,
                let url = URL(string: shareURL) {
                 state.permalink = url

@@ -5719,6 +5719,70 @@ class ClientProxyMock: ClientProxyProtocol, @unchecked Sendable {
             return fetchSetkaPlusUserProfileDetailsUserIDReturnValue
         }
     }
+    //MARK: - fetchProfileBackgroundPresets
+
+    var fetchProfileBackgroundPresetsUnderlyingCallsCount = 0
+    var fetchProfileBackgroundPresetsCallsCount: Int {
+        get {
+            if Thread.isMainThread {
+                return fetchProfileBackgroundPresetsUnderlyingCallsCount
+            } else {
+                var returnValue: Int? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchProfileBackgroundPresetsUnderlyingCallsCount
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchProfileBackgroundPresetsUnderlyingCallsCount = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchProfileBackgroundPresetsUnderlyingCallsCount = newValue
+                }
+            }
+        }
+    }
+    var fetchProfileBackgroundPresetsCalled: Bool {
+        return fetchProfileBackgroundPresetsCallsCount > 0
+    }
+
+    var fetchProfileBackgroundPresetsUnderlyingReturnValue: Result<[ProfileSuggestedBanner], ClientProxyError>!
+    var fetchProfileBackgroundPresetsReturnValue: Result<[ProfileSuggestedBanner], ClientProxyError>! {
+        get {
+            if Thread.isMainThread {
+                return fetchProfileBackgroundPresetsUnderlyingReturnValue
+            } else {
+                var returnValue: Result<[ProfileSuggestedBanner], ClientProxyError>? = nil
+                DispatchQueue.main.sync {
+                    returnValue = fetchProfileBackgroundPresetsUnderlyingReturnValue
+                }
+
+                return returnValue!
+            }
+        }
+        set {
+            if Thread.isMainThread {
+                fetchProfileBackgroundPresetsUnderlyingReturnValue = newValue
+            } else {
+                DispatchQueue.main.sync {
+                    fetchProfileBackgroundPresetsUnderlyingReturnValue = newValue
+                }
+            }
+        }
+    }
+    var fetchProfileBackgroundPresetsClosure: (() async -> Result<[ProfileSuggestedBanner], ClientProxyError>)?
+
+    func fetchProfileBackgroundPresets() async -> Result<[ProfileSuggestedBanner], ClientProxyError> {
+        fetchProfileBackgroundPresetsCallsCount += 1
+        if let fetchProfileBackgroundPresetsClosure = fetchProfileBackgroundPresetsClosure {
+            return await fetchProfileBackgroundPresetsClosure()
+        } else {
+            return fetchProfileBackgroundPresetsReturnValue
+        }
+    }
     //MARK: - updateSetkaPlusUserProfileDetails
 
     var updateSetkaPlusUserProfileDetailsUnderlyingCallsCount = 0

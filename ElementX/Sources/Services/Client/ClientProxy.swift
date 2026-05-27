@@ -1178,44 +1178,46 @@ class ClientProxy: ClientProxyProtocol {
         do {
             let targetUserID = userID?.trimmingCharacters(in: .whitespacesAndNewlines)
             let isFetchingOtherUser = targetUserID != nil && targetUserID != self.userID
-            let path: String
-            if let targetUserID, !targetUserID.isEmpty, targetUserID != self.userID {
-                path = "/setka_plus/users/\(encodedPathSegment(targetUserID))/status_emoji"
+            let paths: [String]
+            if let targetUserID, !targetUserID.isEmpty, isFetchingOtherUser {
+                let encoded = encodedPathSegment(targetUserID)
+                paths = [
+                    "/setka_plus/users/\(encoded)/status_emoji",
+                    "/profile/\(encoded)/setka_plus/status_emoji"
+                ]
                 MXLog.info("Fetching Setka Plus status for user: \(targetUserID)")
             } else {
-                path = "/user/\(encodedUserID())/setka_plus/status_emoji"
+                paths = ["/user/\(encodedUserID())/setka_plus/status_emoji"]
                 MXLog.info("Fetching own Setka Plus status")
             }
 
-            let (data, response) = try await performUserMetadataRequest(method: "GET", path: path)
-            MXLog.info("Setka Plus status fetch response: \(response.statusCode)")
-            
-            if response.statusCode == 404 {
-                if isFetchingOtherUser {
-                    MXLog.info("Setka Plus status not found (404) for other user - returning empty status")
-                    return .success(.init(emoji: nil, packID: nil, stickerID: nil, updatedAt: nil))
+            for path in paths {
+                let (data, response) = try await performUserMetadataRequest(method: "GET", path: path)
+                MXLog.info("Setka Plus status fetch response (\(path)): \(response.statusCode)")
+
+                if response.statusCode == 404 {
+                    continue
                 }
-                MXLog.info("Setka Plus status not found (404) - returning empty status")
-                return .success(.init(emoji: nil, packID: nil, stickerID: nil, updatedAt: nil))
+
+                guard 200..<300 ~= response.statusCode else {
+                    MXLog.warning("Setka Plus status fetch failed for \(path) with status code: \(response.statusCode)")
+                    continue
+                }
+
+                var statusEmoji = try decodeSetkaPlusStatusEmojiResponse(data)
+                if isFetchingOtherUser,
+                   statusEmoji.emoji?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false,
+                   statusEmoji.stickerID?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
+                    statusEmoji = .init(emoji: nil,
+                                        packID: statusEmoji.packID,
+                                        stickerID: "setka_plus_subscription",
+                                        updatedAt: statusEmoji.updatedAt)
+                }
+                MXLog.info("Setka Plus status fetch successful: \(statusEmoji.emoji ?? "nil")")
+                return .success(statusEmoji)
             }
-            
-            guard 200..<300 ~= response.statusCode else {
-                MXLog.error("Setka Plus status fetch failed with status code: \(response.statusCode)")
-                throw ClientProxyError.invalidResponse
-            }
-            
-            var statusEmoji = try decodeSetkaPlusStatusEmojiResponse(data)
-            if isFetchingOtherUser,
-               statusEmoji.emoji?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false,
-               statusEmoji.stickerID?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
-                // User has Setka Plus metadata endpoint available but no custom status yet.
-                statusEmoji = .init(emoji: nil,
-                                    packID: statusEmoji.packID,
-                                    stickerID: "setka_plus_subscription",
-                                    updatedAt: statusEmoji.updatedAt)
-            }
-            MXLog.info("Setka Plus status fetch successful: \(statusEmoji.emoji ?? "nil")")
-            return .success(statusEmoji)
+
+            return .success(.init(emoji: nil, packID: nil, stickerID: nil, updatedAt: nil))
         } catch let error as ClientProxyError {
             MXLog.error("Failed fetching Setka Plus status emoji with ClientProxyError: \(error)")
             return .failure(error)
@@ -1227,11 +1229,21 @@ class ClientProxy: ClientProxyProtocol {
 
     func fetchSetkaPlusUserProfileDetails(userID: String) async -> Result<SetkaPlusUserProfileDetails, ClientProxyError> {
         let encodedTargetUserID = encodedPathSegment(userID)
-        let candidates = [
-            "/user/\(encodedTargetUserID)/setka_profile",
-            "/profile/\(encodedTargetUserID)/setka_profile",
-            "/setka_plus/users/\(encodedTargetUserID)/profile"
-        ]
+        let isOwnUser = userID == self.userID
+        // Match Android: own profile uses /user/…, other users use /profile/… first.
+        let candidates = if isOwnUser {
+            [
+                "/user/\(encodedTargetUserID)/setka_profile",
+                "/profile/\(encodedTargetUserID)/setka_profile",
+                "/setka_plus/users/\(encodedTargetUserID)/profile"
+            ]
+        } else {
+            [
+                "/profile/\(encodedTargetUserID)/setka_profile",
+                "/user/\(encodedTargetUserID)/setka_profile",
+                "/setka_plus/users/\(encodedTargetUserID)/profile"
+            ]
+        }
 
         for path in candidates {
             do {
@@ -1255,7 +1267,34 @@ class ClientProxy: ClientProxyProtocol {
 
         return .success(.init(bio: nil, backgroundURL: nil, lastSeenText: nil, shareURL: nil))
     }
-    
+
+    func fetchProfileBackgroundPresets() async -> Result<[ProfileSuggestedBanner], ClientProxyError> {
+        let candidates = [
+            "/setka_plus/profile_background_presets",
+            "/profile/background_presets",
+            "/setka_profile/background_presets"
+        ]
+
+        for path in candidates {
+            do {
+                let (data, response) = try await performUserMetadataRequest(method: "GET", path: path)
+                if response.statusCode == 404 {
+                    continue
+                }
+                guard 200..<300 ~= response.statusCode else {
+                    continue
+                }
+                if let presets = ProfileSuggestedBanner.decodeList(from: data), !presets.isEmpty {
+                    return .success(presets)
+                }
+            } catch {
+                MXLog.warning("Failed fetching profile background presets from \(path): \(error)")
+            }
+        }
+
+        return .success(ProfileSuggestedBanner.defaultPresets)
+    }
+
     func updateSetkaPlusUserProfileDetails(_ details: SetkaPlusUserProfileUpdate) async -> Result<Void, ClientProxyError> {
         let payload = try? JSONEncoder().encode(details)
         let candidates: [(String, String)] = [

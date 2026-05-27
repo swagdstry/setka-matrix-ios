@@ -362,46 +362,41 @@ struct RoomScreen: View {
         let blurRadius = appThemeService.wallpaperBlurRadius
         let overlayOpacity = appThemeService.resolvedTimelineOverlayOpacity(for: colorScheme)
         let defaultWallpaperStyle = appThemeService.resolvedDefaultRoomWallpaperStyle(for: colorScheme)
+        let fallbackColor = appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
 
-        GeometryReader { geometry in
-            if let imageURL = roomWallpaperService.wallpaperURL(forRoomID: timelineContext.viewState.roomID) ??
-                roomWallpaperService.defaultWallpaperURL(themeStyle: defaultWallpaperStyle) {
-                if roomWallpaperService.shouldUseMediaProvider(for: imageURL) {
-                    LoadableImage(url: imageURL,
-                                  mediaProvider: context.mediaProvider,
-                                  transformer: { view in
-                                      AnyView(view
-                                          .scaledToFill()
-                                          .frame(width: geometry.size.width, height: geometry.size.height)
-                                          .clipped()
-                                          .blur(radius: blurRadius))
-                                  },
-                                  placeholder: {
-                                      appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
-                                  })
-                                  .ignoresSafeArea()
-                } else {
-                    AsyncImage(url: imageURL) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: geometry.size.width, height: geometry.size.height)
-                                .clipped()
-                                .blur(radius: blurRadius)
-                        default:
-                            appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
+        if let imageURL = roomWallpaperService.wallpaperURL(forRoomID: timelineContext.viewState.roomID) ??
+            roomWallpaperService.defaultWallpaperURL(themeStyle: defaultWallpaperStyle) {
+            ZStack {
+                fallbackColor
+
+                Group {
+                    if roomWallpaperService.shouldUseMediaProvider(for: imageURL) {
+                        LoadableImage(url: imageURL,
+                                      mediaProvider: context.mediaProvider,
+                                      transformer: { view in
+                                          AnyView(view.scaledToFill())
+                                      },
+                                      placeholder: {
+                                          fallbackColor
+                                      })
+                    } else {
+                        AsyncImage(url: imageURL) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image.resizable().scaledToFill()
+                            default:
+                                fallbackColor
+                            }
                         }
                     }
-                    .ignoresSafeArea()
                 }
-                
+                .blur(radius: blurRadius)
+
                 Color.black.opacity(overlayOpacity)
-                    .ignoresSafeArea()
-            } else {
-                appThemeService.resolvedHomeBackgroundColor(for: colorScheme)
             }
+            .ignoresSafeArea()
+        } else {
+            fallbackColor
         }
     }
     

@@ -644,6 +644,7 @@ protocol ClientProxyProtocol: AnyObject {
     func fetchSetkaPlusPayments() async -> Result<[SetkaPlusPayment], ClientProxyError>
     func fetchSetkaPlusStatusEmoji(userID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError>
     func fetchSetkaPlusUserProfileDetails(userID: String) async -> Result<SetkaPlusUserProfileDetails, ClientProxyError>
+    func fetchProfileBackgroundPresets() async -> Result<[ProfileSuggestedBanner], ClientProxyError>
     func updateSetkaPlusUserProfileDetails(_ details: SetkaPlusUserProfileUpdate) async -> Result<Void, ClientProxyError>
     func updateSetkaPlusStatusEmoji(emoji: String?, packID: String?, stickerID: String?) async -> Result<SetkaPlusStatusEmoji, ClientProxyError>
     func createSetkaPlusYooMoneyPayment(amount: Double?, description: String?, planID: String?) async -> Result<SetkaPlusPaymentRequest, ClientProxyError>
@@ -697,7 +698,11 @@ extension ClientProxyProtocol {
     func fetchSetkaPlusUserProfileDetails(userID: String) async -> Result<SetkaPlusUserProfileDetails, ClientProxyError> {
         .success(.init(bio: nil, backgroundURL: nil, lastSeenText: nil, shareURL: nil))
     }
-    
+
+    func fetchProfileBackgroundPresets() async -> Result<[ProfileSuggestedBanner], ClientProxyError> {
+        .success(ProfileSuggestedBanner.defaultPresets)
+    }
+
     func updateSetkaPlusUserProfileDetails(_: SetkaPlusUserProfileUpdate) async -> Result<Void, ClientProxyError> {
         .failure(.invalidResponse)
     }
